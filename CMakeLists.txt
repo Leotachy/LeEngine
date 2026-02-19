@@ -28,6 +28,9 @@ endmacro ()
 # end of Configure optional libraries
 
 
+add_compile_definitions(
+	$<$<CONFIG:Debug>:LE_DEBUG>
+)
 
 
 # These are in cmake/directory
@@ -37,6 +40,8 @@ include(cmake/functions.cmake)
 if(MSVC)
 	include(cmake/msvc.cmake)
 endif()
+
+
 
 
 add_subdirectory(src)

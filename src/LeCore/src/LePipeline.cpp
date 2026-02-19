@@ -1,6 +1,6 @@
 
+#include "lecore/lecore.h"
 #include "LePipeline.h"
-#include <fstream>
 
 namespace Le
 {
@@ -38,16 +38,15 @@ namespace Le
 
 		if (!file.is_open())
 		{
-			char buf[256];
-			sprintf_s(buf, sizeof(buf), "failed to open file: %s\n", Path);
-			// TODO: fire assert here
+			LE_ERROR("Failed to open file: %s", Path);
+
 			Size = 0;
 			return nullptr;
 		}
 
 		size_t fileSize = static_cast<size_t>(file.tellg());
 		Size = int(fileSize);
-		char* DataBuffer = (char*)malloc(fileSize * sizeof(char));
+		char* DataBuffer = (char*)LeMalloc(fileSize * sizeof(char));
 
 		file.seekg(0);
 		file.read(DataBuffer, fileSize);

@@ -16,7 +16,7 @@ function (LeEngine_target_settings_toolchain target)
 
     # Treat code included using angle brackets as external, and set warning level 3 for external code
     target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/external:anglebrackets>)
-    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/external:W3>)
+    #target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/external:W3>)
 
     # Source code is UTF-8
     target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
