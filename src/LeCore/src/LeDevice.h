@@ -25,9 +25,9 @@ struct QueueFamilyIndices {
 class LeDevice {
 public:
 #ifdef LE_DEBUG
-    const bool enableValidationLayers = false;
-#else
     const bool enableValidationLayers = true;
+#else
+    const bool enableValidationLayers = false;
 #endif
 
     LeDevice(LeWindow& window);

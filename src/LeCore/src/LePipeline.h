@@ -7,8 +7,18 @@
 
 struct LePipelineConfigInfo
 {
-
+	VkViewport viewport;
+	VkRect2D scissor;
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+	VkPipelineRasterizationStateCreateInfo rasterizationInfo;
+	VkPipelineMultisampleStateCreateInfo multisampleInfo;
+	VkPipelineColorBlendAttachmentState colorBlendAttachment;
+	VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+	VkPipelineLayout pipelineLayout = nullptr;
+	VkRenderPass renderPass = nullptr;
+	uint32_t subpass = 0;
 };
+
 
 class LePipeline
 {
@@ -16,11 +26,17 @@ public:
 
 	static LePipelineConfigInfo DefaultPipelineConfigInfo(uint32 Width, uint32 Height);
 
-	LePipeline(const LePipelineConfigInfo& ConfigInfo, LeDevice& Device, const LeChar* vertFilePath, const LeChar* fragFilePath);
-	~LePipeline();
-
 	LePipeline(const LePipeline&) = delete;
 	void operator=(const LePipeline&) = delete;
+
+	LePipeline();
+	~LePipeline();
+
+	void Init(const LePipelineConfigInfo& ConfigInfo, LeDevice& Device, const LeChar* vertFilePath, const LeChar* fragFilePath);
+	void DeInit();
+
+	void Bind(VkCommandBuffer CommandBuffer);
+
 
 private:
 
@@ -32,13 +48,15 @@ private:
 	const uint32* ReadShaderBinaryFile(const LeChar* Path, uint32& Size /* Returns size in bytes */);
 		
 
+	LeBool m_Inited;
+
 	const uint32* m_VertShaderBin;
 	uint32 m_VertShaderLen;
 
 	const uint32* m_FragShaderBin;
 	uint32 m_FragShaderLen;
 
-	LeDevice& m_LeDevice;
+	LeDevice* m_LeDevice;
 	VkPipeline m_GraphicsPipeline;
 	VkShaderModule m_VertShaderModule;
 	VkShaderModule m_FragShaderModule;

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "lecore/lecore.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 
@@ -27,6 +29,8 @@ private:
 
 
 public:
+
+	VkExtent2D getExtent() { return { uint32(m_width), uint32(m_height) }; }
 
 	bool ShouldClose(void);
 	void PollEvents(void);

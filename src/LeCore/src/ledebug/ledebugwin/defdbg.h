@@ -8,6 +8,7 @@
 #include "lecore/lecore.h"
 
 // #define LOG_ONLY
+//#define EXIT_ON_ERROR
 
 #define LOG_PATH (LECORE_LOG_PATH "ledebug.log")
 
@@ -64,7 +65,9 @@ static void DefaultDebugHandler(LeDebugType type, const LeChar* string)
 		MessageBox(NULL, string, "LE ASSERT FIRED", MB_OK | MB_ICONERROR | MB_TOPMOST);
 #endif
 
+#ifdef EXIT_ON_ERROR
 		exit(1);
+#endif
 
 		break;
 
@@ -76,7 +79,10 @@ static void DefaultDebugHandler(LeDebugType type, const LeChar* string)
 		MessageBox(NULL, string, "LE ERROR", MB_OK | MB_ICONERROR | MB_TOPMOST);
 #endif
 
+
+#ifdef EXIT_ON_ERROR
 		exit(1);
+#endif
 
 		break;
 
