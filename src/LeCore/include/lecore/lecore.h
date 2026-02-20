@@ -38,6 +38,9 @@ typedef bool LeBool;
 
 #define LeMalloc(size) (malloc(size))
 
+#define STRINGIFY(x) #x
+#define ARRAY_SIZE(x) sizeof(x)/(sizeof(x[0]))
+
 // ledebug
 
 enum LeDebugType
@@ -54,11 +57,11 @@ typedef void (*LeDebugHandler)(LeDebugType type, const LeChar* string);
 
 void _LeDebugSendMessage(LeDebugType type, const LeChar* file, const int32 line, const LeChar* message, ...);
 
-#define LeDebugSendMessage(type, funcName, message)     \
+#define LeDebugSendMessage(type, message, ...)          \
         _LeDebugSendMessage(type,                       \
 							__FILE__,			        \
                             __LINE__,                   \
-                            message)
+                            message, __VA_ARGS__)
 
 LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 
@@ -79,6 +82,7 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 
 #define LE_DEBUG_ERROR(x, ...) _LeDebugSendMessage(leDEBUGERROR,__FILE__,__LINE__,x,__VA_ARGS__)
 #define LE_DEBUG_WARN(x, ...) _LeDebugSendMessage(leDEBUGWARN,__FILE__,__LINE__,x,__VA_ARGS__)
+#define LE_DEBUG_MESSAGE(x, ...) _LeDebugSendMessage(leDEBUGMESSAGE,__FILE__,__LINE__,x,__VA_ARGS__)
 
 #else
 
@@ -86,6 +90,7 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 #define LE_DEBUG_ASSERT(ignore)
 #define LE_DEBUG_ERROR(ignore, ...)
 #define LE_DEBUG_WARN(ignore, ...)
+#define LE_DEBUG_MESSAGE(ignore, ...)
 
 #endif
 

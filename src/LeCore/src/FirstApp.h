@@ -1,25 +1,32 @@
 
 #pragma once
 
+#include "lecore/lecore.h"
+
 #include "LeWindow.h"
 #include "LePipeline.h"
+#include "LeDevice.h"
 
-namespace Le
+
+class FirstApp
 {
-	class FirstApp
-	{
 
-	public:
+public:
 
-		static constexpr int WIDTH = 800;
-		static constexpr int HEIGHT = 600;
+	static constexpr int WIDTH = 800;
+	static constexpr int HEIGHT = 600;
 
-		void Run();
+	void Run();
 
-	private:
+private:
 
-		LeWindow m_LeWindow{WIDTH, HEIGHT, "LeEngine Vulkan Window"};
-		LePipeline m_LePipeline{ LECORE_RESOURCES_PATH "shaders/compiled/basic_vk.vert.spv",
-								 LECORE_RESOURCES_PATH "shaders/compiled/basic_vk.frag.spv" };
+	LeWindow m_LeWindow{ WIDTH, HEIGHT, "LeEngine Vulkan Window" };
+	LeDevice m_LeDevice{ m_LeWindow };
+	LePipeline m_LePipeline
+	{ 
+		LePipeline::DefaultPipelineConfigInfo(WIDTH, HEIGHT),
+		m_LeDevice,
+		LECORE_RESOURCES_PATH "shaders/compiled/basic_vk.vert.spv",
+		LECORE_RESOURCES_PATH "shaders/compiled/basic_vk.frag.spv" 
 	};
-}
+};

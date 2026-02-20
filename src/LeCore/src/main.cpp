@@ -7,7 +7,7 @@
 
 int main()
 {
-    Le::FirstApp FirstApp;
+    FirstApp FirstApp;
 
     try
     {

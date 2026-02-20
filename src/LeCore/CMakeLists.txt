@@ -11,14 +11,23 @@ LeEngine_target_sources_grouped(
 	"src/ledebug/ledebug.cpp"
 	"src/ledebug/ledebugwin/defdbg.h"
 
+
 	"src/main.cpp"
 	"src/main.h"
+
 	"src/LeWindow.cpp"
 	"src/LeWindow.h"
+
 	"src/FirstApp.cpp"
 	"src/FirstApp.h"
+
 	"src/LePipeline.cpp"
 	"src/LePipeline.h"
+
+	"src/LeDevice.cpp"
+	"src/LeDevice.h"
+
+
 	"src/camera.h"
 	"src/stb_image.cpp"
 	"src/stb_image.h"
