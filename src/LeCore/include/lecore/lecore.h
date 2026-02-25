@@ -9,6 +9,7 @@
 #include <float.h>
 #include <ctime>
 #include <fstream>
+#include <vector>
 
 // types
 
@@ -91,6 +92,7 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 #define LE_DEBUG_ERROR(ignore, ...)
 #define LE_DEBUG_WARN(ignore, ...)
 #define LE_DEBUG_MESSAGE(ignore, ...)
+#define LE_DEBUG_MESSAGE_RAW(x, ...)
 
 #endif
 
@@ -105,4 +107,7 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 
 #define LE_ERROR(x, ...) _LeDebugSendMessage(leDEBUGERROR,__FILE__, __LINE__,x,__VA_ARGS__) 
 #define LE_WARN(x, ...) _LeDebugSendMessage(leDEBUGWARN,__FILE__, __LINE__,x,__VA_ARGS__) 
+
+
+
 

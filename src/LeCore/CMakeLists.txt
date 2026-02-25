@@ -1,35 +1,24 @@
 # CMakeLists.txt for LeEngine/src/LeCore
 
 set(_target "LeCore")
-add_executable(${_target})
+add_library(${_target})
 
 LeEngine_target_sources_grouped(
 	${_target} TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
 
-	"include/lecore/lecore.h"
+	"include/LeCore/LeCore.h"
 
-	"src/ledebug/ledebug.cpp"
-	"src/ledebug/ledebugwin/defdbg.h"
+	"src/LeDebug/LeDebug.cpp"
+	"src/LeDebug/LeDebugwin/DefDbg.h"
 
-
-	"src/main.cpp"
-	"src/main.h"
-
-	
-	"src/FirstApp.cpp"
-	"src/FirstApp.h"
-
-	"src/LeWindow.cpp"
-	"src/LeWindow.h"
-
-	"src/LeDevice.cpp"
-	"src/LeDevice.h"
-
-	"src/LePipeline.cpp"
-	"src/LePipeline.h"
-
-	"src/LeSwapChain.cpp"
-	"src/LeSwapChain.h"
+	"include/LeCore/LeRender/LeDevice.h"
+	"include/LeCore/LeRender/LeRender.h"
+	"include/LeCore/LeRender/LeVulkanQueue.h"
+	"src/LeRender/LeDevice.cpp"
+	"src/LeRender/LeRender.cpp"
+	"src/LeRender/LeVulkanQueue.cpp"
+	"src/LeRender/LeRenderUtils.cpp"
+	"src/LeRender/LeRenderUtils.h"
 
 	"src/camera.h"
 	"src/stb_image.cpp"

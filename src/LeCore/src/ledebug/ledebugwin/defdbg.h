@@ -9,6 +9,7 @@
 
 // #define LOG_ONLY
 //#define EXIT_ON_ERROR
+#define PRINT_TO_CONSOLE
 
 #define LOG_PATH (LECORE_LOG_PATH "ledebug.log")
 
@@ -33,6 +34,11 @@ static void le_log_init(void)
 static void le_log_fired(LeChar* string)
 {
 
+#ifdef PRINT_TO_CONSOLE
+	printf(string);
+#endif
+
+
 	/* Have we intialised the file?	*/
 	if (!bInitialisedLog)
 	{
@@ -49,6 +55,8 @@ static void le_log_fired(LeChar* string)
 
 	fprintf(fP, "%s", string);
 	fclose(fP);
+
+
 
 }
 
