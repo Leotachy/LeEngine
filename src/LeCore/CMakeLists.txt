@@ -14,11 +14,13 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeRender/LeDevice.h"
 	"include/LeCore/LeRender/LeRender.h"
 	"include/LeCore/LeRender/LeVulkanQueue.h"
+	"include/LeCore/LeRender/LeShader.h"
 	"src/LeRender/LeDevice.cpp"
 	"src/LeRender/LeRender.cpp"
 	"src/LeRender/LeVulkanQueue.cpp"
 	"src/LeRender/LeRenderUtils.cpp"
 	"src/LeRender/LeRenderUtils.h"
+	"src/LeRender/LeShader.cpp"
 
 	"src/camera.h"
 	"src/stb_image.cpp"
@@ -34,8 +36,6 @@ target_include_directories(${_target} PUBLIC "include/" PRIVATE "src/")
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/logs")
 
 target_compile_definitions(${_target} 
-	PUBLIC
-		LECORE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/res/"
 	PRIVATE
 		LECORE_LOG_PATH="${CMAKE_BINARY_DIR}/logs/"
 )

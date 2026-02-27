@@ -1,6 +1,5 @@
 
-#define GLFW_INCLUDE_VULKAN
-#include "GLFW/glfw3.h"
+
 
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeVulkanQueue.h"
@@ -29,6 +28,8 @@ private:
 	int32 m_numImages = 0;
 	std::vector<VkCommandBuffer> m_cmdBufs;
 	LeVulkanQueue* m_pRenderQueue = NULL;
+	
+	LeShader m_basicShader;
 
 public:
 

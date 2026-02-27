@@ -11,6 +11,7 @@ TestAppWindow::TestAppWindow(int width, int height, const char* name) : m_width{
 
 TestAppWindow::~TestAppWindow(void)
 {
+	m_basicShader.Destroy();
 
 	m_LeVkCore.FreeCommandBuffers(m_numImages, m_cmdBufs.data());
 
@@ -30,6 +31,8 @@ void TestAppWindow::Init(void)
 	m_LeVkCore.Init(m_name, m_window);
 	m_numImages = m_LeVkCore.GetNumImages();
 	m_pRenderQueue = m_LeVkCore.GetQueue();
+
+	m_basicShader.Init(m_LeVkCore.GetDevice(), TESTAPP_SHADER_BIN_PATH "basic.spv");
 
 	CreateCommandBuffers();
 	RecordCommandBuffers();
@@ -82,59 +85,72 @@ void TestAppWindow::CreateCommandBuffers(void)
 void TestAppWindow::RecordCommandBuffers(void)
 {
 
-	VkClearColorValue ClearColor = { 1.0f, 0.0f, 0.0f, 1.0f };
-
-	VkImageSubresourceRange ImageRange = {
-		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = 0,
-		.layerCount = 1
-	};
+	VkClearValue ClearColor = { 1.0f, 1.0f, 0.0f, 1.0f };
 
 	for (uint32 i = 0; i < m_cmdBufs.size(); i++)
 	{
-
-		VkImageMemoryBarrier PresentToClearBarrier = {
-				.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-				.pNext = NULL,
-				.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-				.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-				.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-				.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-				.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-				.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-				.image = m_LeVkCore.GetImage(i),
-				.subresourceRange = ImageRange
-		};
-
-		// Change layout of image to be optimal for presenting
-		VkImageMemoryBarrier ClearToPresentBarrier = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			.pNext = NULL,
-			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-			.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = m_LeVkCore.GetImage(i),
-			.subresourceRange = ImageRange
-		};
+		LE_DEBUG_ASSERT(int32(i) < m_numImages);
 
 		m_LeVkCore.BeginCommandBuffer(m_cmdBufs[i], VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
+		// setup image barrier for clearing the color
 
-		vkCmdPipelineBarrier(m_cmdBufs[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-			0,  // dependency flags
-			0, NULL, // memory barriers
-			0, NULL, // buffer memory barriers
-			1, &PresentToClearBarrier); // image memory barriers
+		VkImageMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		barrier.image = m_LeVkCore.GetImage(i);
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.layerCount = 1;
 
-		vkCmdClearColorImage(m_cmdBufs[i], m_LeVkCore.GetImage(i), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &ClearColor, 1, &ImageRange);
+		vkCmdPipelineBarrier(
+			m_cmdBufs[i],
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
 
-		vkCmdPipelineBarrier(m_cmdBufs[i], VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-			0, 0, NULL, 0, NULL, 1, &ClearToPresentBarrier);
+
+
+
+		VkRenderingAttachmentInfo colorAttachment{};
+		colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+		colorAttachment.imageView = m_LeVkCore.GetImageView(i);
+		colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.clearValue = ClearColor;
+
+		VkRenderingInfo renderingInfo{};
+		renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+		renderingInfo.renderArea.offset = { 0, 0 };
+		renderingInfo.renderArea.extent = getExtent();
+		renderingInfo.layerCount = 1;
+		renderingInfo.colorAttachmentCount = 1;
+		renderingInfo.pColorAttachments = &colorAttachment;
+
+		vkCmdBeginRendering(m_cmdBufs[i], &renderingInfo);
+
+		vkCmdEndRendering(m_cmdBufs[i]);
+
+		barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		barrier.dstAccessMask = 0;
+
+		vkCmdPipelineBarrier(
+			m_cmdBufs[i],
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
 
 		m_LeVkCore.EndCommandBuffer(m_cmdBufs[i]);
 	}

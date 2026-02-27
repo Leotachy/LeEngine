@@ -246,9 +246,15 @@ void LeVulkanCore::CreateDevice()
 	DeviceFeatures.geometryShader = VK_TRUE;
 	DeviceFeatures.tessellationShader = VK_TRUE;
 
+	// Enable dynamic rendering
+	VkPhysicalDeviceDynamicRenderingFeatures DynamicRenderingFeature{};
+	DynamicRenderingFeature.sType =
+		VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+	DynamicRenderingFeature.dynamicRendering = VK_TRUE;
+
 	VkDeviceCreateInfo DeviceCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = &DynamicRenderingFeature,
 		.flags = 0,
 		.queueCreateInfoCount = 1,
 		.pQueueCreateInfos = &qInfo,
@@ -269,11 +275,11 @@ void LeVulkanCore::CreateDevice()
 
 static VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& PresentModes)
 {
-	for (int i = 0; i < PresentModes.size(); i++) {
+	/*for (int i = 0; i < PresentModes.size(); i++) {
 		if (PresentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
 			return PresentModes[i];
 		}
-	}
+	}*/
 
 	// Fallback to FIFO which is always supported
 	return VK_PRESENT_MODE_FIFO_KHR;
@@ -309,7 +315,7 @@ static VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkS
 	return SurfaceFormats[0];
 }
 
-VkImageView CreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
+static VkImageView CreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
 	VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels)
 {
 	VkImageViewCreateInfo ViewInfo =
@@ -402,6 +408,11 @@ void LeVulkanCore::CreateSwapChain()
 	}
 
 	LE_DEBUG_MESSAGE("Created image views");
+}
+
+void LeVulkanCore::CreateGraphicsPipeline()
+{
+	
 }
 
 void LeVulkanCore::CreateCommandBufferPool()

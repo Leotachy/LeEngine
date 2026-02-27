@@ -19,13 +19,13 @@ LeEngine_target_sources_grouped(
 
 #file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/logs")
 
-#target_compile_definitions(${_target} 
-#	PUBLIC
-#		LECORE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/res/"
-#	PRIVATE
-#		LECORE_LOG_PATH="${CMAKE_BINARY_DIR}/logs/"
-#)
+target_compile_definitions(${_target} 
+	PUBLIC
+		TESTAPP_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/res/"
+		TESTAPP_SHADER_BIN_PATH="${CMAKE_CURRENT_SOURCE_DIR}/res/shaders/bin/"
+)
 
+		
 
 target_link_libraries(${_target} glfw)
 target_link_libraries(${_target} LeCore)
