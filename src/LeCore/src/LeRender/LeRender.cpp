@@ -152,7 +152,7 @@ void LeVulkanCore::CreateInstance(const char* pAppName)
 		.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
 		.pEngineName = "LeEngine",
 		.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
-		.apiVersion = VK_API_VERSION_1_0
+		.apiVersion = VK_API_VERSION_1_4
 	};
 
 	VkInstanceCreateInfo CreateInfo =

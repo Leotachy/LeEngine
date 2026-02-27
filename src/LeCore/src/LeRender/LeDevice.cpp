@@ -40,27 +40,27 @@ static void PrintImageUsageFlags(const VkImageUsageFlags& flags)
 static void PrintMemoryProperty(VkMemoryPropertyFlags PropertyFlags)
 {
     if (PropertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-        LE_DEBUG_MESSAGE("DEVICE LOCAL ");
+        LE_DEBUG_MESSAGE("DEVICE LOCAL");
     }
 
     if (PropertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-        LE_DEBUG_MESSAGE("HOST VISIBLE ");
+        LE_DEBUG_MESSAGE("HOST VISIBLE");
     }
 
     if (PropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-        LE_DEBUG_MESSAGE("HOST COHERENT ");
+        LE_DEBUG_MESSAGE("HOST COHERENT");
     }
 
     if (PropertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-        LE_DEBUG_MESSAGE("HOST CACHED ");
+        LE_DEBUG_MESSAGE("HOST CACHED");
     }
 
     if (PropertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
-        LE_DEBUG_MESSAGE("LAZILY ALLOCATED ");
+        LE_DEBUG_MESSAGE("LAZILY ALLOCATED");
     }
 
     if (PropertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) {
-        LE_DEBUG_MESSAGE("PROTECTED ");
+        LE_DEBUG_MESSAGE("PROTECTED");
     }
 }
 
