@@ -29,49 +29,52 @@ static std::vector<char> readFile(const char* pShaderBinaryPath)
 
 LeShader::LeShader()
 {
-	m_device = NULL;
 	m_shaderModule = NULL;
+	m_device = NULL;
 }
 
 LeShader::~LeShader()
 {
-	Destroy();
 }
 
-void LeShader::Init(VkDevice* pDevice, const char* pShaderBinaryPath)
+void LeShader::Init(VkDevice Device, const char* pShaderBinaryPath)
 {
-	m_device = pDevice;
-	LE_ASSERT(m_device);
+	m_device = Device;
+	LE_DEBUG_ASSERT(m_device);
 
 	std::vector<char> code = readFile(pShaderBinaryPath);
 	if (code.size())
 	{
 		LeBool bCreated = CreateShaderModule(reinterpret_cast<const uint32*>(code.data()), uint32(code.size()));
 		LE_ASSERT(bCreated);
+
+		LE_DEBUG_MESSAGE("Shader created");
 	}
 
 }
 
 void LeShader::Destroy()
 {
-	if (!m_device)
-		return; // was not initialized
 
-	if (m_shaderModule)
-	{
-		vkDestroyShaderModule(*m_device, m_shaderModule, NULL);
-		m_shaderModule = NULL;
-	}
+	vkDestroyShaderModule(m_device, m_shaderModule, NULL);
+	m_shaderModule = NULL;
+
+	LE_DEBUG_MESSAGE("Shader destroyed");
+
+	m_device = NULL;
 }
 
 LeBool LeShader::CreateShaderModule(const uint32* pBinaryCode, uint32 codeSize)
 {
-	VkShaderModuleCreateInfo CreateInfo{};
-	CreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	CreateInfo.codeSize = codeSize;
-	CreateInfo.pCode = pBinaryCode;
+	VkShaderModuleCreateInfo CreateInfo = 
+	{
+		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+		.codeSize = codeSize,
+		.pCode = pBinaryCode
+	};
 
-	VkResult res = vkCreateShaderModule(*m_device, &CreateInfo, NULL, &m_shaderModule);
+
+	VkResult res = vkCreateShaderModule(m_device, &CreateInfo, NULL, &m_shaderModule);
 
 	if (res == VK_SUCCESS)
 	{

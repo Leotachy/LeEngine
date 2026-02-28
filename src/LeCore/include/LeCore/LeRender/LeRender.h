@@ -9,8 +9,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include "LeCore/LeRender/LeDevice.h"
+#include "LeCore/LeRender/LePhysicalDevice.h"
 #include "LeCore/LeRender/LeVulkanQueue.h"
+#include "LeCore/LeRender/LeSwapchain.h"
 #include "LeCore/LeRender/LeShader.h"
 
 class LeVulkanCore
@@ -29,7 +30,6 @@ private:
     void CreateDebugCallback();
     void CreateSurface(GLFWwindow* pWindow);
     void CreateDevice();
-    void CreateSwapChain();
     void CreateGraphicsPipeline();
     void CreateCommandBufferPool();
 
@@ -39,27 +39,27 @@ private:
     LeVulkanPhysicalDevices m_physicalDevices;
     uint32 m_queueFamily = 0;
     VkDevice m_device; // logical device
-    VkSwapchainKHR m_swapChain;
-    std::vector<VkImage> m_images;
-    std::vector<VkImageView> m_imageViews;
+
+    LeSwapchain m_swapChain;
+
     VkCommandPool m_cmdBufPool;
     LeVulkanQueue m_queue;
 
 public:
 
-    int32 GetNumImages(void) { return int32(m_images.size()); }
-    VkImage GetImage(uint32 i) { return m_images[i]; }
-    VkImageView GetImageView(uint32 i) { return m_imageViews[i]; }
+   
     void CreateCommandBuffers(uint32 Count, VkCommandBuffer* pCmdBufs);
     void FreeCommandBuffers(uint32 Count, const VkCommandBuffer* pCmdBufs);
 
     void BeginCommandBuffer(VkCommandBuffer CommandBuffer, VkCommandBufferUsageFlags UsageFlags);
     void EndCommandBuffer(VkCommandBuffer CommandBuffer);
 
+    LeSwapchain* GetSwapchain(void) { return &m_swapChain; }
+
     LeVulkanQueue* GetQueue() { return &m_queue; }
     uint32 GetQueueFamily() const { return m_queueFamily; }
 
-    VkDevice* GetDevice(void) { return &m_device; }
+    VkDevice GetDevice(void) { return m_device; }
 
 };
 

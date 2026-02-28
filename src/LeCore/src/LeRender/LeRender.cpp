@@ -59,16 +59,8 @@ LeVulkanCore::~LeVulkanCore()
 	// Destroy command pool
 	vkDestroyCommandPool(m_device, m_cmdBufPool, NULL);
 
-	// Destroy image views
-
-	for (VkImageView& ImageView : m_imageViews)
-		vkDestroyImageView(m_device, ImageView, NULL);
-	LE_DEBUG_MESSAGE("Image views destroyed");
-
-	// Destroy the swap chain
-
-	vkDestroySwapchainKHR(m_device, m_swapChain, NULL);
-	LE_DEBUG_MESSAGE("Swap chain destroyed");
+	// Destroy swapchain
+	m_swapChain.Destroy();
 
 	// Destroy logical device
 
@@ -114,9 +106,9 @@ void LeVulkanCore::Init(const char* pAppName, GLFWwindow* pWindow)
 	m_physicalDevices.Init(m_instance, m_surface);
 	m_queueFamily = m_physicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 	CreateDevice();
-	CreateSwapChain();
+	m_swapChain.Init(m_device, &m_physicalDevices.Selected(), m_surface, m_queueFamily);
 	CreateCommandBufferPool();
-	m_queue.Init(m_device, m_swapChain, m_queueFamily, 0);
+	m_queue.Init(m_device, m_swapChain.GetSwapchain(), m_queueFamily, 0);
 }
 
 void LeVulkanCore::CreateInstance(const char* pAppName)
@@ -273,142 +265,6 @@ void LeVulkanCore::CreateDevice()
 }
 
 
-static VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& PresentModes)
-{
-	/*for (int i = 0; i < PresentModes.size(); i++) {
-		if (PresentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-			return PresentModes[i];
-		}
-	}*/
-
-	// Fallback to FIFO which is always supported
-	return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-
-static uint32 ChooseNumImages(const VkSurfaceCapabilitiesKHR& Capabilities)
-{
-	uint32 RequestedNumImages = Capabilities.minImageCount + 1;
-
-	int FinalNumImages = 0;
-
-	if ((Capabilities.maxImageCount > 0) && (RequestedNumImages > Capabilities.maxImageCount)) {
-		FinalNumImages = Capabilities.maxImageCount;
-	}
-	else {
-		FinalNumImages = RequestedNumImages;
-	}
-
-	return FinalNumImages;
-}
-
-
-static VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkSurfaceFormatKHR>& SurfaceFormats)
-{
-	for (int i = 0; i < SurfaceFormats.size(); i++) {
-		if ((SurfaceFormats[i].format == VK_FORMAT_B8G8R8A8_SRGB) &&
-			(SurfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)) {
-			return SurfaceFormats[i];
-		}
-	}
-
-	return SurfaceFormats[0];
-}
-
-static VkImageView CreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
-	VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels)
-{
-	VkImageViewCreateInfo ViewInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.image = Image,
-		.viewType = ViewType,
-		.format = Format,
-		.components = {
-			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.a = VK_COMPONENT_SWIZZLE_IDENTITY
-		},
-		.subresourceRange = {
-			.aspectMask = AspectFlags,
-			.baseMipLevel = 0,
-			.levelCount = mipLevels,
-			.baseArrayLayer = 0,
-			.layerCount = LayerCount
-		}
-	};
-
-	VkImageView ImageView;
-	VkResult res = vkCreateImageView(Device, &ViewInfo, NULL, &ImageView);
-	LE_CHECK_VK_RESULT(res, "vkCreateImageView");
-	return ImageView;
-}
-
-
-void LeVulkanCore::CreateSwapChain()
-{
-	const VkSurfaceCapabilitiesKHR& SurfaceCaps = m_physicalDevices.Selected().m_surfaceCaps;
-
-	uint32 NumImages = ChooseNumImages(SurfaceCaps);
-
-	const std::vector<VkPresentModeKHR>& PresentModes = m_physicalDevices.Selected().m_presentModes;
-	VkPresentModeKHR PresentMode = ChoosePresentMode(PresentModes);
-
-	VkSurfaceFormatKHR SurfaceFormat = ChooseSurfaceFormatAndColorSpace(
-		m_physicalDevices.Selected().m_surfaceFormats);
-
-	VkSwapchainCreateInfoKHR SwapChainCreateInfo = {
-		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-		.pNext = NULL,
-		.flags = 0,
-		.surface = m_surface,
-		.minImageCount = NumImages,
-		.imageFormat = SurfaceFormat.format,
-		.imageColorSpace = SurfaceFormat.colorSpace,
-		.imageExtent = SurfaceCaps.currentExtent,
-		.imageArrayLayers = 1,
-		.imageUsage = (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
-		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.queueFamilyIndexCount = 1,
-		.pQueueFamilyIndices = &m_queueFamily,
-		.preTransform = SurfaceCaps.currentTransform,
-		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-		.presentMode = PresentMode,
-		.clipped = VK_TRUE
-	};
-
-	VkResult res = vkCreateSwapchainKHR(m_device, &SwapChainCreateInfo, NULL, &m_swapChain);
-	LE_CHECK_VK_RESULT(res, "vkCreateSwapchainKHR");
-
-	LE_DEBUG_MESSAGE("Swap chain created");
-
-	uint32 NumSwapChainImages = 0;
-	res = vkGetSwapchainImagesKHR(m_device, m_swapChain, &NumSwapChainImages, NULL);
-	LE_CHECK_VK_RESULT(res, "vkGetSwapchainImagesKHR");
-	LE_DEBUG_ASSERT(NumImages == NumSwapChainImages);
-
-	LE_DEBUG_MESSAGE("Number of images %d", NumSwapChainImages);
-
-	m_images.resize(NumSwapChainImages);
-	m_imageViews.resize(NumSwapChainImages);
-
-	res = vkGetSwapchainImagesKHR(m_device, m_swapChain, &NumSwapChainImages, m_images.data());
-	LE_CHECK_VK_RESULT(res, "vkGetSwapchainImagesKHR");
-
-
-	int LayerCount = 1;
-	int MipLevels = 1;
-	for (uint32 i = 0; i < NumSwapChainImages; i++) 
-	{
-		m_imageViews[i] = CreateImageView(m_device, m_images[i], SurfaceFormat.format,
-			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, LayerCount, MipLevels);
-	}
-
-	LE_DEBUG_MESSAGE("Created image views");
-}
 
 void LeVulkanCore::CreateGraphicsPipeline()
 {

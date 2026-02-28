@@ -29,7 +29,7 @@ void TestAppWindow::Init(void)
 	m_window = glfwCreateWindow(m_width, m_height, m_name, nullptr, nullptr);
 
 	m_LeVkCore.Init(m_name, m_window);
-	m_numImages = m_LeVkCore.GetNumImages();
+	m_numImages = m_LeVkCore.GetSwapchain()->GetNumImages();
 	m_pRenderQueue = m_LeVkCore.GetQueue();
 
 	m_basicShader.Init(m_LeVkCore.GetDevice(), TESTAPP_SHADER_BIN_PATH "basic.spv");
@@ -101,7 +101,7 @@ void TestAppWindow::RecordCommandBuffers(void)
 		barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		barrier.srcAccessMask = 0;
 		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		barrier.image = m_LeVkCore.GetImage(i);
+		barrier.image = m_LeVkCore.GetSwapchain()->GetImage(i);
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		barrier.subresourceRange.levelCount = 1;
 		barrier.subresourceRange.layerCount = 1;
@@ -120,7 +120,7 @@ void TestAppWindow::RecordCommandBuffers(void)
 
 		VkRenderingAttachmentInfo colorAttachment{};
 		colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-		colorAttachment.imageView = m_LeVkCore.GetImageView(i);
+		colorAttachment.imageView = m_LeVkCore.GetSwapchain()->GetImageView(i);
 		colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
