@@ -7,7 +7,21 @@
 #include "LeRenderUtils.h"
 
 
-LeGraphicsPipeline::LeGraphicsPipeline(VkDevice Device, const LeSwapchain* pSwapchain, LeShader* pShader)
+LeGraphicsPipeline::LeGraphicsPipeline()
+{
+	m_pipeline = NULL;
+	m_pipelineLayout = NULL;
+
+	m_device = NULL;
+}
+
+LeGraphicsPipeline::~LeGraphicsPipeline()
+{
+
+}
+
+
+void LeGraphicsPipeline::Init(VkDevice Device, const LeSwapchain* pSwapchain, LeShader* pShader)
 {
 
 	LE_DEBUG_ASSERT(pSwapchain);
@@ -45,7 +59,7 @@ LeGraphicsPipeline::LeGraphicsPipeline(VkDevice Device, const LeSwapchain* pSwap
 	};
 	const uint32 NumDynamicStates = ARRAY_SIZE(DynamicStates);
 
-	const VkPipelineDynamicStateCreateInfo DynamicStateInfo = 
+	const VkPipelineDynamicStateCreateInfo DynamicStateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
 		.dynamicStateCount = NumDynamicStates,
@@ -64,7 +78,7 @@ LeGraphicsPipeline::LeGraphicsPipeline(VkDevice Device, const LeSwapchain* pSwap
 		.primitiveRestartEnable = VK_FALSE
 	};
 
-	
+
 	VkPipelineViewportStateCreateInfo ViewportStateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -95,7 +109,7 @@ LeGraphicsPipeline::LeGraphicsPipeline(VkDevice Device, const LeSwapchain* pSwap
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 	};
 
-	VkPipelineColorBlendStateCreateInfo BlendStateInfo = 
+	VkPipelineColorBlendStateCreateInfo BlendStateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 		.logicOpEnable = VK_FALSE,
@@ -136,6 +150,7 @@ LeGraphicsPipeline::LeGraphicsPipeline(VkDevice Device, const LeSwapchain* pSwap
 		.pRasterizationState = &RasterizationStateInfo,
 		.pMultisampleState = &MultisampleStateInfo,
 		.pColorBlendState = &BlendStateInfo,
+		.pDynamicState = &DynamicStateInfo,
 		.layout = m_pipelineLayout,
 		.renderPass = NULL,
 		.subpass = 0,
@@ -149,14 +164,13 @@ LeGraphicsPipeline::LeGraphicsPipeline(VkDevice Device, const LeSwapchain* pSwap
 	LE_DEBUG_MESSAGE("Graphics pipeline created");
 }
 
-LeGraphicsPipeline::~LeGraphicsPipeline()
+void LeGraphicsPipeline::Destroy(void)
 {
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, NULL);
 	vkDestroyPipeline(m_device, m_pipeline, NULL);
 
 	LE_DEBUG_MESSAGE("Graphics pipeline destroyed");
 }
-
 
 void LeGraphicsPipeline::Bind(VkCommandBuffer CmdBuf)
 {

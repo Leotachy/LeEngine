@@ -30,7 +30,6 @@ private:
     void CreateDebugCallback();
     void CreateSurface(GLFWwindow* pWindow);
     void CreateDevice();
-    void CreateGraphicsPipeline();
     void CreateCommandBufferPool();
 
     VkInstance m_instance = VK_NULL_HANDLE;

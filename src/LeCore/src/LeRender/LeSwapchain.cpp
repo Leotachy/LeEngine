@@ -112,6 +112,8 @@ void LeSwapchain::Init(VkDevice Device, const LePhysicalDevice* pPhysicalDevice,
 
 	const VkSurfaceCapabilitiesKHR& SurfaceCaps = pPhysicalDevice->m_surfaceCaps;
 
+	m_extent = SurfaceCaps.currentExtent;
+
 	uint32 NumImages = ChooseNumImages(SurfaceCaps);
 
 	const std::vector<VkPresentModeKHR>& PresentModes = pPhysicalDevice->m_presentModes;

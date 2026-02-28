@@ -6,16 +6,19 @@ class LeGraphicsPipeline
 
 public:
 
-	LeGraphicsPipeline(VkDevice Device, const LeSwapchain* pSwapchain, LeShader* pShader);
+	LeGraphicsPipeline();
 	~LeGraphicsPipeline();
+
+	void Init(VkDevice Device, const LeSwapchain* pSwapchain, LeShader* pShader);
+	void Destroy(void);
 
 	void Bind(VkCommandBuffer CmdBuf);
 
 private:
 
-	VkPipeline m_pipeline = NULL;
-	VkPipelineLayout m_pipelineLayout = NULL;
+	VkPipeline m_pipeline;
+	VkPipelineLayout m_pipelineLayout;
 
-	VkDevice m_device = NULL;
+	VkDevice m_device;
 };
 

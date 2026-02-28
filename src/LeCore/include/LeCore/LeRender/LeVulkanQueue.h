@@ -2,15 +2,16 @@
 #pragma once
 
 #include "LeCore/LeCore.h"
+#include "LeCore/LeRender/LeSwapchain.h"
 
 class LeVulkanQueue
 {
 
 public:
-	LeVulkanQueue() {}
-	~LeVulkanQueue() {}
+	LeVulkanQueue();
+	~LeVulkanQueue();
 
-	void Init(VkDevice Device, VkSwapchainKHR SwapChain, uint32 QueueFamily, uint32 QueueIndex);
+	void Init(VkDevice Device, LeSwapchain* pSwapChain, uint32 QueueFamily, uint32 QueueIndex);
 
 	void Destroy();
 
@@ -24,13 +25,17 @@ public:
 
 	void WaitIdle();
 
+	void WaitForFences(void);
+
+	void ResetFences(void);
+
 private:
 
-	void CreateSemaphores();
-
-	VkDevice m_device = VK_NULL_HANDLE;
-	VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
-	VkQueue m_queue = VK_NULL_HANDLE;
+	VkQueue m_queue;
 	VkSemaphore m_renderCompleteSem; // post
 	VkSemaphore m_presentCompleteSem; // pre
+	VkFence m_renderFinishedFence;
+
+	VkDevice m_device;
+	LeSwapchain* m_swapChain;
 };

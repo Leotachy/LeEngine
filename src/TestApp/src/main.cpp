@@ -20,5 +20,5 @@ int main()
 
 	}
 
-
+	Window.WaitIdle();
 }

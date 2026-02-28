@@ -25,6 +25,7 @@ public:
 	VkImageView GetImageView(uint32 idx) { return m_imageViews[idx]; }
 
 	VkFormat GetImageFormat(void) const { return m_imageFormat; }
+	VkExtent2D GetExtent(void) const { return m_extent; }
 
 private:
 	VkSwapchainKHR m_swapChain;
@@ -34,6 +35,7 @@ private:
 	uint32 m_numImages;
 
 	VkFormat m_imageFormat;
+	VkExtent2D m_extent;
 
 	VkDevice m_device;
 

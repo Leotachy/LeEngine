@@ -9,9 +9,7 @@ static VkSemaphore createSemaphore(VkDevice Device)
 {
 	VkSemaphoreCreateInfo CreateInfo =
 	{
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 	};
 
 	VkSemaphore Semaphore;
@@ -20,17 +18,52 @@ static VkSemaphore createSemaphore(VkDevice Device)
 	return Semaphore;
 }
 
-
-void LeVulkanQueue::Init(VkDevice Device, VkSwapchainKHR SwapChain, uint32 QueueFamily, uint32 QueueIndex)
+static VkFence createFence(VkDevice Device)
 {
+	VkFenceCreateInfo FenceInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+		.flags = VK_FENCE_CREATE_SIGNALED_BIT
+	};
+
+	VkFence Fence;
+	VkResult Res = vkCreateFence(Device, &FenceInfo, NULL, &Fence);
+	LE_CHECK_VK_RESULT(Res, "vkCreateFence");
+	return Fence;
+}
+
+LeVulkanQueue::LeVulkanQueue()
+{
+	m_queue = NULL;
+	m_renderCompleteSem = NULL;
+	m_presentCompleteSem = NULL;
+	m_renderFinishedFence = NULL;
+
+	m_device = NULL;
+	m_swapChain = NULL;
+}
+
+LeVulkanQueue::~LeVulkanQueue()
+{
+
+}
+
+void LeVulkanQueue::Init(VkDevice Device, LeSwapchain* pSwapChain, uint32 QueueFamily, uint32 QueueIndex)
+{
+
+	LE_DEBUG_ASSERT(Device);
+	LE_DEBUG_ASSERT(pSwapChain);
+
 	m_device = Device;
-	m_swapChain = SwapChain;
+	m_swapChain = pSwapChain;
 
 	vkGetDeviceQueue(Device, QueueFamily, QueueIndex, &m_queue);
 
 	LE_DEBUG_MESSAGE("Queue acquired");
 
-	CreateSemaphores();
+	m_presentCompleteSem = createSemaphore(m_device);
+	m_renderCompleteSem = createSemaphore(m_device);
+	m_renderFinishedFence = createFence(m_device);
 }
 
 
@@ -38,13 +71,7 @@ void LeVulkanQueue::Destroy()
 {
 	vkDestroySemaphore(m_device, m_presentCompleteSem, NULL);
 	vkDestroySemaphore(m_device, m_renderCompleteSem, NULL);
-}
-
-
-void LeVulkanQueue::CreateSemaphores()
-{
-	m_presentCompleteSem = createSemaphore(m_device);
-	m_renderCompleteSem = createSemaphore(m_device);
+	vkDestroyFence(m_device, m_renderFinishedFence, NULL);
 }
 
 
@@ -55,11 +82,20 @@ void LeVulkanQueue::WaitIdle()
 	vkQueueWaitIdle(m_queue);
 }
 
+void LeVulkanQueue::WaitForFences(void)
+{
+	vkWaitForFences(m_device, 1, &m_renderFinishedFence, true, UINT64_MAX);
+}
+
+void LeVulkanQueue::ResetFences(void)
+{
+	vkResetFences(m_device, 1, &m_renderFinishedFence);
+}
 
 uint32 LeVulkanQueue::AcquireNextImage()
 {
 	uint32 ImageIndex = 0;
-	VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_presentCompleteSem, NULL, &ImageIndex);
+	VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain->GetSwapchain(), UINT64_MAX, m_presentCompleteSem, NULL, &ImageIndex);
 	LE_CHECK_VK_RESULT(res, "vkAcquireNextImageKHR");
 	return ImageIndex;
 }
@@ -100,20 +136,23 @@ void LeVulkanQueue::SubmitAsync(VkCommandBuffer CmbBuf)
 		.pSignalSemaphores = &m_renderCompleteSem
 	};
 
-	VkResult res = vkQueueSubmit(m_queue, 1, &SubmitInfo, NULL);
+	VkResult res = vkQueueSubmit(m_queue, 1, &SubmitInfo, m_renderFinishedFence);
 	LE_CHECK_VK_RESULT(res, "vkQueueSubmit");
 }
 
 
 void LeVulkanQueue::Present(uint32 ImageIndex)
 {
+
+	VkSwapchainKHR Swapchain = m_swapChain->GetSwapchain();
+
 	VkPresentInfoKHR PresentInfo = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.pNext = NULL,
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &m_renderCompleteSem,
 		.swapchainCount = 1,
-		.pSwapchains = &m_swapChain,
+		.pSwapchains = &Swapchain,
 		.pImageIndices = &ImageIndex
 	};
 

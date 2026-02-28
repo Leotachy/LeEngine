@@ -108,7 +108,7 @@ void LeVulkanCore::Init(const char* pAppName, GLFWwindow* pWindow)
 	CreateDevice();
 	m_swapChain.Init(m_device, &m_physicalDevices.Selected(), m_surface, m_queueFamily);
 	CreateCommandBufferPool();
-	m_queue.Init(m_device, m_swapChain.GetSwapchain(), m_queueFamily, 0);
+	m_queue.Init(m_device, &m_swapChain, m_queueFamily, 0);
 }
 
 void LeVulkanCore::CreateInstance(const char* pAppName)
@@ -224,7 +224,8 @@ void LeVulkanCore::CreateDevice()
 	const char* DevExts[] =
 	{
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME
+		VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+		VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
 	};
 
 	if (m_physicalDevices.Selected().m_features.geometryShader == VK_FALSE)
@@ -234,27 +235,33 @@ void LeVulkanCore::CreateDevice()
 		LE_ERROR("The Tessellation Shader is not supported!");
 
 
-	VkPhysicalDeviceFeatures DeviceFeatures = { 0 };
-	DeviceFeatures.geometryShader = VK_TRUE;
-	DeviceFeatures.tessellationShader = VK_TRUE;
+	VkPhysicalDeviceVulkan13Features vk13 =
+	{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+		.synchronization2 = VK_TRUE,
+		.dynamicRendering = VK_TRUE
+	};
+	
 
-	// Enable dynamic rendering
-	VkPhysicalDeviceDynamicRenderingFeatures DynamicRenderingFeature{};
-	DynamicRenderingFeature.sType =
-		VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
-	DynamicRenderingFeature.dynamicRendering = VK_TRUE;
+	VkPhysicalDeviceFeatures2 features2 =
+	{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+		.pNext = &vk13
+	};
+
+	features2.features.geometryShader = VK_TRUE;
+	features2.features.tessellationShader = VK_TRUE;
 
 	VkDeviceCreateInfo DeviceCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-		.pNext = &DynamicRenderingFeature,
+		.pNext = &features2,
 		.flags = 0,
 		.queueCreateInfoCount = 1,
 		.pQueueCreateInfos = &qInfo,
 		.enabledLayerCount = 0,			// DEPRECATED
 		.ppEnabledLayerNames = NULL,    // DEPRECATED
 		.enabledExtensionCount = ARRAY_SIZE(DevExts),
-		.ppEnabledExtensionNames = DevExts,
-		.pEnabledFeatures = &DeviceFeatures
+		.ppEnabledExtensionNames = DevExts
 	};
 
 	VkResult res = vkCreateDevice(m_physicalDevices.Selected().m_physDevice, &DeviceCreateInfo, NULL, &m_device);
@@ -264,20 +271,13 @@ void LeVulkanCore::CreateDevice()
 	
 }
 
-
-
-void LeVulkanCore::CreateGraphicsPipeline()
-{
-	
-}
-
 void LeVulkanCore::CreateCommandBufferPool()
 {
 	VkCommandPoolCreateInfo cmdPoolCreateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 		.pNext = NULL,
-		.flags = 0,
+		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 		.queueFamilyIndex = m_queueFamily
 	};
 
