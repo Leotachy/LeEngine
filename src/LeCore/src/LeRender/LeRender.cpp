@@ -100,6 +100,11 @@ LeVulkanCore::~LeVulkanCore()
 
 void LeVulkanCore::Init(const char* pAppName, GLFWwindow* pWindow)
 {
+	LE_DEBUG_ASSERT(pAppName);
+	LE_DEBUG_ASSERT(pWindow);
+
+	m_pWindow = pWindow;
+
 	CreateInstance(pAppName);
 	CreateDebugCallback();
 	CreateSurface(pWindow);
@@ -326,4 +331,25 @@ void LeVulkanCore::EndCommandBuffer(VkCommandBuffer CommandBuffer)
 {
 	VkResult res = vkEndCommandBuffer(CommandBuffer);
 	LE_CHECK_VK_RESULT(res, "vkEndCommandBuffer");
+}
+
+void LeVulkanCore::RecreateSwapChain(void)
+{
+
+	// minimisation case.. TODO obv
+	int32 width = 0, height = 0;
+	glfwGetFramebufferSize(m_pWindow, &width, &height);
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(m_pWindow, &width, &height);
+		glfwWaitEvents();
+	}
+
+
+	m_queue.WaitIdle();
+
+
+
+	m_swapChain.Destroy();
+	m_swapChain.Init(m_device, &m_physicalDevices.Selected(), m_surface, m_queueFamily);
 }

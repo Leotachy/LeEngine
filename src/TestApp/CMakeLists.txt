@@ -7,10 +7,6 @@ LeEngine_target_sources_grouped(
 	${_target} TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
 
 	"src/main.cpp"
-	"src/main.h"
-
-	"src/window.cpp"
-	"src/window.h"
 
 )
 

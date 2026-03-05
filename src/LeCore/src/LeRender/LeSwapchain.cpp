@@ -110,7 +110,8 @@ void LeSwapchain::Init(VkDevice Device, const LePhysicalDevice* pPhysicalDevice,
 
 	m_device = Device;
 
-	const VkSurfaceCapabilitiesKHR& SurfaceCaps = pPhysicalDevice->m_surfaceCaps;
+	VkSurfaceCapabilitiesKHR SurfaceCaps;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(pPhysicalDevice->m_physDevice, Surface, &SurfaceCaps);
 
 	m_extent = SurfaceCaps.currentExtent;
 

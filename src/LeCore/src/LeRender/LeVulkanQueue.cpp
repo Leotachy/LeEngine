@@ -96,6 +96,11 @@ uint32 LeVulkanQueue::AcquireNextImage(int32 frameIndex)
 {
 	uint32 ImageIndex = 0;
 	VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain->GetSwapchain(), UINT64_MAX, m_presentCompleteSems[frameIndex], NULL, &ImageIndex);
+
+	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+		return -1; //TODO fix this
+
+
 	LE_CHECK_VK_RESULT(res, "vkAcquireNextImageKHR");
 	return ImageIndex;
 }
@@ -123,7 +128,7 @@ void LeVulkanQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32
 }
 
 
-void LeVulkanQueue::Present(uint32 ImageIndex)
+bool LeVulkanQueue::Present(uint32 ImageIndex)
 {
 
 	VkSwapchainKHR Swapchain = m_swapChain->GetSwapchain();
@@ -139,7 +144,12 @@ void LeVulkanQueue::Present(uint32 ImageIndex)
 	};
 
 	VkResult res = vkQueuePresentKHR(m_queue, &PresentInfo);
+
+	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+		return false; //TODO fix this
+
 	LE_CHECK_VK_RESULT(res, "vkQueuePresentKHR");
+	return true;
 }
 
 

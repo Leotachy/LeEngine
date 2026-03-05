@@ -16,7 +16,7 @@ public:
 	~LeSwapchain();
 
 	void Init(VkDevice Device, const LePhysicalDevice* pPhysicalDevice, VkSurfaceKHR Surface, uint32 QueueFamily);
-	void Destroy();
+	void Destroy(void);
 
 	VkSwapchainKHR GetSwapchain(void) { return m_swapChain; }
 

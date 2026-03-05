@@ -36,6 +36,8 @@ private:
     void CreateDevice();
     void CreateCommandBufferPool();
 
+    GLFWwindow* m_pWindow = NULL;
+
     VkInstance m_instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
@@ -63,6 +65,8 @@ public:
     uint32 GetQueueFamily() const { return m_queueFamily; }
 
     VkDevice GetDevice(void) { return m_device; }
+
+    void RecreateSwapChain(void);
 
 };
 

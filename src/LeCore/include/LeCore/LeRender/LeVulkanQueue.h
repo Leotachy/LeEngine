@@ -19,7 +19,8 @@ public:
 
 	void SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 frameIndex);
 
-	void Present(uint32 imageIndex);
+	// Swapchain needs to be recreated if returns false
+	bool Present(uint32 imageIndex);
 
 	void WaitIdle();
 
