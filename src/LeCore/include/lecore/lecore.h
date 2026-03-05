@@ -36,8 +36,8 @@ typedef bool LeBool;
 #define LeMemmove memmove
 #define LeMemset memset
 #define LeMemcmp memcmp
-
 #define LeMalloc(size) (malloc(size))
+#define LeFree(p) (free(p))
 
 #define STRINGIFY(x) #x
 #define ARRAY_SIZE(x) sizeof(x)/(sizeof(x[0]))

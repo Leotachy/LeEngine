@@ -15,7 +15,7 @@ TestAppWindow::~TestAppWindow(void)
 
 	m_basicShader.Destroy();
 
-	m_LeVkCore.FreeCommandBuffers(m_numImages, m_cmdBufs.data());
+	m_LeVkCore.FreeCommandBuffers(LE_MAX_FRAMES_IN_FLIGHT, m_cmdBufs.data());
 
 	glfwDestroyWindow(m_window);
 	glfwTerminate();
@@ -40,25 +40,29 @@ void TestAppWindow::Init(void)
 
 	CreateCommandBuffers();
 
+	m_frameIndex = 0;
+
 }
 
 void TestAppWindow::Draw()
 {
-	m_pRenderQueue->WaitIdle();
 
-	uint32 ImageIndex = m_pRenderQueue->AcquireNextImage();
-	RecordCommandBuffer(ImageIndex);
+	m_pRenderQueue->WaitForFences(m_frameIndex);
+	m_pRenderQueue->ResetFences(m_frameIndex);
 
-	m_pRenderQueue->ResetFences();
+	uint32 ImageIndex = m_pRenderQueue->AcquireNextImage(m_frameIndex);
+	RecordCommandBuffer(m_cmdBufs[m_frameIndex], ImageIndex);
 
-	m_pRenderQueue->SubmitAsync(m_cmdBufs[ImageIndex]);
 
-	m_pRenderQueue->WaitForFences();
+
+	m_pRenderQueue->SubmitAsync(m_cmdBufs[m_frameIndex], ImageIndex, m_frameIndex);
+
+
 
 	m_pRenderQueue->Present(ImageIndex);
 
-	
 
+	m_frameIndex = (m_frameIndex + 1) % LE_MAX_FRAMES_IN_FLIGHT;
 }
 
 bool TestAppWindow::ShouldClose(void)
@@ -87,22 +91,22 @@ void TestAppWindow::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surfa
 
 void TestAppWindow::CreateCommandBuffers(void)
 {
-	m_cmdBufs.resize(m_numImages);
-	m_LeVkCore.CreateCommandBuffers(m_numImages, m_cmdBufs.data());
+	m_cmdBufs.resize(LE_MAX_FRAMES_IN_FLIGHT);
+	m_LeVkCore.CreateCommandBuffers(LE_MAX_FRAMES_IN_FLIGHT, m_cmdBufs.data());
 }
 
-void TestAppWindow::RecordCommandBuffer(uint32 image_index)
+void TestAppWindow::RecordCommandBuffer(VkCommandBuffer cmdBuf, uint32 image_index)
 {
 
 	VkClearValue ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 	LE_DEBUG_ASSERT(int32(image_index) < m_numImages);
 
-	m_LeVkCore.BeginCommandBuffer(m_cmdBufs[image_index], 0);
+	m_LeVkCore.BeginCommandBuffer(cmdBuf, 0);
 
 	// setup image barrier for clearing the color
 
-	TransitionImageLayout(m_cmdBufs[image_index], m_pSwapchain->GetImage(image_index),
+	TransitionImageLayout(cmdBuf, m_pSwapchain->GetImage(image_index),
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_NONE,
@@ -129,11 +133,12 @@ void TestAppWindow::RecordCommandBuffer(uint32 image_index)
 	renderingInfo.colorAttachmentCount = 1;
 	renderingInfo.pColorAttachments = &colorAttachment;
 
-	vkCmdBeginRendering(m_cmdBufs[image_index], &renderingInfo);
+	vkCmdBeginRendering(cmdBuf, &renderingInfo);
 
-	m_graphicsPipeline.Bind(m_cmdBufs[image_index]);
+	m_graphicsPipeline.Bind(cmdBuf);
 
-	VkViewport Viewport = {
+	VkViewport Viewport =
+	{
 		.x = 0.0f,
 		.y = 0.0f,
 		.width = (float)swapchainExtent.width,
@@ -142,7 +147,8 @@ void TestAppWindow::RecordCommandBuffer(uint32 image_index)
 		.maxDepth = 1.0f
 	};
 
-	VkRect2D Scissor{
+	VkRect2D Scissor = 
+	{
 		.offset =
 		{
 			.x = 0,
@@ -156,17 +162,17 @@ void TestAppWindow::RecordCommandBuffer(uint32 image_index)
 	};
 
 
-	vkCmdSetViewport(m_cmdBufs[image_index], 0, 1, &Viewport);
-	vkCmdSetScissor(m_cmdBufs[image_index], 0, 1, &Scissor);
+	vkCmdSetViewport(cmdBuf, 0, 1, &Viewport);
+	vkCmdSetScissor(cmdBuf, 0, 1, &Scissor);
 
-	vkCmdDraw(m_cmdBufs[image_index], 3, 1, 0, 0);
+	vkCmdDraw(cmdBuf, 3, 1, 0, 0);
 
-	vkCmdEndRendering(m_cmdBufs[image_index]);
+	vkCmdEndRendering(cmdBuf);
 
 		
 	// transition the image for presenting
 
-	TransitionImageLayout(m_cmdBufs[image_index], m_pSwapchain->GetImage(image_index),
+	TransitionImageLayout(cmdBuf, m_pSwapchain->GetImage(image_index),
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
@@ -174,7 +180,7 @@ void TestAppWindow::RecordCommandBuffer(uint32 image_index)
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
 
-	m_LeVkCore.EndCommandBuffer(m_cmdBufs[image_index]);
+	m_LeVkCore.EndCommandBuffer(cmdBuf);
 
 }
 

@@ -35,6 +35,8 @@ private:
 
 	LeGraphicsPipeline m_graphicsPipeline;
 
+	int32 m_frameIndex;
+
 public:
 
 	void Draw();
@@ -51,7 +53,7 @@ public:
 private:
 
 	void CreateCommandBuffers(void);
-	void RecordCommandBuffer(uint32 image_index);
+	void RecordCommandBuffer(VkCommandBuffer cmdBuf, uint32 image_index);
 
 	// helper funcs for recording command buffers
 	void TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,

@@ -15,26 +15,39 @@ public:
 
 	void Destroy();
 
-	uint32 AcquireNextImage();
+	uint32 AcquireNextImage(int32 frameIndex);
 
-	void SubmitSync(VkCommandBuffer CmbBuf);
+	void SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 frameIndex);
 
-	void SubmitAsync(VkCommandBuffer CmbBuf);
-
-	void Present(uint32 ImageIndex);
+	void Present(uint32 imageIndex);
 
 	void WaitIdle();
 
-	void WaitForFences(void);
+	void WaitForFences(int32 frameIndex);
 
-	void ResetFences(void);
+	void ResetFences(int32 frameIndex);
 
 private:
 
+
+	void CreateSyncObjects(void);
+	void FreeSyncObjects(void);
+
+
 	VkQueue m_queue;
-	VkSemaphore m_renderCompleteSem; // post
-	VkSemaphore m_presentCompleteSem; // pre
-	VkFence m_renderFinishedFence;
+
+
+
+	int32 m_numRenderCompleteSems;
+	VkSemaphore* m_renderCompleteSems;
+
+	int32 m_numPresentCompleteSems;
+	VkSemaphore* m_presentCompleteSems;
+
+	int32 m_numRenderCompleteFences;
+	VkFence* m_renderCompleteFences;
+
+
 
 	VkDevice m_device;
 	LeSwapchain* m_swapChain;
