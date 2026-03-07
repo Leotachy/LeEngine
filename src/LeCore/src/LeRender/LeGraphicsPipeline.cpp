@@ -68,7 +68,12 @@ void LeGraphicsPipeline::Init(VkDevice Device, const LeSwapchain* pSwapchain, Le
 
 	VkPipelineVertexInputStateCreateInfo VertexInputInfo =
 	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+		.vertexBindingDescriptionCount = 1,
+		.pVertexBindingDescriptions = LeVertexGetBindingDescription(),
+		.vertexAttributeDescriptionCount = LeVertexGetNumAttributeDescriptions(),
+		.pVertexAttributeDescriptions = LeVertexGetAttributeDescriptions()
+
 	};
 
 	VkPipelineInputAssemblyStateCreateInfo InputAssemblyInfo =

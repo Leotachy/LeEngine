@@ -353,3 +353,30 @@ void LeVulkanCore::RecreateSwapChain(void)
 	m_swapChain.Destroy();
 	m_swapChain.Init(m_device, &m_physicalDevices.Selected(), m_surface, m_queueFamily);
 }
+
+
+static const VkVertexInputBindingDescription s_BindingDescription =
+{
+	0, sizeof(LeVertex), VK_VERTEX_INPUT_RATE_VERTEX
+};
+
+const VkVertexInputBindingDescription* LeVertexGetBindingDescription()
+{
+	return &s_BindingDescription;
+}
+
+static const VkVertexInputAttributeDescription s_AttributeDescriptions[] =
+{
+	VkVertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
+	VkVertexInputAttributeDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(LeVertex::pos))
+};
+
+const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions()
+{
+	return s_AttributeDescriptions;
+}
+
+int32 LeVertexGetNumAttributeDescriptions()
+{
+	return ARRAY_SIZE(s_AttributeDescriptions);
+}

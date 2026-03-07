@@ -9,13 +9,16 @@
 
 #include <vulkan/vulkan.h>
 
-constexpr int LE_MAX_FRAMES_IN_FLIGHT = 2;
+
 
 #include "LeCore/LeRender/LePhysicalDevice.h"
 #include "LeCore/LeRender/LeVulkanQueue.h"
 #include "LeCore/LeRender/LeSwapchain.h"
 #include "LeCore/LeRender/LeShader.h"
 
+#include "glm/glm.hpp"
+
+constexpr int LE_MAX_FRAMES_IN_FLIGHT = 2;
 
 
 class LeVulkanCore
@@ -70,3 +73,15 @@ public:
 
 };
 
+
+
+
+struct LeVertex
+{
+    glm::vec2 pos;
+    glm::vec3 color;
+};
+
+const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
+const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
+int32 LeVertexGetNumAttributeDescriptions();

@@ -22,6 +22,15 @@ static int32 iFrameIdx;
 
 static LeBool bFrameBufferResized;
 
+
+static const LeVertex Vertices[] =
+{
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
+static const int32 iNumVertices = ARRAY_SIZE(Vertices);
+
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	bFrameBufferResized = true;
