@@ -6,9 +6,18 @@ struct VertexData
 
 };
 
-// first param is set, second is binding
+// first param is binding, second is set
 [[vk::binding(0, 0)]]
 StructuredBuffer<VertexData> in_Vertices : register(t0);
+
+struct Uniforms
+{
+    float4x4 mvp;
+};
+
+// set 0 binding 1
+[[vk::binding(1, 0)]]
+ConstantBuffer<Uniforms> in_Uniforms;
 
 struct VSOutput
 {
@@ -21,13 +30,14 @@ struct VSOutput
 [shader("vertex")]
 VSOutput vertMain(uint vertexIndex : SV_VertexID)
 {
-    VSOutput output;
 
     VertexData vtx = in_Vertices[vertexIndex];
 
-    float3 pos = float3(vtx.x, vtx.y, vtx.z);
+    float4 worldPos = float4(vtx.x, vtx.y, vtx.z, 1.0f);
+    float4 pos = mul(in_Uniforms.mvp, worldPos);
 
-    output.position = float4(pos, 1.0);
+    VSOutput output;
+    output.position = pos;
     output.color = float3(vtx.r, vtx.g, vtx.b);
     output.texCoords = float2(vtx.u, vtx.v);
 

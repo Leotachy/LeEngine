@@ -46,8 +46,22 @@ public:
         if (m_buffer)
             vkDestroyBuffer(Device, m_buffer, NULL);
     }
+
+    void Update(VkDevice Device, const void* pData, size_t Size);
 };
 
+class LeVulkanTexture
+{
+public:
+    LeVulkanTexture() {}
+
+    VkImage m_image = VK_NULL_HANDLE;
+    VkDeviceMemory m_mem = VK_NULL_HANDLE;
+    VkImageView m_view = VK_NULL_HANDLE;
+    VkSampler m_sampler = VK_NULL_HANDLE;
+
+    void Destroy(VkDevice Device);
+};
 
 constexpr int LE_MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -71,9 +85,10 @@ private:
     void CreateCommandBufferPool();
 
     uint32 GetMemoryTypeIndex(uint32 memTypeBits, VkMemoryPropertyFlags memPropFlags);
+    void CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size);
+    void CreateUniformBuffer(size_t Size, LeMemoryBuffer& OutMemoryBuffer);
     void CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties,
         LeMemoryBuffer& OutMemoryBuffer);
-    void CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size);
 
     GLFWwindow* m_pWindow = NULL;
 
@@ -93,6 +108,7 @@ private:
 public:
 
    
+    void CreateUniformBuffers(size_t Size, std::vector<LeMemoryBuffer>& OutMemoryBuffers);
     void CreateVertexBuffer(const void* pVertices, size_t Size, LeMemoryBuffer& OutMemoryBuffer);
 
     void CreateCommandBuffers(uint32 Count, VkCommandBuffer* pCmdBufs);

@@ -10,7 +10,7 @@ public:
 	~LeGraphicsPipeline();
 
 	void Init(VkDevice Device, const LeSwapchain* pSwapchain, LeShader* pShader, const LeSimpleMesh* pSimpleMesh,
-		int32 NumImages);
+		int32 NumImages, std::vector<LeMemoryBuffer>& UniformBuffers, int32 UniformDataSize);
 	void Destroy(void);
 
 	void Bind(VkCommandBuffer CmdBuf, int32 ImageIndex);
@@ -18,10 +18,12 @@ public:
 private:
 
 	void CreateDescriptorPool(int32 NumImages);
-	void CreateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages);
-	void CreateDescriptorSetLayout(void);
+	void CreateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
+		int32 UniformDataSize);
+	void CreateDescriptorSetLayout(std::vector<LeMemoryBuffer>& UniformBuffers, int32 UniformDataSize);
 	void AllocateDescriptorSets(int32 NumImages);
-	void UpdateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages);
+	void UpdateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
+		int32 UniformDataSize);
 
 	VkPipeline m_pipeline;
 	VkPipelineLayout m_pipelineLayout;

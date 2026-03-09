@@ -31,6 +31,15 @@ int32 LeVertexGetNumAttributeDescriptions()
 }
 
 
+void LeMemoryBuffer::Update(VkDevice Device, const void* pData, size_t Size)
+{
+	void* pMem = NULL;
+	VkResult res = vkMapMemory(Device, m_mem, 0, Size, 0, &pMem);
+	LE_CHECK_VK_RESULT(res, "vkMapMemory");
+	LeMemcpy(pMem, pData, Size);
+	vkUnmapMemory(Device, m_mem);
+}
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT Severity,
 	VkDebugUtilsMessageTypeFlagsEXT Type,
@@ -370,6 +379,18 @@ void LeVulkanCore::CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size)
 	m_queue.WaitIdle();
 }
 
+void LeVulkanCore::CreateUniformBuffer(size_t Size, LeMemoryBuffer& OutMemoryBuffer)
+{
+
+	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+	CreateBuffer(Size, Usage, MemProps, OutMemoryBuffer);
+
+}
+
+
 void LeVulkanCore::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties,
 	LeMemoryBuffer& OutMemoryBuffer)
 {
@@ -410,6 +431,19 @@ void LeVulkanCore::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkM
 	// Step 5: bind memory
 	res = vkBindBufferMemory(m_device, OutMemoryBuffer.m_buffer, OutMemoryBuffer.m_mem, 0);
 	LE_CHECK_VK_RESULT(res, "vkBindBufferMemory");
+}
+
+void LeVulkanCore::CreateUniformBuffers(size_t Size, std::vector<LeMemoryBuffer>& OutMemoryBuffers)
+{
+
+	OutMemoryBuffers.clear();
+	OutMemoryBuffers.resize(m_swapChain.GetNumImages());
+
+	for (int i = 0; i < OutMemoryBuffers.size(); i++)
+	{
+		CreateUniformBuffer(Size, OutMemoryBuffers[i]);
+	}
+
 }
 
 void LeVulkanCore::CreateVertexBuffer(const void* pVertices, size_t Size, LeMemoryBuffer& OutMemoryBuffer)

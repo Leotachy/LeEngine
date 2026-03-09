@@ -5,6 +5,8 @@
 #include "LeCore/LeRender/LeGraphicsPipeline.h"
 #include "LeCore/LeMesh/LeSimpleMesh.h"
 
+#include "glm/glm.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 static GLFWwindow* pWindow;
 
@@ -24,6 +26,8 @@ static LeBool bFrameBufferResized;
 
 static LeSimpleMesh TestMesh;
 
+std::vector<LeMemoryBuffer> m_uniformBuffers;
+
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -39,6 +43,19 @@ static const LeVertex Vertices[] =
 static const int32 iNumVertices = ARRAY_SIZE(Vertices);
 
 
+static void updateUniformBuffers(uint32_t ImageIndex)
+{
+	static float foo = 0.0f;
+	glm::mat4 Rotate = glm::mat4(1.0);
+	Rotate = glm::rotate(Rotate, glm::radians(foo), glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f)));
+	foo += 0.001f;
+
+	glm::mat4 VP = glm::mat4(1.0f);
+
+	glm::mat4 WVP = glm::mat4(1.0f);
+	m_uniformBuffers[ImageIndex].Update(LeVkCore.GetDevice(), &WVP, sizeof(WVP));
+}
+
 static void createVertexBuffer()
 {
 
@@ -46,6 +63,16 @@ static void createVertexBuffer()
 
 	TestMesh.m_vertexBufferSize = sizeof(Vertices[0]) * iNumVertices;
 	LeVkCore.CreateVertexBuffer(Vertices, TestMesh.m_vertexBufferSize, TestMesh.m_vb);
+}
+
+struct UniformData
+{
+	glm::mat4 mvp;
+};
+
+static void createUniformBuffers()
+{
+	LeVkCore.CreateUniformBuffers(sizeof(UniformData), m_uniformBuffers);
 }
 
 static void testAppInit(void)
@@ -63,7 +90,10 @@ static void testAppInit(void)
 	BasicShader.Init(LeVkCore.GetDevice(), TESTAPP_SHADER_BIN_PATH "basic.spv");
 
 	createVertexBuffer();
-	TheGraphicsPipeline.Init(LeVkCore.GetDevice(), LeVkCore.GetSwapchain(), &BasicShader, &TestMesh, NumImages);
+	createUniformBuffers();
+
+	TheGraphicsPipeline.Init(LeVkCore.GetDevice(), LeVkCore.GetSwapchain(), &BasicShader, &TestMesh, NumImages,
+		m_uniformBuffers, sizeof(UniformData));
 
 	CommandBuffers.resize(LE_MAX_FRAMES_IN_FLIGHT);
 	LeVkCore.CreateCommandBuffers(LE_MAX_FRAMES_IN_FLIGHT, CommandBuffers.data());
@@ -75,11 +105,16 @@ static void testAppInit(void)
 
 static void testAppCleanup(void)
 {
-	TestMesh.Destroy(LeVkCore.GetDevice());
+
 
 	LeVkCore.FreeCommandBuffers(LE_MAX_FRAMES_IN_FLIGHT, CommandBuffers.data());
 
 	TheGraphicsPipeline.Destroy();
+
+	for (int i = 0; i < m_uniformBuffers.size(); i++)
+		m_uniformBuffers[i].Destroy(LeVkCore.GetDevice());
+
+	TestMesh.Destroy(LeVkCore.GetDevice());
 
 	BasicShader.Destroy();
 
@@ -233,6 +268,8 @@ static void draw()
 	}
 
 	pRenderQueue->ResetFences(iFrameIdx);
+
+	updateUniformBuffers(ImageIndex);
 
 	recordCommandBuffer(CommandBuffers[iFrameIdx], ImageIndex);
 
