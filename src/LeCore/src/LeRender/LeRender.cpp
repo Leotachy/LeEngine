@@ -4,6 +4,33 @@
 #include "LeRenderUtils.h"
 
 
+static const VkVertexInputBindingDescription s_BindingDescription =
+{
+	0, sizeof(LeVertex), VK_VERTEX_INPUT_RATE_VERTEX
+};
+
+const VkVertexInputBindingDescription* LeVertexGetBindingDescription()
+{
+	return &s_BindingDescription;
+}
+
+static const VkVertexInputAttributeDescription s_AttributeDescriptions[] =
+{
+	VkVertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
+	VkVertexInputAttributeDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(LeVertex::pos))
+};
+
+const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions()
+{
+	return s_AttributeDescriptions;
+}
+
+int32 LeVertexGetNumAttributeDescriptions()
+{
+	return ARRAY_SIZE(s_AttributeDescriptions);
+}
+
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT Severity,
 	VkDebugUtilsMessageTypeFlagsEXT Type,
@@ -53,6 +80,11 @@ LeVulkanCore::LeVulkanCore()
 
 LeVulkanCore::~LeVulkanCore()
 {
+
+	// Destroy the copy command buffer
+
+	FreeCommandBuffers(1, &m_copyCmdBuf);
+
 	// Destroy the render queue
 	m_queue.Destroy();
 
@@ -114,6 +146,8 @@ void LeVulkanCore::Init(const char* pAppName, GLFWwindow* pWindow)
 	m_swapChain.Init(m_device, &m_physicalDevices.Selected(), m_surface, m_queueFamily);
 	CreateCommandBufferPool();
 	m_queue.Init(m_device, &m_swapChain, m_queueFamily, 0);
+
+	CreateCommandBuffers(1, &m_copyCmdBuf);
 }
 
 void LeVulkanCore::CreateInstance(const char* pAppName)
@@ -292,6 +326,126 @@ void LeVulkanCore::CreateCommandBufferPool()
 	LE_DEBUG_MESSAGE("Command buffer pool created");
 }
 
+
+
+uint32 LeVulkanCore::GetMemoryTypeIndex(uint32 MemTypeBitsMask, VkMemoryPropertyFlags ReqMemPropFlags)
+{
+
+	const VkPhysicalDeviceMemoryProperties& MemProps = m_physicalDevices.Selected().m_memProps;
+
+	for (uint32 i = 0; i < MemProps.memoryTypeCount; i++)
+	{
+		const VkMemoryType& MemType = MemProps.memoryTypes[i];
+		uint32 CurBitmask = (1 << i);
+		bool IsCurMemTypeSupported = (MemTypeBitsMask & CurBitmask);
+		bool HasRequiredMemProps = ((MemType.propertyFlags & ReqMemPropFlags) == ReqMemPropFlags);
+
+		if (IsCurMemTypeSupported && HasRequiredMemProps)
+		{
+			return i;
+		}
+	}
+
+	LE_DEBUG_ERROR("Cannot find memory type for type %x requested mem props %x", MemTypeBitsMask, ReqMemPropFlags);
+
+	return -1;
+}
+
+void LeVulkanCore::CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size)
+{
+	BeginCommandBuffer(m_copyCmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	VkBufferCopy BufferCopy = {
+		.srcOffset = 0,
+		.dstOffset = 0,
+		.size = Size
+	};
+
+	vkCmdCopyBuffer(m_copyCmdBuf, Src, Dst, 1, &BufferCopy);
+
+	vkEndCommandBuffer(m_copyCmdBuf);
+
+	m_queue.SubmitSync(m_copyCmdBuf);
+
+	m_queue.WaitIdle();
+}
+
+void LeVulkanCore::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties,
+	LeMemoryBuffer& OutMemoryBuffer)
+{
+	VkBufferCreateInfo BufferCreateInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = Size,
+		.usage = Usage,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+
+
+	// Step 1: create a buffer
+	VkResult res = vkCreateBuffer(m_device, &BufferCreateInfo, NULL, &OutMemoryBuffer.m_buffer);
+	LE_CHECK_VK_RESULT(res, "vkCreateBuffer");
+
+	// Step 2: get the buffer memory requirements
+	VkMemoryRequirements MemReqs = {};
+	vkGetBufferMemoryRequirements(m_device, OutMemoryBuffer.m_buffer, &MemReqs);
+
+	OutMemoryBuffer.m_allocationSize = MemReqs.size;
+
+	// Step 3: get the memory type index
+	uint32 MemoryTypeIndex = GetMemoryTypeIndex(MemReqs.memoryTypeBits, Properties);
+
+	// Step 4: allocate memory
+	VkMemoryAllocateInfo MemAllocInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = MemReqs.size,
+		.memoryTypeIndex = MemoryTypeIndex
+	};
+
+	res = vkAllocateMemory(m_device, &MemAllocInfo, NULL, &OutMemoryBuffer.m_mem);
+	LE_CHECK_VK_RESULT(res, "vkAllocateMemory");
+
+	// Step 5: bind memory
+	res = vkBindBufferMemory(m_device, OutMemoryBuffer.m_buffer, OutMemoryBuffer.m_mem, 0);
+	LE_CHECK_VK_RESULT(res, "vkBindBufferMemory");
+}
+
+void LeVulkanCore::CreateVertexBuffer(const void* pVertices, size_t Size, LeMemoryBuffer& OutMemoryBuffer)
+{
+	// Step 1: create the staging buffer
+	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	LeMemoryBuffer StagingVB;
+	CreateBuffer(Size, Usage, MemProps, StagingVB);
+
+	// Step 2: map the memory of the stage buffer
+	void* pMem = NULL;
+	VkDeviceSize Offset = 0;
+	VkMemoryMapFlags Flags = 0;
+	VkResult res = vkMapMemory(m_device, StagingVB.m_mem, Offset, StagingVB.m_allocationSize, Flags, &pMem);
+	LE_CHECK_VK_RESULT(res, "vkMapMemory");
+
+	// Step 3: copy the vertices to the staging buffer
+	LeMemcpy(pMem, pVertices, Size);
+
+	// Step 4: unmap/release the mapped memory
+	vkUnmapMemory(m_device, StagingVB.m_mem);
+
+	// Step 5: create the final buffer
+	Usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	MemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	CreateBuffer(Size, Usage, MemProps, OutMemoryBuffer);
+
+	// Step 6: copy the staging buffer to the final buffer
+	CopyBuffer(OutMemoryBuffer.m_buffer, StagingVB.m_buffer, Size);
+
+	// Step 7: release the resources of the staging buffer
+	StagingVB.Destroy(m_device);
+}
+
 void LeVulkanCore::CreateCommandBuffers(uint32 count, VkCommandBuffer* cmdBufs)
 {
 	VkCommandBufferAllocateInfo cmdBufAllocInfo = {
@@ -354,29 +508,3 @@ void LeVulkanCore::RecreateSwapChain(void)
 	m_swapChain.Init(m_device, &m_physicalDevices.Selected(), m_surface, m_queueFamily);
 }
 
-
-static const VkVertexInputBindingDescription s_BindingDescription =
-{
-	0, sizeof(LeVertex), VK_VERTEX_INPUT_RATE_VERTEX
-};
-
-const VkVertexInputBindingDescription* LeVertexGetBindingDescription()
-{
-	return &s_BindingDescription;
-}
-
-static const VkVertexInputAttributeDescription s_AttributeDescriptions[] =
-{
-	VkVertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
-	VkVertexInputAttributeDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(LeVertex::pos))
-};
-
-const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions()
-{
-	return s_AttributeDescriptions;
-}
-
-int32 LeVertexGetNumAttributeDescriptions()
-{
-	return ARRAY_SIZE(s_AttributeDescriptions);
-}

@@ -17,6 +17,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeRender/LeVulkanQueue.h"
 	"include/LeCore/LeRender/LeShader.h"
 	"include/LeCore/LeRender/LeGraphicsPipeline.h"
+	"include/LeCore/LeMesh/LeSimpleMesh.h"
 	"src/LeRender/LePhysicalDevice.cpp"
 	"src/LeRender/LeRender.cpp"
 	"src/LeRender/LeSwapchain.cpp"

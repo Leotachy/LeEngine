@@ -17,6 +17,7 @@ public:
 
 	uint32 AcquireNextImage(int32 frameIndex);
 
+	void SubmitSync(VkCommandBuffer CmbBuf);
 	void SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 frameIndex);
 
 	// Swapchain needs to be recreated if returns false

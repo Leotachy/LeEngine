@@ -105,6 +105,24 @@ uint32 LeVulkanQueue::AcquireNextImage(int32 frameIndex)
 	return ImageIndex;
 }
 
+void LeVulkanQueue::SubmitSync(VkCommandBuffer CmbBuf)
+{
+	VkSubmitInfo SubmitInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.pNext = NULL,
+		.waitSemaphoreCount = 0,
+		.pWaitSemaphores = VK_NULL_HANDLE,
+		.pWaitDstStageMask = VK_NULL_HANDLE,
+		.commandBufferCount = 1,
+		.pCommandBuffers = &CmbBuf,
+		.signalSemaphoreCount = 0,
+		.pSignalSemaphores = VK_NULL_HANDLE
+	};
+
+	VkResult res = vkQueueSubmit(m_queue, 1, &SubmitInfo, NULL);
+	LE_CHECK_VK_RESULT(res, "vkQueueSubmit");
+}
 
 void LeVulkanQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 frameIndex)
 {

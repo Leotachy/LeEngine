@@ -18,6 +18,37 @@
 
 #include "glm/glm.hpp"
 
+
+struct LeVertex
+{
+    glm::vec3 pos;
+    glm::vec3 color;
+    glm::vec2 uv;
+};
+
+const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
+const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
+int32 LeVertexGetNumAttributeDescriptions();
+
+class LeMemoryBuffer
+{
+public:
+
+    VkBuffer m_buffer = NULL;
+    VkDeviceMemory m_mem = NULL;
+    VkDeviceSize m_allocationSize = 0;
+
+    void Destroy(VkDevice Device)
+    {
+        if (m_mem)
+            vkFreeMemory(Device, m_mem, NULL);
+
+        if (m_buffer)
+            vkDestroyBuffer(Device, m_buffer, NULL);
+    }
+};
+
+
 constexpr int LE_MAX_FRAMES_IN_FLIGHT = 2;
 
 
@@ -39,6 +70,11 @@ private:
     void CreateDevice();
     void CreateCommandBufferPool();
 
+    uint32 GetMemoryTypeIndex(uint32 memTypeBits, VkMemoryPropertyFlags memPropFlags);
+    void CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties,
+        LeMemoryBuffer& OutMemoryBuffer);
+    void CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size);
+
     GLFWwindow* m_pWindow = NULL;
 
     VkInstance m_instance = VK_NULL_HANDLE;
@@ -52,10 +88,13 @@ private:
 
     VkCommandPool m_cmdBufPool;
     LeVulkanQueue m_queue;
+    VkCommandBuffer m_copyCmdBuf;
 
 public:
 
    
+    void CreateVertexBuffer(const void* pVertices, size_t Size, LeMemoryBuffer& OutMemoryBuffer);
+
     void CreateCommandBuffers(uint32 Count, VkCommandBuffer* pCmdBufs);
     void FreeCommandBuffers(uint32 Count, const VkCommandBuffer* pCmdBufs);
 
@@ -76,12 +115,3 @@ public:
 
 
 
-struct LeVertex
-{
-    glm::vec2 pos;
-    glm::vec3 color;
-};
-
-const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
-const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
-int32 LeVertexGetNumAttributeDescriptions();

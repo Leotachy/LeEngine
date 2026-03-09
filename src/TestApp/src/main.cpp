@@ -3,7 +3,7 @@
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeGraphicsPipeline.h"
-
+#include "LeCore/LeMesh/LeSimpleMesh.h"
 
 
 static GLFWwindow* pWindow;
@@ -22,18 +22,30 @@ static int32 iFrameIdx;
 
 static LeBool bFrameBufferResized;
 
+static LeSimpleMesh TestMesh;
 
-static const LeVertex Vertices[] =
-{
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-};
-static const int32 iNumVertices = ARRAY_SIZE(Vertices);
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	bFrameBufferResized = true;
+}
+
+static const LeVertex Vertices[] =
+{
+	{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+	{{0.5f, 0.5f,  0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}
+};
+static const int32 iNumVertices = ARRAY_SIZE(Vertices);
+
+
+static void createVertexBuffer()
+{
+
+
+
+	TestMesh.m_vertexBufferSize = sizeof(Vertices[0]) * iNumVertices;
+	LeVkCore.CreateVertexBuffer(Vertices, TestMesh.m_vertexBufferSize, TestMesh.m_vb);
 }
 
 static void testAppInit(void)
@@ -50,7 +62,8 @@ static void testAppInit(void)
 	pSwapchain = LeVkCore.GetSwapchain();
 	BasicShader.Init(LeVkCore.GetDevice(), TESTAPP_SHADER_BIN_PATH "basic.spv");
 
-	TheGraphicsPipeline.Init(LeVkCore.GetDevice(), LeVkCore.GetSwapchain(), &BasicShader);
+	createVertexBuffer();
+	TheGraphicsPipeline.Init(LeVkCore.GetDevice(), LeVkCore.GetSwapchain(), &BasicShader, &TestMesh, NumImages);
 
 	CommandBuffers.resize(LE_MAX_FRAMES_IN_FLIGHT);
 	LeVkCore.CreateCommandBuffers(LE_MAX_FRAMES_IN_FLIGHT, CommandBuffers.data());
@@ -62,6 +75,7 @@ static void testAppInit(void)
 
 static void testAppCleanup(void)
 {
+	TestMesh.Destroy(LeVkCore.GetDevice());
 
 	LeVkCore.FreeCommandBuffers(LE_MAX_FRAMES_IN_FLIGHT, CommandBuffers.data());
 
@@ -153,7 +167,7 @@ static void recordCommandBuffer(VkCommandBuffer cmdBuf, uint32 image_index)
 
 	vkCmdBeginRendering(cmdBuf, &renderingInfo);
 
-	TheGraphicsPipeline.Bind(cmdBuf);
+	TheGraphicsPipeline.Bind(cmdBuf, image_index);
 
 	VkViewport Viewport =
 	{
