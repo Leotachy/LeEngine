@@ -4,9 +4,11 @@
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeGraphicsPipeline.h"
 #include "LeCore/LeMesh/LeSimpleMesh.h"
+#include "LeCore/LeCamera/LeCamera.h"
 
-#include "glm/glm.hpp"
-#include <glm/gtc/matrix_transform.hpp>
+
+#define DEFAULT_SCREEN_WIDTH 800
+#define DEFAULT_SCREEN_HEIGHT 600
 
 static GLFWwindow* pWindow;
 
@@ -28,10 +30,56 @@ static LeSimpleMesh TestMesh;
 
 std::vector<LeMemoryBuffer> m_uniformBuffers;
 
+static LeCamera* pCam = NULL;
+
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	bFrameBufferResized = true;
+
+	if (pCam)
+	{
+		pCam->SetScreenSize(width, height);
+	}
+}
+
+static void processInput(GLFWwindow* window, float deltaT)
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		pCam->ProcessKeyboard(CamMovement::FORWARD, deltaT);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		pCam->ProcessKeyboard(CamMovement::BACKWARD, deltaT);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		pCam->ProcessKeyboard(CamMovement::LEFT, deltaT);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		pCam->ProcessKeyboard(CamMovement::RIGHT, deltaT);
+}
+
+
+static bool s_lastInit = false;
+static float s_lastX = 0.0f;
+static float s_lastY = 0.0f;
+
+static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (s_lastInit)
+	{
+		float xoffset = (float)xpos - s_lastX;
+		float yoffset = ((float)ypos - s_lastY);
+
+		pCam->ProcessMouseMovement(xoffset, yoffset);
+	}
+	else
+	{
+		s_lastInit = true;
+	}
+
+	s_lastX = (float)xpos;
+	s_lastY = (float)ypos;
+
 }
 
 static const LeVertex Vertices[] =
@@ -50,10 +98,9 @@ static void updateUniformBuffers(uint32_t ImageIndex)
 	Rotate = glm::rotate(Rotate, glm::radians(foo), glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f)));
 	foo += 0.001f;
 
-	glm::mat4 VP = glm::mat4(1.0f);
+	const glm::mat4* ViewProj = pCam->GetViewProjMatrix();
 
-	glm::mat4 WVP = glm::mat4(1.0f);
-	m_uniformBuffers[ImageIndex].Update(LeVkCore.GetDevice(), &WVP, sizeof(WVP));
+	m_uniformBuffers[ImageIndex].Update(LeVkCore.GetDevice(), ViewProj, sizeof(glm::mat4));
 }
 
 static void createVertexBuffer()
@@ -81,7 +128,13 @@ static void testAppInit(void)
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	pWindow = glfwCreateWindow(800, 600, "TestApp", nullptr, nullptr);
+	pWindow = glfwCreateWindow(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, "TestApp", nullptr, nullptr);
+
+	pCam = new LeCamera(PROJECTION_TYPE_PERSPECTIVE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
+	glm::vec3 start = glm::vec3(0.0f, 0.0f, 3.0f);
+	pCam->SetPosition(&start);
+
+	glfwSetCursorPosCallback(pWindow, mouse_callback);
 
 	LeVkCore.Init("TestApp", pWindow);
 	NumImages = LeVkCore.GetSwapchain()->GetNumImages();
@@ -117,6 +170,9 @@ static void testAppCleanup(void)
 	TestMesh.Destroy(LeVkCore.GetDevice());
 
 	BasicShader.Destroy();
+
+	delete pCam;
+	pCam = NULL;
 
 	glfwDestroyWindow(pWindow);
 	glfwTerminate();
@@ -293,10 +349,18 @@ int main(void)
 {
 	testAppInit();
 
+	float deltaTime = 0.0f;	// Time between current frame and last frame
+	float lastFrame = 0.0f; // Time of last frame
+
 	while (!glfwWindowShouldClose(pWindow))
 	{
 		glfwPollEvents();
 
+		float currentFrame = float(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		processInput(pWindow, deltaTime);
 		draw();
 	}
 

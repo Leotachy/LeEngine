@@ -18,6 +18,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeRender/LeShader.h"
 	"include/LeCore/LeRender/LeGraphicsPipeline.h"
 	"include/LeCore/LeMesh/LeSimpleMesh.h"
+	"include/LeCore/LeCamera/LeCamera.h"
 	"src/LeRender/LePhysicalDevice.cpp"
 	"src/LeRender/LeRender.cpp"
 	"src/LeRender/LeSwapchain.cpp"
@@ -26,8 +27,8 @@ LeEngine_target_sources_grouped(
 	"src/LeRender/LeRenderUtils.h"
 	"src/LeRender/LeShader.cpp"
 	"src/LeRender/LeGraphicsPipeline.cpp"
+	"src/LeCamera/LeCamera.cpp"
 
-	"src/camera.h"
 	"src/stb_image.cpp"
 	"src/stb_image.h"
 
