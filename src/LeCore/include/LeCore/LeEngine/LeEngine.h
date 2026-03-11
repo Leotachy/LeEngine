@@ -6,7 +6,10 @@
 
 #include "LeCore/LeRender/LeRender.h"
 
+struct InitEngineParams
+{
+	InitRendererParams RendererParams;
+};
 
-
-void LeEngineInit(void);
+void LeEngineInit(InitEngineParams& Params);
 void LeEngineTerm(void);

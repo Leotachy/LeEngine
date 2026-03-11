@@ -41,3 +41,19 @@ void LeTermRenderer(void)
 
 	s_RenderApi = LeRenderApi::None;
 }
+
+
+LeBool LeBeginRender(LeCamera* pCam)
+{
+
+}
+
+void LeRender(LeMesh* pMesh)
+{
+
+}
+
+void LeEndRender(void)
+{
+
+}

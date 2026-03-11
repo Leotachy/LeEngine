@@ -6,6 +6,9 @@
 
 class LeShader
 {
+
+	LeShader(const char* pName, const char* pShaderBinaryPath);
+
 public:
 	virtual ~LeShader();
 
@@ -15,8 +18,6 @@ public:
 	static LeShader* Create(const char* pName, const char* pShaderBinaryPath);
 
 protected:
-
-	LeShader(const char* pName, const char* pShaderBinaryPath);
 
 	const LeChar* m_Name;
 	uint64 m_NameHash;
