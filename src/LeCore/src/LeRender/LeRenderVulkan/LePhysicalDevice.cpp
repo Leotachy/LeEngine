@@ -1,8 +1,7 @@
 
 #include "LeCore/LeCore.h"
-#include "LeCore/LeRender/LePhysicalDevice.h"
-#include "LeRenderUtils.h"
-
+#include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
+#include "LeCore/LeRender/LeRenderVulkan/LePhysicalDevice.h"
 
 
 static void PrintImageUsageFlags(const VkImageUsageFlags& flags)

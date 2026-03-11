@@ -10,7 +10,7 @@
 #include <ctime>
 #include <fstream>
 #include <vector>
-
+#include <set>
 
 // third party headers
 
@@ -44,7 +44,7 @@ typedef bool LeBool;
 #define LeMemset memset
 #define LeMemcmp memcmp
 #define LeMalloc(size) (malloc(size))
-#define LeFree(p) (free(p))
+#define LeFree(p) (free((void*)p))
 
 #define STRINGIFY(x) #x
 #define ARRAY_SIZE(x) sizeof(x)/(sizeof(x[0]))
@@ -116,4 +116,4 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 #define LE_WARN(x, ...) _LeDebugSendMessage(leDEBUGWARN,__FILE__, __LINE__,x,__VA_ARGS__) 
 
 
-
+#include "LeUtils/LeHash.h"
