@@ -24,7 +24,7 @@ public:
 	uint32 GetFlags(void) const { return m_Flags; }
 
 	void SetShader(LeShader* pShader) { m_pShader = pShader; }
-	LeShader* GetShader(void) { return m_pShader; }
+	LeShader* GetShader(void) const { return m_pShader; }
 
 private:
 

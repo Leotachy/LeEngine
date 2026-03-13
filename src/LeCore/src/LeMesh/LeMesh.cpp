@@ -25,7 +25,7 @@ LeMatBlock* LeMatBlock::Create(void)
 		break;
 
 	case LeRenderApi::Vulkan:
-		return new LeMatblockVk();
+		return new LeMatBlockVk();
 		break;
 	}
 
@@ -36,10 +36,9 @@ LeMatBlock* LeMatBlock::Create(void)
 void LeMatBlock::SetMaterial(LeMaterial* m)
 {
 	m_pMaterial = m;
-	m_Flags |= MATBLOCK_MATERIAL_DIRTY;
 }
 
-const LeMaterial* LeMatBlock::GetMaterial(void)
+LeMaterial* LeMatBlock::GetMaterial(void)
 {
 	return m_pMaterial;
 }

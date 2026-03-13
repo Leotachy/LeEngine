@@ -3,16 +3,28 @@
 
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 
-class LeMatblockVk : public LeMatBlock
+class LeMatBlockVk : public LeMatBlock
 {
 public:
-	LeMatblockVk();
-	~LeMatblockVk();
+	LeMatBlockVk();
+	~LeMatBlockVk();
+
+	LeVkGraphicsPipeline* GetGraphicsPipeline(void) { return m_pGraphicsPipeline; }
+	void SetGraphicsPipeline(LeVkGraphicsPipeline* pGraphicsPipeline) { m_pGraphicsPipeline = pGraphicsPipeline; }
+
+	LeVkMemoryBuffer* GetVertexBuffer(void) { return &m_vb; }
 
 private:
 
-	LeVkMemoryBuffer m_vb;
-	size_t m_vertexBufferSize = 0;
+	LeVkGraphicsPipeline* m_pGraphicsPipeline;
 
+	LeVkMemoryBuffer m_vb;
 };
+
+
+
+const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
+const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
+uint32 LeVertexGetNumAttributeDescriptions();

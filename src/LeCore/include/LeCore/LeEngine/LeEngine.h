@@ -1,4 +1,6 @@
 
+#pramga once
+
 // Lukas Andrijauskas
 // KTU Programø sistemos baigiamasis darbas
 // 2026

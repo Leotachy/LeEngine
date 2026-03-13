@@ -15,13 +15,28 @@ LeVkMemoryBuffer::LeVkMemoryBuffer()
 
 LeVkMemoryBuffer::~LeVkMemoryBuffer()
 {
-	if (device)
+	DeAlloc();
+}
+
+void LeVkMemoryBuffer::DeAlloc(void)
+{
+	if (Alloced())
 	{
 		if (mem)
+		{
 			vkFreeMemory(device, mem, NULL);
+			mem = VK_NULL_HANDLE;
+		}
 
 		if (buffer)
+		{
 			vkDestroyBuffer(device, buffer, NULL);
+			buffer = VK_NULL_HANDLE;
+		}
+			
+		allocationSize = 0;
+
+		device = VK_NULL_HANDLE;
 	}
 }
 

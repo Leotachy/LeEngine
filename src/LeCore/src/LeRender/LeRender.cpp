@@ -10,6 +10,16 @@ LeRenderApi LeGetRenderApi(void)
 	return s_RenderApi;
 }
 
+typedef LeBool (*LeBeginRenderFunc)(LeCamera*);
+LeBeginRenderFunc s_beginRenderFunc = NULL;
+
+typedef void(*LeRenderFunc)(LeMesh*);
+LeRenderFunc s_renderFunc = NULL;
+
+typedef void(*LeEndRenderFunc)(void);
+LeEndRenderFunc s_endRenderFunc = NULL;
+
+
 void LeInitRenderer(InitRendererParams& params)
 {
 
@@ -20,7 +30,12 @@ void LeInitRenderer(InitRendererParams& params)
 		break;
 
 	case LeRenderApi::Vulkan:
-		LeVkInit(params.pAppName, params.pWindow);
+		LeInitVulkan(params.pAppName, params.pWindow);
+
+		s_beginRenderFunc = LeVkBeginRender;
+		s_renderFunc = LeVkRender;
+		s_endRenderFunc = LeVkEndRender;
+
 		break;
 	}
 
@@ -35,7 +50,7 @@ void LeTermRenderer(void)
 		break;
 
 	case LeRenderApi::Vulkan:
-		LeVkTerminate();
+		LeTermRenderer();
 		break;
 	}
 
@@ -45,15 +60,15 @@ void LeTermRenderer(void)
 
 LeBool LeBeginRender(LeCamera* pCam)
 {
-
+	return s_beginRenderFunc(pCam);
 }
 
 void LeRender(LeMesh* pMesh)
 {
-
+	return s_renderFunc(pMesh);
 }
 
 void LeEndRender(void)
 {
-
+	s_endRenderFunc();
 }

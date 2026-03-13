@@ -24,9 +24,11 @@ public:
 	void AddFlags(uint32 f) { m_Flags |= f; }
 	void SetFlags(uint32 f) { m_Flags = f; }
 	uint32 GetFlags(void) const { return m_Flags; }
+	LeBool HasFlags(uint32 f) { return (m_Flags & f) == f; }
+	void DeleteFlags(uint32 f) { m_Flags &= ~f; }
 
 	void SetMaterial(LeMaterial* m);
-	const LeMaterial* GetMaterial(void);
+	LeMaterial* GetMaterial(void);
 
 
 	std::vector<LeVertex> Vertices;

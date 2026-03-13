@@ -24,8 +24,9 @@ static uint32 m_queueFamily = 0;
 static LeSwapchain m_swapChain;
 
 static VkCommandPool m_cmdBufPool;
+static VkCommandPool m_cmdBufPoolTransient; // Command pool for short lived commands
 static LeVulkanQueue m_queue;
-static VkCommandBuffer m_copyCmdBuf;
+
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT Severity,
@@ -227,28 +228,33 @@ static void createLogicalDevice()
 
 }
 
-static void createCommandBufferPool()
+static VkCommandPool createCommandBufferPool(VkCommandPoolCreateFlagBits Flags, uint32 QueueFamilyIndex)
 {
 	VkCommandPoolCreateInfo cmdPoolCreateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 		.pNext = NULL,
-		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-		.queueFamilyIndex = m_queueFamily
+		.flags = Flags,
+		.queueFamilyIndex = QueueFamilyIndex
 	};
 
-	VkResult res = vkCreateCommandPool(s_LogicalDevice, &cmdPoolCreateInfo, NULL, &m_cmdBufPool);
+	VkCommandPool ret;
+
+	VkResult res = vkCreateCommandPool(s_LogicalDevice, &cmdPoolCreateInfo, NULL, &ret);
 	LE_CHECK_VK_RESULT(res, "vkCreateCommandPool");
 
 	LE_DEBUG_MESSAGE("Command buffer pool created");
+
+	return ret;
 }
 
-void createCommandBuffers(uint32 count, VkCommandBuffer* cmdBufs)
+void createCommandBuffers(VkCommandPool CommandPool, uint32 count, VkCommandBuffer* cmdBufs)
 {
-	VkCommandBufferAllocateInfo cmdBufAllocInfo = {
+	VkCommandBufferAllocateInfo cmdBufAllocInfo =
+	{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.pNext = NULL,
-		.commandPool = m_cmdBufPool,
+		.commandPool = CommandPool,
 		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 		.commandBufferCount = count
 	};
@@ -291,15 +297,19 @@ static uint32 getMemoryTypeIndex(uint32 MemTypeBitsMask, VkMemoryPropertyFlags R
 
 	for (uint32 i = 0; i < MemProps.memoryTypeCount; i++)
 	{
-		const VkMemoryType& MemType = MemProps.memoryTypes[i];
 		uint32 CurBitmask = (1 << i);
-		bool IsCurMemTypeSupported = (MemTypeBitsMask & CurBitmask);
-		bool HasRequiredMemProps = ((MemType.propertyFlags & ReqMemPropFlags) == ReqMemPropFlags);
+		LeBool IsCurMemTypeSupported = (MemTypeBitsMask & CurBitmask);
 
-		if (IsCurMemTypeSupported && HasRequiredMemProps)
-		{
-			return i;
-		}
+		if (!IsCurMemTypeSupported)
+			continue;
+
+		const VkMemoryType& MemType = MemProps.memoryTypes[i];
+		LeBool HasRequiredMemProps = ((MemType.propertyFlags & ReqMemPropFlags) == ReqMemPropFlags);
+
+		if (!HasRequiredMemProps)
+			continue;
+
+		return i;
 	}
 
 	LE_DEBUG_ERROR("Cannot find memory type for type %x requested mem props %x", MemTypeBitsMask, ReqMemPropFlags);
@@ -309,24 +319,29 @@ static uint32 getMemoryTypeIndex(uint32 MemTypeBitsMask, VkMemoryPropertyFlags R
 
 static void copyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size)
 {
-	beginCommandBuffer(m_copyCmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-	VkBufferCopy BufferCopy = {
+	VkCommandBuffer copyCmdBuf;
+	createCommandBuffers(m_cmdBufPoolTransient, 1, &copyCmdBuf);
+
+	beginCommandBuffer(copyCmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	VkBufferCopy BufferCopy =
+	{
 		.srcOffset = 0,
 		.dstOffset = 0,
 		.size = Size
 	};
 
-	vkCmdCopyBuffer(m_copyCmdBuf, Src, Dst, 1, &BufferCopy);
+	vkCmdCopyBuffer(copyCmdBuf, Src, Dst, 1, &BufferCopy);
 
-	vkEndCommandBuffer(m_copyCmdBuf);
+	vkEndCommandBuffer(copyCmdBuf);
 
-	m_queue.SubmitSync(m_copyCmdBuf);
+	m_queue.SubmitSync(copyCmdBuf);
 
 	m_queue.WaitIdle();
 }
 
-static void createUniformBuffer(size_t Size, LeVkMemoryBuffer& OutMemoryBuffer)
+static void createUniformBuffer(size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
 {
 
 	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -339,8 +354,11 @@ static void createUniformBuffer(size_t Size, LeVkMemoryBuffer& OutMemoryBuffer)
 
 
 static void createBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties,
-	LeVkMemoryBuffer& OutMemoryBuffer)
+	LeVkMemoryBuffer* OutMemoryBuffer)
 {
+
+	LE_DEBUG_ASSERT(OutMemoryBuffer);
+
 	VkBufferCreateInfo BufferCreateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -350,17 +368,17 @@ static void createBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPr
 	};
 
 
-	OutMemoryBuffer.device = s_LogicalDevice;
+	OutMemoryBuffer->device = s_LogicalDevice;
 
 	// Step 1: create a buffer
-	VkResult res = vkCreateBuffer(s_LogicalDevice, &BufferCreateInfo, NULL, &OutMemoryBuffer.buffer);
+	VkResult res = vkCreateBuffer(s_LogicalDevice, &BufferCreateInfo, NULL, &OutMemoryBuffer->buffer);
 	LE_CHECK_VK_RESULT(res, "vkCreateBuffer");
 
 	// Step 2: get the buffer memory requirements
 	VkMemoryRequirements MemReqs = {};
-	vkGetBufferMemoryRequirements(s_LogicalDevice, OutMemoryBuffer.buffer, &MemReqs);
+	vkGetBufferMemoryRequirements(s_LogicalDevice, OutMemoryBuffer->buffer, &MemReqs);
 
-	OutMemoryBuffer.allocationSize = MemReqs.size;
+	OutMemoryBuffer->allocationSize = MemReqs.size;
 
 	// Step 3: get the memory type index
 	uint32 MemoryTypeIndex = getMemoryTypeIndex(MemReqs.memoryTypeBits, Properties);
@@ -373,11 +391,11 @@ static void createBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPr
 		.memoryTypeIndex = MemoryTypeIndex
 	};
 
-	res = vkAllocateMemory(s_LogicalDevice, &MemAllocInfo, NULL, &OutMemoryBuffer.mem);
+	res = vkAllocateMemory(s_LogicalDevice, &MemAllocInfo, NULL, &OutMemoryBuffer->mem);
 	LE_CHECK_VK_RESULT(res, "vkAllocateMemory");
 
 	// Step 5: bind memory
-	res = vkBindBufferMemory(s_LogicalDevice, OutMemoryBuffer.buffer, OutMemoryBuffer.mem, 0);
+	res = vkBindBufferMemory(s_LogicalDevice, OutMemoryBuffer->buffer, OutMemoryBuffer->mem, 0);
 	LE_CHECK_VK_RESULT(res, "vkBindBufferMemory");
 }
 
@@ -388,19 +406,21 @@ static void createUniformBuffers(size_t Size, std::vector<LeVkMemoryBuffer>& Out
 	OutMemoryBuffers.resize(m_swapChain.GetNumImages());
 
 	for (int i = 0; i < OutMemoryBuffers.size(); i++)
-	{
-		createUniformBuffer(Size, OutMemoryBuffers[i]);
-	}
+		createUniformBuffer(Size, &OutMemoryBuffers[i]);
 
 }
 
-static void createVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer& OutMemoryBuffer)
+static void setupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
 {
+	LE_DEBUG_ASSERT(pVertices);
+	LE_DEBUG_ASSERT(Size);
+	LE_DEBUG_ASSERT(OutMemoryBuffer);
+
 	// Step 1: create the staging buffer
 	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	LeVkMemoryBuffer StagingVB;
-	createBuffer(Size, Usage, MemProps, StagingVB);
+	createBuffer(Size, Usage, MemProps, &StagingVB);
 
 	// Step 2: map the memory of the stage buffer
 	void* pMem = NULL;
@@ -415,14 +435,21 @@ static void createVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuf
 	// Step 4: unmap/release the mapped memory
 	vkUnmapMemory(s_LogicalDevice, StagingVB.mem);
 
-	// Step 5: create the final buffer
-	Usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	MemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	if (OutMemoryBuffer->Alloced() && Size > OutMemoryBuffer->allocationSize)
+		OutMemoryBuffer->DeAlloc();
 
-	createBuffer(Size, Usage, MemProps, OutMemoryBuffer);
+	if (!OutMemoryBuffer->Alloced())
+	{
+		// Step 5: create the final buffer
+		Usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		MemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+		createBuffer(Size, Usage, MemProps, OutMemoryBuffer);
+	}
+	
 
 	// Step 6: copy the staging buffer to the final buffer
-	copyBuffer(OutMemoryBuffer.buffer, StagingVB.buffer, Size);
+	copyBuffer(OutMemoryBuffer->buffer, StagingVB.buffer, Size);
 
 	// Step 7: release the resources of the staging buffer
 	//StagingVB.Destroy(s_LogicalDevice); // Destructor takes care of it now
@@ -452,7 +479,7 @@ static void recreateSwapChain(void)
 
 
 
-void InitVulkan(const char* pAppName, GLFWwindow* pWindow)
+void LeInitVulkan(const char* pAppName, GLFWwindow* pWindow)
 {
 	LE_DEBUG_ASSERT(pAppName);
 	LE_DEBUG_ASSERT(pWindow);
@@ -466,22 +493,19 @@ void InitVulkan(const char* pAppName, GLFWwindow* pWindow)
 	m_queueFamily = m_physicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 	createLogicalDevice();
 	m_swapChain.Init(s_LogicalDevice, &m_physicalDevices.Selected(), s_Surface, m_queueFamily);
-	createCommandBufferPool();
+	m_cmdBufPool = createCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_queueFamily);
+	m_cmdBufPoolTransient = createCommandBufferPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queueFamily);
 	m_queue.Init(s_LogicalDevice, &m_swapChain, m_queueFamily, 0);
-
-	createCommandBuffers(1, &m_copyCmdBuf);
 }
 
-void DeInitVulkan()
+void LeTerminateVulkan(void)
 {
-	// Destroy the copy command buffer
-
-	freeCommandBuffers(1, &m_copyCmdBuf);
 
 	// Destroy the render queue
 	m_queue.Destroy();
 
 	// Destroy command pool
+	vkDestroyCommandPool(s_LogicalDevice, m_cmdBufPoolTransient, NULL);
 	vkDestroyCommandPool(s_LogicalDevice, m_cmdBufPool, NULL);
 
 	// Destroy swapchain
@@ -522,10 +546,121 @@ void DeInitVulkan()
 	LE_DEBUG_MESSAGE("Vulkan instance destroyed");
 }
 
+LeBool LeVkBeginRender(LeCamera* pCam)
+{
+
+}
+
+// returns true if graphics pipeline changed
+// TODO: optimize this
+static LeBool refreshGraphicsPipelineForMatblock(LeMatBlockVk* pMbVk)
+{
+
+	LE_DEBUG_ASSERT(pMbVk);
+
+	// Test if graphics pipeline needs a refresh
+
+	LeVkGraphicsPipeline* pGraphicsPipeline = pMbVk->GetGraphicsPipeline();
+
+	
+	LeMaterial* pMaterial = pMbVk->GetMaterial();
+	LE_DEBUG_ASSERT(pMaterial && "Matblock is missing material!");
+
+	LeShader* pShader = pMaterial->GetShader();
+	LE_DEBUG_ASSERT(pShader && "Shader is missing material!");
+
+	// Test if pipeline is still valid
+	LeGraphicsPipelineVkKey PipelineKey =
+	{
+		.NumImages = m_swapChain.GetNumImages(),
+		.RenderColFormat = m_swapChain.GetImageFormat(),
+		.ShaderHash = pShader->GetNameHash(),
+	};
+
+	int64 PipelineKeyHash = lehash64_bin(&PipelineKey, sizeof(PipelineKey));
+
+	if (!pGraphicsPipeline || pGraphicsPipeline->GetKey() != PipelineKeyHash)
+	{
+
+		LeVkGraphicsPipeline* FoundGraphicsPipeline = 
+			LeVkGraphicsPipelineDictionary::Singleton()->Find(PipelineKeyHash);
+
+		if (FoundGraphicsPipeline)
+		{
+			pMbVk->SetGraphicsPipeline(FoundGraphicsPipeline);
+				
+		}
+		else
+		{
+			LeShaderVk* pShaderVk = static_cast<LeShaderVk*>(pShader);
+			LE_DEBUG_ASSERT(pShaderVk);
+
+			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, m_swapChain.GetNumImages(),
+				pShaderVk, m_swapChain.GetImageFormat());
+
+			LeVkGraphicsPipelineDictionary::Singleton()->Add(NewGraphicsPipeline);
+
+			pMbVk->SetGraphicsPipeline(NewGraphicsPipeline);
+		}
+
+
+		return true;
+	}
+	
+
+	return false;
+}
+
+// returns true if buffer was created or updated
+static LeBool setupVertexBufferForMatBlock(LeMatBlockVk* pMbVk)
+{
+	LE_DEBUG_ASSERT(pMbVk);
+
+	if (pMbVk->HasFlags(MATBLOCK_VERTS_DIRTY))
+	{
+		uint64 uLocalSizeOfVerts = pMbVk->Vertices.size() * sizeof(LeVertex);
+		setupVertexBuffer(pMbVk->Vertices.data(), uLocalSizeOfVerts, pMbVk->GetVertexBuffer()); // this will either create or update the buffer
+		pMbVk->DeleteFlags(MATBLOCK_VERTS_DIRTY);
+
+		return true;
+	}
+
+
+	return false;
+	
+}
+
+void LeVkRender(LeMesh* pMesh)
+{
+	LE_DEBUG_ASSERT(pMesh);
+
+	for (uint32 i = 0; i < pMesh->GetNumMatblocks(); i++)
+	{
+		LeMatBlock* pMb = pMesh->GetMatblock(i);
+		LE_DEBUG_ASSERT(pMb);
+
+		LeMatBlockVk* pMbVk = static_cast<LeMatBlockVk*>(pMb);
+		LE_DEBUG_ASSERT(pMbVk);
+
+		refreshGraphicsPipelineForMatblock(pMbVk);
+
+		setupVertexBufferForMatBlock(pMbVk);
+
+
+
+	}
+}
+
+void LeVkEndRender(void)
+{
+
+}
+
 // global functions
 
 VkDevice LeGetVkLogicalDevice(void)
 {
+	LE_DEBUG_ASSERT(s_LogicalDevice);
 	return s_LogicalDevice;
 }
 
@@ -607,24 +742,3 @@ uint32_t GetVkBytesPerTexFormat(VkFormat Format)
 
 
 
-
-//static const VkVertexInputBindingDescription s_BindingDescription =
-//{
-//	0, sizeof(LeVertex), VK_VERTEX_INPUT_RATE_VERTEX
-//};
-//
-//const VkVertexInputBindingDescription* LeVertexGetBindingDescription()
-//{
-//	return &s_BindingDescription;
-//}
-//
-//static const VkVertexInputAttributeDescription s_AttributeDescriptions[] =
-//{
-//	VkVertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
-//	VkVertexInputAttributeDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(LeVertex::pos))
-//};
-//
-//const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions()
-//{
-//	return s_AttributeDescriptions;
-//}

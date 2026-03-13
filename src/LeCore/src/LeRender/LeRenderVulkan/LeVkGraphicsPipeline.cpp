@@ -1,42 +1,27 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRender.h"
-#include "LeCore/LeRender/LeShader.h"
-#include "LeCore/LeRender/LeGraphicsPipeline.h"
-
-#include "LeRenderUtils.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 
 
-LeGraphicsPipeline::LeGraphicsPipeline()
+
+LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShaderVk* pShader, VkFormat RenderColFormat)
 {
-	m_pipeline = NULL;
-	m_pipelineLayout = NULL;
-
-	m_device = NULL;
-}
-
-LeGraphicsPipeline::~LeGraphicsPipeline()
-{
-
-}
-
-
-void LeGraphicsPipeline::Init(VkDevice Device, const LeSwapchain* pSwapchain, LeShader* pShader,
-	const LeSimpleMesh* pSimpleMesh,
-	int32 NumImages,
-	std::vector<LeMemoryBuffer>& UniformBuffers,
-	int32 UniformDataSize)
-{
-
-	LE_DEBUG_ASSERT(pSwapchain);
+	LE_DEBUG_ASSERT(key);
+	LE_DEBUG_ASSERT(NumImages > 0);
 	LE_DEBUG_ASSERT(pShader);
 
-	m_device = Device;
+	m_key = key;
 
-	if (pSimpleMesh)
-	{
-		CreateDescriptorSets(pSimpleMesh, NumImages, UniformBuffers, UniformDataSize);
-	}
+	m_device = LeGetVkLogicalDevice();
+
+	m_descriptorPool = VK_NULL_HANDLE;
+	m_descriptorSetLayout = VK_NULL_HANDLE;
+
+	/*if (pSimpleMesh)
+		{
+			CreateDescriptorSets(pSimpleMesh, NumImages, UniformBuffers, UniformDataSize);
+		}*/
 
 	const VkPipelineShaderStageCreateInfo ShaderStageInfo[] =
 	{
@@ -78,10 +63,10 @@ void LeGraphicsPipeline::Init(VkDevice Device, const LeSwapchain* pSwapchain, Le
 	VkPipelineVertexInputStateCreateInfo VertexInputInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-		/*.vertexBindingDescriptionCount = 1,
+		.vertexBindingDescriptionCount = 1,
 		.pVertexBindingDescriptions = LeVertexGetBindingDescription(),
 		.vertexAttributeDescriptionCount = LeVertexGetNumAttributeDescriptions(),
-		.pVertexAttributeDescriptions = LeVertexGetAttributeDescriptions()*/
+		.pVertexAttributeDescriptions = LeVertexGetAttributeDescriptions()
 
 	};
 
@@ -137,23 +122,23 @@ void LeGraphicsPipeline::Init(VkDevice Device, const LeSwapchain* pSwapchain, Le
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
 	};
 
-	if (pSimpleMesh && pSimpleMesh->m_vb.m_buffer)
+	/*if (pSimpleMesh && pSimpleMesh->m_vb.m_buffer)
 	{
 		LayoutInfo.setLayoutCount = 1;
 		LayoutInfo.pSetLayouts = &m_descriptorSetLayout;
 	}
-	else
+	else*/
 	{
 		LayoutInfo.setLayoutCount = 0;
 		LayoutInfo.pSetLayouts = NULL;
 	}
 
-	VkResult res = vkCreatePipelineLayout(Device, &LayoutInfo, NULL, &m_pipelineLayout);
+	VkResult res = vkCreatePipelineLayout(m_device, &LayoutInfo, NULL, &m_pipelineLayout);
 	LE_CHECK_VK_RESULT(res, "vkCreatePipelineLayout");
 
 	// Dynamic rendering config
 
-	VkFormat ColorAttachmentFormat = pSwapchain->GetImageFormat();
+	VkFormat ColorAttachmentFormat = RenderColFormat;
 
 	VkPipelineRenderingCreateInfo RenderingInfo =
 	{
@@ -182,23 +167,33 @@ void LeGraphicsPipeline::Init(VkDevice Device, const LeSwapchain* pSwapchain, Le
 		.basePipelineIndex = -1
 	};
 
-	res = vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &PipelineInfo, NULL, &m_pipeline);
+	res = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &PipelineInfo, NULL, &m_pipeline);
 	LE_CHECK_VK_RESULT(res, "vkCreateGraphicsPipelines");
 
 	LE_DEBUG_MESSAGE("Graphics pipeline created");
+
+
 }
 
-void LeGraphicsPipeline::Destroy(void)
+LeVkGraphicsPipeline::~LeVkGraphicsPipeline()
 {
-	vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, NULL);
-	vkDestroyPipelineLayout(m_device, m_pipelineLayout, NULL);
-	vkDestroyDescriptorPool(m_device, m_descriptorPool, NULL);
-	vkDestroyPipeline(m_device, m_pipeline, NULL);
+	if (m_device)
+	{
+		vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, NULL);
+		vkDestroyPipelineLayout(m_device, m_pipelineLayout, NULL);
+		vkDestroyDescriptorPool(m_device, m_descriptorPool, NULL);
+		vkDestroyPipeline(m_device, m_pipeline, NULL);
+	}
+
+	
 
 	LE_DEBUG_MESSAGE("Graphics pipeline destroyed");
 }
 
-void LeGraphicsPipeline::Bind(VkCommandBuffer CmdBuf, int32 ImageIndex)
+
+
+
+void LeVkGraphicsPipeline::Bind(VkCommandBuffer CmdBuf, int32 ImageIndex)
 {
 	vkCmdBindPipeline(CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
@@ -218,7 +213,7 @@ void LeGraphicsPipeline::Bind(VkCommandBuffer CmdBuf, int32 ImageIndex)
 
 
 
-void LeGraphicsPipeline::CreateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
+void LeVkGraphicsPipeline::CreateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
 	int32 UniformDataSize)
 {
 	CreateDescriptorPool(NumImages);
@@ -231,7 +226,7 @@ void LeGraphicsPipeline::CreateDescriptorSets(const LeSimpleMesh* pMesh, int32 N
 }
 
 
-void LeGraphicsPipeline::CreateDescriptorPool(int NumImages)
+void LeVkGraphicsPipeline::CreateDescriptorPool(int NumImages)
 {
 
 	VkDescriptorPoolSize PoolSizes[2] =
@@ -260,7 +255,7 @@ void LeGraphicsPipeline::CreateDescriptorPool(int NumImages)
 }
 
 
-void LeGraphicsPipeline::CreateDescriptorSetLayout(std::vector<LeMemoryBuffer>& UniformBuffers,
+void LeVkGraphicsPipeline::CreateDescriptorSetLayout(std::vector<LeMemoryBuffer>& UniformBuffers,
 	int32 UniformDataSize)
 {
 	std::vector<VkDescriptorSetLayoutBinding> LayoutBindings;
@@ -296,7 +291,7 @@ void LeGraphicsPipeline::CreateDescriptorSetLayout(std::vector<LeMemoryBuffer>& 
 }
 
 
-void LeGraphicsPipeline::AllocateDescriptorSets(int NumImages)
+void LeVkGraphicsPipeline::AllocateDescriptorSets(int NumImages)
 {
 	std::vector<VkDescriptorSetLayout> Layouts(NumImages, m_descriptorSetLayout);
 
@@ -315,7 +310,7 @@ void LeGraphicsPipeline::AllocateDescriptorSets(int NumImages)
 }
 
 
-void LeGraphicsPipeline::UpdateDescriptorSets(const LeSimpleMesh* pMesh, int NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
+void LeVkGraphicsPipeline::UpdateDescriptorSets(const LeSimpleMesh* pMesh, int NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
 	int32 UniformDataSize)
 {
 	VkDescriptorBufferInfo BufferInfo_VB =
@@ -364,4 +359,34 @@ void LeGraphicsPipeline::UpdateDescriptorSets(const LeSimpleMesh* pMesh, int Num
 	}
 
 	vkUpdateDescriptorSets(m_device, (uint32)WriteDescriptorSet.size(), WriteDescriptorSet.data(), 0, NULL);
+}
+
+
+LeVkGraphicsPipelineDictionary* LeVkGraphicsPipelineDictionary::Singleton(void)
+{
+	static LeVkGraphicsPipelineDictionary instance;
+	return &instance;
+}
+
+void LeVkGraphicsPipelineDictionary::Add(LeVkGraphicsPipeline* pPipeline)
+{
+	uint64 key = pPipeline->GetKey();
+
+	if (m_GraphicsPipelines[key])
+		LE_WARN("Pipeline already exists with key %lld", key);
+
+	m_GraphicsPipelines[key] = pPipeline;
+}
+
+LeVkGraphicsPipeline* LeVkGraphicsPipelineDictionary::Find(int64 key)
+{
+	return m_GraphicsPipelines[key];
+}
+
+void LeVkGraphicsPipelineDictionary::Purge(void)
+{
+	for (auto pipeline : m_GraphicsPipelines)
+		delete pipeline.second;
+
+	m_GraphicsPipelines.clear();
 }
