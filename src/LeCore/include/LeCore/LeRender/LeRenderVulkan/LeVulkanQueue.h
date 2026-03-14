@@ -2,7 +2,7 @@
 #pragma once
 
 #include "LeCore/LeCore.h"
-#include "LeCore/LeRender/LeSwapchain.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeSwapchain.h"
 
 class LeVulkanQueue
 {
@@ -21,7 +21,7 @@ public:
 	void SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 frameIndex);
 
 	// Swapchain needs to be recreated if returns false
-	bool Present(uint32 imageIndex);
+	bool Present(uint32 imageIndex, int32 frameIndex);
 
 	void WaitIdle();
 

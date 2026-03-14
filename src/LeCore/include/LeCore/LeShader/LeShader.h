@@ -1,26 +1,19 @@
 
 #pragma once
 
-#include "LeShaderVulkan/LeShaderVulkan.h"
-
-
-
 class LeShader
 {
-
+protected:
 	LeShader(const char* pName, const char* pShaderBinaryPath);
-
 public:
 	virtual ~LeShader();
 
-	const LeChar* GetName(void) { return m_Name; }
 	uint64 GetNameHash(void) { return m_NameHash; }
 
 	static LeShader* Create(const char* pName, const char* pShaderBinaryPath);
 
 protected:
 
-	const LeChar* m_Name;
 	uint64 m_NameHash;
 };
 

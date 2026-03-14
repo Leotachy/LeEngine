@@ -1,8 +1,8 @@
 
 #include "LeCore/LeCore.h"
-#include "LeCore/LeRender/LeRender.h"
-#include "LeCore/LeRender/LeVulkanQueue.h"
-#include "LeRender/LeRenderUtils.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeSwapchain.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVulkanQueue.h"
 
 
 static VkSemaphore createSemaphore(VkDevice Device)
@@ -95,7 +95,8 @@ void LeVulkanQueue::ResetFences(int32 frameIndex)
 uint32 LeVulkanQueue::AcquireNextImage(int32 frameIndex)
 {
 	uint32 ImageIndex = 0;
-	VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain->GetSwapchain(), UINT64_MAX, m_presentCompleteSems[frameIndex], NULL, &ImageIndex);
+	VkResult res = vkAcquireNextImageKHR(m_device,
+		m_swapChain->GetSwapchain(), UINT64_MAX, m_presentCompleteSems[frameIndex], NULL, &ImageIndex);
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 		return -1; //TODO fix this
@@ -146,7 +147,7 @@ void LeVulkanQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32
 }
 
 
-bool LeVulkanQueue::Present(uint32 ImageIndex)
+bool LeVulkanQueue::Present(uint32 imageIndex, int32 frameIndex)
 {
 
 	VkSwapchainKHR Swapchain = m_swapChain->GetSwapchain();
@@ -155,10 +156,10 @@ bool LeVulkanQueue::Present(uint32 ImageIndex)
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.pNext = NULL,
 		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &m_renderCompleteSems[ImageIndex],
+		.pWaitSemaphores = &m_renderCompleteSems[imageIndex],
 		.swapchainCount = 1,
 		.pSwapchains = &Swapchain,
-		.pImageIndices = &ImageIndex
+		.pImageIndices = &imageIndex
 	};
 
 	VkResult res = vkQueuePresentKHR(m_queue, &PresentInfo);

@@ -10,27 +10,24 @@ LeShader::LeShader(const LeChar* name, const char* pShaderBinaryPath)
 {
 	LE_ASSERT(name);
 
-	m_Name = strdup(name);
-	m_NameHash = lehash64(m_Name);
+	m_NameHash = lehash64(name);
 }
 
 LeShader::~LeShader()
 {
-	LeFree(m_Name);
 }
 
 LeShader* LeShader::Create(const char* pName, const char* pShaderBinaryPath)
 {
 	switch (LeGetRenderApi())
 	{
-	case LeRenderApi::None:
-		LE_ASSERT(0);
-		break;
-
 	case LeRenderApi::Vulkan:
 		return new LeShaderVk(pName, pShaderBinaryPath);
 		break;
 	}
+
+	LE_DEBUG_ASSERT(0);
+	return NULL;
 }
 
 void LeShaderDictionary::AddShader(LeShader* pShader)
@@ -49,6 +46,8 @@ LeShader* LeShaderDictionary::GetShader(uint64 uNameHash)
 	{
 		return found->second;
 	}
+
+	return NULL;
 }
 
 LeBool LeShaderDictionary::ShaderExists(uint64 uNameHash)

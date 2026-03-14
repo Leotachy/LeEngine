@@ -1,8 +1,8 @@
 
-#pramga once
+#pragma once
 
 // Lukas Andrijauskas
-// KTU Programø sistemos baigiamasis darbas
+// KTU Programu sistemos baigiamasis darbas
 // 2026
 
 
@@ -14,4 +14,5 @@ struct InitEngineParams
 };
 
 void LeEngineInit(InitEngineParams& Params);
-void LeEngineTerm(void);
+void LeEngineShutDown(void);
+void LeEngineDeInit(void);

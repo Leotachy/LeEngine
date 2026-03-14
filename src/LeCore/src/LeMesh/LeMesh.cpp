@@ -1,5 +1,6 @@
 
 #include "LeCore/LeCore.h"
+#include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
 
@@ -20,14 +21,13 @@ LeMatBlock* LeMatBlock::Create(void)
 
 	switch (LeGetRenderApi())
 	{
-	case LeRenderApi::None:
-		LE_DEBUG_ASSERT(0);
-		break;
-
 	case LeRenderApi::Vulkan:
 		return new LeMatBlockVk();
 		break;
 	}
+
+	LE_DEBUG_ASSERT(0);
+	return NULL;
 
 }
 
@@ -55,12 +55,12 @@ LeMesh::LeMesh()
 
 LeMesh::~LeMesh()
 {
-
+	PurgeAllMatblocks();
 }
 
 void LeMesh::AddMatblock(LeMatBlock* pMb)
 {
-
+	m_Matblocks.push_back(pMb);
 }
 
 uint32 LeMesh::GetNumMatblocks(void)
@@ -71,18 +71,20 @@ uint32 LeMesh::GetNumMatblocks(void)
 
 LeMatBlock* LeMesh::GetMatblock(uint32 i)
 {
-	if (i > m_Matblocks.size())
-		return NULL;
-
+	LE_DEBUG_ASSERT(i < m_Matblocks.size());
 	return m_Matblocks[i];
 }
 
 void LeMesh::RemoveMatblock(uint32 i)
 {
-
+	LE_DEBUG_ASSERT(i < m_Matblocks.size());
+	m_Matblocks.erase(m_Matblocks.begin() + i);
 }
 
-void LeMesh::RemoveAllMatblocks(void)
+void LeMesh::PurgeAllMatblocks(void)
 {
+	for (LeMatBlock* pMb : m_Matblocks)
+		delete pMb;
 
+	m_Matblocks.clear();
 }

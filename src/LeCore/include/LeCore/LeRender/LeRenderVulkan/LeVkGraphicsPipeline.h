@@ -13,27 +13,16 @@ public:
 	LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShaderVk* pShader, VkFormat RenderColFormat);
 	~LeVkGraphicsPipeline();
 
-	void Bind(VkCommandBuffer CmdBuf, int32 ImageIndex);
-
 	uint64 GetKey() { return m_key; }
 
-private:
+	VkPipeline GetPipeline() { return m_pipeline; }
+	VkPipelineLayout GetPipelineLayout() { return m_pipelineLayout; }
 
-	void CreateDescriptorPool(int32 NumImages);
-	void CreateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
-		int32 UniformDataSize);
-	void CreateDescriptorSetLayout(std::vector<LeMemoryBuffer>& UniformBuffers, int32 UniformDataSize);
-	void AllocateDescriptorSets(int32 NumImages);
-	void UpdateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
-		int32 UniformDataSize);
+private:
 
 	uint64 m_key; // Key in dictionary
 
 	VkDevice m_device;
-
-	VkDescriptorPool m_descriptorPool;
-	VkDescriptorSetLayout m_descriptorSetLayout;
-	std::vector<VkDescriptorSet> m_descriptorSets;
 
 	VkPipeline m_pipeline;
 	VkPipelineLayout m_pipelineLayout;
@@ -51,7 +40,7 @@ struct LeGraphicsPipelineVkKey
 	VkFormat RenderColFormat;
 
 	// material
-	int64 ShaderHash;
+	uint64 ShaderHash;
 };
 
 class LeVkGraphicsPipelineDictionary

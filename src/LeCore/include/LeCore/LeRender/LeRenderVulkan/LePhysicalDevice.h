@@ -1,12 +1,6 @@
 
 #pragma once
 
-
-#include <vulkan/vulkan.h>
-
-#include "LeCore/LeCore.h"
-
-
 struct LePhysicalDevice
 {
 	VkPhysicalDevice m_physDevice;

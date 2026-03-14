@@ -3,6 +3,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "LeCore/LeCore.h"
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeCamera/LeCamera.h"
 
@@ -25,10 +26,11 @@ struct InitRendererParams
 };
 
 void LeInitRenderer(InitRendererParams& params);
-void LeTermRenderer(void);
+void LeShutdownRenderer();
+void LeDeInitRenderer(void);
 
 
 
-LeBool LeBeginRender(LeCamera* pCam);
-void LeRender(LeMesh* pMesh);
-void LeEndRender(void);
+LeBool LeBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
+LeBool LeRender(LeMesh* pMesh);
+LeBool LeEndRender(void);

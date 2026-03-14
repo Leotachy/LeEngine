@@ -14,12 +14,15 @@
 
 static LeCamera* pCam = NULL;
 
+static LeBool s_bFramebufferResized = false;
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 
 	if (pCam)
 		pCam->SetScreenSize(width, height);
+
+	s_bFramebufferResized = true;
 }
 
 static void processInput(GLFWwindow* window, float deltaT)
@@ -70,6 +73,9 @@ int main(void)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	GLFWwindow* pWindow = glfwCreateWindow(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, "TestApp", nullptr, nullptr);
+	glfwSetCursorPosCallback(pWindow, mouse_callback);
+	glfwSetFramebufferSizeCallback(pWindow, framebufferResizeCallback);
+	glfwSetInputMode(pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	InitEngineParams Params =
 	{
@@ -98,13 +104,23 @@ int main(void)
 
 	const std::vector<LeVertex> Vertices =
 	{
-		{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+		{{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+		{{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
 		{{0.5f, 0.5f,  0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
 		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}
 	};
 
+	const std::vector<LeFace> indices =
+	{
+		{0, 1, 2},
+		{2, 3, 0}
+	};
+
 	Mb->Vertices = Vertices;
 	Mb->AddFlags(MATBLOCK_VERTS_DIRTY);
+
+	Mb->Faces = indices;
+	Mb->AddFlags(MATBLOCK_FACES_DIRTY);
 
 	LeMesh Mesh;
 	Mesh.AddMatblock(Mb);
@@ -126,21 +142,20 @@ int main(void)
 		processInput(pWindow, deltaTime);
 
 
-		if (LeBeginRender(pCam))
-		{
-			LeRender(&Mesh);
+		if (LeBeginRender(pCam, s_bFramebufferResized))
+			if (LeRender(&Mesh))
+				LeEndRender();
 
-
-			LeEndRender();
-		}
+		s_bFramebufferResized = false;
 	}
 
-	delete Mb;
+	LeEngineShutDown();
+
 	delete BasicShader;
-
 	delete pCam;
+	Mesh.PurgeAllMatblocks();
 
-	LeEngineTerm();
+	LeEngineDeInit();
 
 	glfwTerminate();
 

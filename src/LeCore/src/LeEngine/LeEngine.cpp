@@ -1,14 +1,19 @@
 
-#include "LeCore.h"
+#include "LeCore/LeCore.h"
 #include "LeCore/LeEngine/LeEngine.h"
-
+#include "LeCore/LeRender/LeRender.h"
 
 void LeEngineInit(InitEngineParams& Params)
 {
 	LeInitRenderer(Params.RendererParams);
 }
 
-void LeEngineTerm(void)
+void LeEngineShutDown(void)
 {
-	LeTermRenderer();
+	LeShutdownRenderer();
+}
+
+void LeEngineDeInit(void)
+{
+	LeDeInitRenderer();
 }

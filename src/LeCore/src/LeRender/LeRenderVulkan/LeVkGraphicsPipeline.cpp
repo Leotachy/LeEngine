@@ -1,9 +1,8 @@
 
 #include "LeCore/LeCore.h"
-#include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
-
-
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptorSet.h"
+#include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
 
 LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShaderVk* pShader, VkFormat RenderColFormat)
 {
@@ -14,14 +13,6 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShader
 	m_key = key;
 
 	m_device = LeGetVkLogicalDevice();
-
-	m_descriptorPool = VK_NULL_HANDLE;
-	m_descriptorSetLayout = VK_NULL_HANDLE;
-
-	/*if (pSimpleMesh)
-		{
-			CreateDescriptorSets(pSimpleMesh, NumImages, UniformBuffers, UniformDataSize);
-		}*/
 
 	const VkPipelineShaderStageCreateInfo ShaderStageInfo[] =
 	{
@@ -119,19 +110,12 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShader
 
 	VkPipelineLayoutCreateInfo LayoutInfo =
 	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.setLayoutCount = (uint32)LeVkGetNumDescriptorSetLayouts(),
+		.pSetLayouts = LeVkGetDescriptorSetLayouts()
 	};
 
-	/*if (pSimpleMesh && pSimpleMesh->m_vb.m_buffer)
-	{
-		LayoutInfo.setLayoutCount = 1;
-		LayoutInfo.pSetLayouts = &m_descriptorSetLayout;
-	}
-	else*/
-	{
-		LayoutInfo.setLayoutCount = 0;
-		LayoutInfo.pSetLayouts = NULL;
-	}
+
 
 	VkResult res = vkCreatePipelineLayout(m_device, &LayoutInfo, NULL, &m_pipelineLayout);
 	LE_CHECK_VK_RESULT(res, "vkCreatePipelineLayout");
@@ -179,187 +163,14 @@ LeVkGraphicsPipeline::~LeVkGraphicsPipeline()
 {
 	if (m_device)
 	{
-		vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, NULL);
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, NULL);
-		vkDestroyDescriptorPool(m_device, m_descriptorPool, NULL);
 		vkDestroyPipeline(m_device, m_pipeline, NULL);
 	}
-
-	
 
 	LE_DEBUG_MESSAGE("Graphics pipeline destroyed");
 }
 
 
-
-
-void LeVkGraphicsPipeline::Bind(VkCommandBuffer CmdBuf, int32 ImageIndex)
-{
-	vkCmdBindPipeline(CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
-
-	if (m_descriptorSets.size() > 0)
-	{
-		vkCmdBindDescriptorSets(CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout,
-			0,  // firstSet
-			1,  // descriptorSetCount
-			&m_descriptorSets[ImageIndex],
-			0,	// dynamicOffsetCount
-			NULL);	// pDynamicOffsets
-	}
-}
-
-
-
-
-
-
-void LeVkGraphicsPipeline::CreateDescriptorSets(const LeSimpleMesh* pMesh, int32 NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
-	int32 UniformDataSize)
-{
-	CreateDescriptorPool(NumImages);
-
-	CreateDescriptorSetLayout(UniformBuffers, UniformDataSize);
-
-	AllocateDescriptorSets(NumImages);
-
-	UpdateDescriptorSets(pMesh, NumImages, UniformBuffers, UniformDataSize);
-}
-
-
-void LeVkGraphicsPipeline::CreateDescriptorPool(int NumImages)
-{
-
-	VkDescriptorPoolSize PoolSizes[2] =
-	{
-		{
-			.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-			.descriptorCount = (uint32)NumImages
-		},
-		{
-			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = (uint32)NumImages
-		}
-	};
-
-	VkDescriptorPoolCreateInfo PoolInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.flags = 0,
-		.maxSets = (uint32)NumImages,
-		.poolSizeCount = ARRAY_SIZE(PoolSizes),
-		.pPoolSizes = PoolSizes
-	};
-
-	VkResult res = vkCreateDescriptorPool(m_device, &PoolInfo, NULL, &m_descriptorPool);
-	LE_CHECK_VK_RESULT(res, "vkCreateDescriptorPool");
-}
-
-
-void LeVkGraphicsPipeline::CreateDescriptorSetLayout(std::vector<LeMemoryBuffer>& UniformBuffers,
-	int32 UniformDataSize)
-{
-	std::vector<VkDescriptorSetLayoutBinding> LayoutBindings;
-
-
-	LayoutBindings.emplace_back(VkDescriptorSetLayoutBinding{
-		.binding = 0,
-		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-		.descriptorCount = 1,
-		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-		});
-
-	if (UniformBuffers.size())
-	{
-		LayoutBindings.emplace_back(VkDescriptorSetLayoutBinding{
-			.binding = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-					});
-	}
-
-	VkDescriptorSetLayoutCreateInfo LayoutInfo = {
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0,			// reserved - must be zero
-		.bindingCount = (uint32)LayoutBindings.size(),
-		.pBindings = LayoutBindings.data()
-	};
-
-	VkResult res = vkCreateDescriptorSetLayout(m_device, &LayoutInfo, NULL, &m_descriptorSetLayout);
-	LE_CHECK_VK_RESULT(res, "vkCreateDescriptorSetLayout");
-}
-
-
-void LeVkGraphicsPipeline::AllocateDescriptorSets(int NumImages)
-{
-	std::vector<VkDescriptorSetLayout> Layouts(NumImages, m_descriptorSetLayout);
-
-	VkDescriptorSetAllocateInfo AllocInfo = {
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-		.pNext = NULL,
-		.descriptorPool = m_descriptorPool,
-		.descriptorSetCount = (uint32)NumImages,
-		.pSetLayouts = Layouts.data()
-	};
-
-	m_descriptorSets.resize(NumImages);
-
-	VkResult res = vkAllocateDescriptorSets(m_device, &AllocInfo, m_descriptorSets.data());
-	LE_CHECK_VK_RESULT(res, "vkAllocateDescriptorSets");
-}
-
-
-void LeVkGraphicsPipeline::UpdateDescriptorSets(const LeSimpleMesh* pMesh, int NumImages, std::vector<LeMemoryBuffer>& UniformBuffers,
-	int32 UniformDataSize)
-{
-	VkDescriptorBufferInfo BufferInfo_VB =
-	{
-		.buffer = pMesh->m_vb.m_buffer,
-		.offset = 0,
-		.range = pMesh->m_vertexBufferSize,  // can also be VK_WHOLE_SIZE
-	};
-
-	std::vector<VkWriteDescriptorSet> WriteDescriptorSet;
-
-	for (size_t i = 0; i < NumImages; i++) {
-
-		WriteDescriptorSet.emplace_back(
-			VkWriteDescriptorSet{
-				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = m_descriptorSets[i],
-				.dstBinding = 0,
-				.dstArrayElement = 0,
-				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &BufferInfo_VB
-			}
-		);
-
-		if (UniformBuffers.size() > 0)
-		{
-			VkDescriptorBufferInfo BufferInfo_Uniform =
-			{
-				.buffer = UniformBuffers[i].m_buffer,
-				.offset = 0,
-				.range = (VkDeviceSize)UniformDataSize,
-			};
-
-			WriteDescriptorSet.emplace_back(VkWriteDescriptorSet{
-					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-					.dstSet = m_descriptorSets[i],
-					.dstBinding = 1,
-					.dstArrayElement = 0,
-					.descriptorCount = 1,
-					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-					.pBufferInfo = &BufferInfo_Uniform
-				}
-			);
-		}
-	}
-
-	vkUpdateDescriptorSets(m_device, (uint32)WriteDescriptorSet.size(), WriteDescriptorSet.data(), 0, NULL);
-}
 
 
 LeVkGraphicsPipelineDictionary* LeVkGraphicsPipelineDictionary::Singleton(void)

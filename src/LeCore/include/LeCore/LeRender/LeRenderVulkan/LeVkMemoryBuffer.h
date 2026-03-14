@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
+
 struct LeVkMemoryBuffer
 {
 
@@ -14,8 +16,8 @@ struct LeVkMemoryBuffer
 
     VkDevice device;
 
-    VkDeviceMemory mem;
     VkBuffer buffer;
+    VkDeviceMemory mem;
     VkDeviceSize allocationSize;
 
 };

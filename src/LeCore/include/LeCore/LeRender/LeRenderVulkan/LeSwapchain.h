@@ -6,6 +6,8 @@
 *	Wrapper for VkSwapchainKHR
 */
 
+#include "LeCore/LeRender/LeRenderVulkan/LePhysicalDevice.h"
+
 class LeSwapchain
 {
 

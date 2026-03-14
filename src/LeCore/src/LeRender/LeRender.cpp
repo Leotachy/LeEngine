@@ -10,13 +10,13 @@ LeRenderApi LeGetRenderApi(void)
 	return s_RenderApi;
 }
 
-typedef LeBool (*LeBeginRenderFunc)(LeCamera*);
+typedef LeBool (*LeBeginRenderFunc)(LeCamera*, LeBool);
 LeBeginRenderFunc s_beginRenderFunc = NULL;
 
-typedef void(*LeRenderFunc)(LeMesh*);
+typedef LeBool (*LeRenderFunc)(LeMesh*);
 LeRenderFunc s_renderFunc = NULL;
 
-typedef void(*LeEndRenderFunc)(void);
+typedef LeBool (*LeEndRenderFunc)(void);
 LeEndRenderFunc s_endRenderFunc = NULL;
 
 
@@ -42,7 +42,7 @@ void LeInitRenderer(InitRendererParams& params)
 	s_RenderApi = params.api;
 }
 
-void LeTermRenderer(void)
+void LeShutdownRenderer()
 {
 	switch (s_RenderApi)
 	{
@@ -50,7 +50,20 @@ void LeTermRenderer(void)
 		break;
 
 	case LeRenderApi::Vulkan:
-		LeTermRenderer();
+		LeShutDownVulkan();
+		break;
+	}
+}
+
+void LeDeInitRenderer(void)
+{
+	switch (s_RenderApi)
+	{
+	case LeRenderApi::None:
+		break;
+
+	case LeRenderApi::Vulkan:
+		LeDeInitVulkan();
 		break;
 	}
 
@@ -58,17 +71,17 @@ void LeTermRenderer(void)
 }
 
 
-LeBool LeBeginRender(LeCamera* pCam)
+LeBool LeBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 {
-	return s_beginRenderFunc(pCam);
+	return s_beginRenderFunc(pCam, bFramebufferResized);
 }
 
-void LeRender(LeMesh* pMesh)
+LeBool LeRender(LeMesh* pMesh)
 {
 	return s_renderFunc(pMesh);
 }
 
-void LeEndRender(void)
+LeBool LeEndRender(void)
 {
-	s_endRenderFunc();
+	return s_endRenderFunc();
 }
