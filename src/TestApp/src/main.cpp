@@ -25,7 +25,7 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 	s_bFramebufferResized = true;
 }
 
-static void processInput(GLFWwindow* window, float deltaT)
+static void processInput(GLFWwindow* window, double deltaT)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
@@ -64,7 +64,18 @@ static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 }
 
+static void manipulateMatblockVertex(LeMatBlock* pMb, double dt)
+{
+	static double LifeTime = 0;
+	LifeTime += dt;
 
+	pMb->Vertices[0].pos.z = (float)glm::sin(LifeTime);
+	pMb->Vertices[pMb->Vertices.size() - 1].pos.z = (float)glm::cos(LifeTime);
+
+	pMb->AddFlags(MATBLOCK_VERTS_DIRTY);
+
+
+}
 
 int main(void)
 {
@@ -128,16 +139,18 @@ int main(void)
 	// The triangle is constructed!
 
 
-	float deltaTime = 0.0f;	// Time between current frame and last frame
-	float lastFrame = 0.0f; // Time of last frame
+	double deltaTime = 0.0;	// Time between current frame and last frame
+	double lastFrame = 0.0; // Time of last frame
 
 	while (!glfwWindowShouldClose(pWindow))
 	{
 		glfwPollEvents();
 
-		float currentFrame = float(glfwGetTime());
+		double currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		manipulateMatblockVertex(Mb, deltaTime);
 
 		processInput(pWindow, deltaTime);
 

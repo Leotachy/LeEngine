@@ -35,9 +35,9 @@ LeCamera::LeCamera(ProjectionType Proj, int32 screenWidth, int32 screenHeight)
 
 
 // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-void LeCamera::ProcessKeyboard(CamMovement direction, float deltaTime)
+void LeCamera::ProcessKeyboard(CamMovement direction, float64 deltaTime)
 {
-    float velocity = m_MovementSpeed * deltaTime;
+    float32 velocity = m_MovementSpeed * (float32)deltaTime;
 
     if (direction == FORWARD)
         m_Position += m_Front * velocity;

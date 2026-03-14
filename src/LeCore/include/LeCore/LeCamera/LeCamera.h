@@ -32,7 +32,7 @@ public:
     LeCamera(ProjectionType Proj, int32 screenWidth, int32 screenHeight);
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(CamMovement direction, float deltaTime);
+    void ProcessKeyboard(CamMovement direction, float64 deltaTime);
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
     void ProcessMouseMovement(float xoffset, float yoffset, LeBool constrainPitch = true);
