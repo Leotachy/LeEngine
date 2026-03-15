@@ -6,8 +6,6 @@
 
 LeMaterial::LeMaterial()
 {
-	m_Flags = 0;
-
 	m_pShader = NULL;
 }
 

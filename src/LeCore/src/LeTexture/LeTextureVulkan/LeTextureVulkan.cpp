@@ -5,6 +5,9 @@
 
 LeVulkanTexture::LeVulkanTexture()
 {
+
+    m_device = VK_NULL_HANDLE;
+
     m_image = VK_NULL_HANDLE;
     m_mem = VK_NULL_HANDLE;
     m_view = VK_NULL_HANDLE;

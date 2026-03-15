@@ -5,20 +5,26 @@
 
 #define TEXTURE_NAME_LENGTH 64
 
-class LeTexture
+// Supports only 32bit RGBA textures - super primitive
+
+#include "LeCore/LeRender/LeRenderResource.h"
+
+
+class LeTexture : public LeRenderResource
 {
 
-public:
-
+protected:
 	LeTexture();
-	~LeTexture();
+public:
+	virtual ~LeTexture();
+	static LeTexture* Create(void);
 
-
+	void SetPixels(const LeRGBA* pPixels, int32 width, int32 height);
 
 private:
 
 	LeChar m_name[TEXTURE_NAME_LENGTH];
-	LeByte* m_pixels;
+	LeRGBA* m_pixels;
 	int32 m_width, m_height;
 
 

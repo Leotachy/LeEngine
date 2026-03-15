@@ -13,6 +13,7 @@ LeEngine_target_sources_grouped(
 
 	"include/LeCore/LeEngine/LeEngine.h"
 	"include/LeCore/LeRender/LeRender.h"
+	"include/LeCore/LeRender/LeRenderResource.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LePhysicalDevice.h"
@@ -31,6 +32,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeTexture/LeTexture.h"
 	"include/LeCore/LeTexture/stb_image.h"
 	"include/LeCore/LeUtils/LeHash.h"
+	"include/LeCore/LeRGBA/LeRGBA.h"
 
 	"src/LeEngine/LeEngine.cpp"
 	"src/LeRender/LeRender.cpp"
@@ -53,6 +55,7 @@ LeEngine_target_sources_grouped(
 	"src/LeTexture/stb_image.cpp"
 	"src/LeUtils/fnv64.hpp"
 	"src/LeUtils/LeHash.cpp"
+	"src/LeRGBA/LeRGBA.cpp"
 
 
 

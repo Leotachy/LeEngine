@@ -116,4 +116,8 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 #define LE_WARN(x, ...) _LeDebugSendMessage(leDEBUGWARN,__FILE__, __LINE__,x,__VA_ARGS__) 
 
 
+// Extra header files that are "convenient" to have around
 #include "LeUtils/LeHash.h"
+#include "LeRGBA/LeRGBA.h"
+
+

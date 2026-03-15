@@ -70,7 +70,7 @@ static void manipulateMatblockVertex(LeMatBlock* pMb, double dt)
 	LifeTime += dt;
 
 	pMb->Vertices[0].pos.z = (float)glm::sin(LifeTime);
-	pMb->Vertices[pMb->Vertices.size() - 1].pos.z = (float)glm::cos(LifeTime);
+	pMb->Vertices[pMb->Vertices.size() - 1].pos.z = (float)glm::sin(LifeTime);
 
 	pMb->AddFlags(MATBLOCK_VERTS_DIRTY);
 
@@ -116,9 +116,9 @@ int main(void)
 	const std::vector<LeVertex> Vertices =
 	{
 		{{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-		{{0.5f, 0.5f,  0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}
+		{{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+		{{0.5f, 0.5f,  0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 	};
 
 	const std::vector<LeFace> indices =
@@ -135,6 +135,15 @@ int main(void)
 
 	LeMesh Mesh;
 	Mesh.AddMatblock(Mb);
+
+	int32 w, h, ch;
+	void* pPixelData = stbi_load(TESTAPP_RESOURCES_PATH "textures/awesomeface.png", &w, &h, &ch, 4);
+
+	LE_DEBUG_ASSERT(ch == 4);
+
+	LeTexture* pBaseTexture = LeTexture::Create();
+	pBaseTexture->SetPixels((LeRGBA*)pPixelData, w, h);
+	Mat.SetBaseTexture(pBaseTexture);
 
 	// The triangle is constructed!
 
@@ -164,6 +173,7 @@ int main(void)
 
 	LeEngineShutDown();
 
+	delete pBaseTexture;
 	delete BasicShader;
 	delete pCam;
 	Mesh.PurgeAllMatblocks();

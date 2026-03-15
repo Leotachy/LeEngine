@@ -2,8 +2,9 @@
 #pragma once
 
 #include "LeCore/LeRender/LeRender.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 
-class LeVulkanTexture
+class LeVulkanTexture : public LeTexture
 {
 public:
     LeVulkanTexture();
