@@ -8,6 +8,7 @@
 #include "LeCore/LeCamera/LeCamera.h"
 #include "LeCore/LeMesh/LeMesh.h"
 
+#include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 
 constexpr int LE_MAX_FRAMES_IN_FLIGHT = 2;
@@ -23,6 +24,7 @@ LeBool LeVkEndRender(void);
 
 
 
-VkDevice LeGetVkLogicalDevice(void);
+VkDevice LeVkGetLogicalDevice(void);
+const LeVkPhysicalDevice* LeVkGetPhysicalDevice(void);
 
 

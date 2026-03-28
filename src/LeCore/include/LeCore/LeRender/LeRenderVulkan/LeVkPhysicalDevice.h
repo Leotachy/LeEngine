@@ -1,7 +1,7 @@
 
 #pragma once
 
-struct LePhysicalDevice
+struct LeVkPhysicalDevice
 {
 	VkPhysicalDevice m_physDevice;
 	VkPhysicalDeviceProperties m_devProps;
@@ -14,21 +14,21 @@ struct LePhysicalDevice
 	VkPhysicalDeviceFeatures m_features;
 };
 
-class LeVulkanPhysicalDevices
+class LeVkPhysicalDevices
 {
 public:
-	LeVulkanPhysicalDevices() {}
-	~LeVulkanPhysicalDevices() {}
+	LeVkPhysicalDevices() {}
+	~LeVkPhysicalDevices() {}
 
 	void Init(const VkInstance& Instance, const VkSurfaceKHR& Surface);
 	void DeInit();
 
 	uint32 SelectDevice(VkQueueFlags RequiredQueueType, LeBool SupportsPresent);
 
-	const LePhysicalDevice& Selected() const;
+	const LeVkPhysicalDevice* Selected() const;
 
 private:
-	std::vector<LePhysicalDevice> m_devices;
+	std::vector<LeVkPhysicalDevice> m_devices;
 
 	int m_devIndex = -1;
 };

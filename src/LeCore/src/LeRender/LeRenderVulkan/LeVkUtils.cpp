@@ -4,6 +4,210 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 
 
+void LeVkCreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
+	VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryBuffer* OutMemoryBuffer)
+{
+	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pMemProps);
+	LE_DEBUG_ASSERT(Size > 0);
+	LE_DEBUG_ASSERT(OutMemoryBuffer);
+
+	VkBufferCreateInfo BufferCreateInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = Size,
+		.usage = Usage,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+
+	OutMemoryBuffer->device = Device;
+
+	// Step 1: create a buffer
+	VkResult res = vkCreateBuffer(Device, &BufferCreateInfo, NULL, &OutMemoryBuffer->buffer);
+	LE_CHECK_VK_RESULT(res, "vkCreateBuffer");
+
+	// Step 2: get the buffer memory requirements
+	VkMemoryRequirements MemReqs = {};
+	vkGetBufferMemoryRequirements(Device, OutMemoryBuffer->buffer, &MemReqs);
+
+	OutMemoryBuffer->allocationSize = MemReqs.size;
+
+	// Step 3: get the memory type index
+	uint32 MemoryTypeIndex = LeVkGetMemoryTypeIndex(pMemProps, MemReqs.memoryTypeBits, Properties);
+
+	// Step 4: allocate memory
+	VkMemoryAllocateInfo MemAllocInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = MemReqs.size,
+		.memoryTypeIndex = MemoryTypeIndex
+	};
+
+	res = vkAllocateMemory(Device, &MemAllocInfo, NULL, &OutMemoryBuffer->mem);
+	LE_CHECK_VK_RESULT(res, "vkAllocateMemory");
+
+	// Step 5: bind memory
+	res = vkBindBufferMemory(Device, OutMemoryBuffer->buffer, OutMemoryBuffer->mem, 0);
+	LE_CHECK_VK_RESULT(res, "vkBindBufferMemory");
+}
+
+void LeVkCreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
+	VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryBuffer2* OutMemoryBuffer)
+{
+	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pMemProps);
+	LE_DEBUG_ASSERT(Size > 0);
+	LE_DEBUG_ASSERT(OutMemoryBuffer);
+
+	VkBufferCreateInfo BufferCreateInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = Size,
+		.usage = Usage,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	OutMemoryBuffer->device = Device;
+
+	// Step 1: create a buffer
+	VkResult res = vkCreateBuffer(Device, &BufferCreateInfo, NULL, &OutMemoryBuffer->buffer);
+	LE_CHECK_VK_RESULT(res, "vkCreateBuffer");
+
+	// Step 2: get the buffer memory requirements
+	VkMemoryRequirements MemReqs = {};
+	vkGetBufferMemoryRequirements(Device, OutMemoryBuffer->buffer, &MemReqs);
+
+	OutMemoryBuffer->allocationSize = MemReqs.size;
+
+	// Step 3: get the memory type index
+	uint32 MemoryTypeIndex = LeVkGetMemoryTypeIndex(pMemProps, MemReqs.memoryTypeBits, Properties);
+
+	// Step 4: allocate memory
+	VkMemoryAllocateInfo MemAllocInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = MemReqs.size,
+		.memoryTypeIndex = MemoryTypeIndex
+	};
+
+	res = vkAllocateMemory(Device, &MemAllocInfo, NULL, &OutMemoryBuffer->mem);
+	LE_CHECK_VK_RESULT(res, "vkAllocateMemory");
+
+	// Step 5: bind memory
+	res = vkBindBufferMemory(Device, OutMemoryBuffer->buffer, OutMemoryBuffer->mem, 0);
+	LE_CHECK_VK_RESULT(res, "vkBindBufferMemory");
+}
+
+void LeVkUpdateBuffer(LeVkMemoryBuffer2* OutMemoryBuffer, const void* pData, size_t Size)
+{
+	LE_DEBUG_ASSERT(OutMemoryBuffer);
+	LE_DEBUG_ASSERT(OutMemoryBuffer->device != VK_NULL_HANDLE);
+
+
+	void* pMem = NULL;
+	VkResult res = vkMapMemory(OutMemoryBuffer->device, OutMemoryBuffer->mem, 0, Size, 0, &pMem);
+	LE_CHECK_VK_RESULT(res, "vkMapMemory");
+	LeMemcpy(pMem, pData, Size);
+	vkUnmapMemory(OutMemoryBuffer->device, OutMemoryBuffer->mem);
+}
+
+void LeVkDestroyBuffer(LeVkMemoryBuffer2* OutMemoryBuffer)
+{
+	LE_DEBUG_ASSERT(OutMemoryBuffer);
+	LE_DEBUG_ASSERT(OutMemoryBuffer->device != VK_NULL_HANDLE);
+
+	vkDestroyBuffer(OutMemoryBuffer->device, OutMemoryBuffer->buffer, NULL);
+	OutMemoryBuffer->buffer = VK_NULL_HANDLE;
+	
+	vkFreeMemory(OutMemoryBuffer->device, OutMemoryBuffer->mem, NULL);
+	OutMemoryBuffer->mem = VK_NULL_HANDLE;
+	
+
+	OutMemoryBuffer->allocationSize = 0;
+
+	OutMemoryBuffer->device = VK_NULL_HANDLE;
+}
+
+void LeVkCreateImage(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
+	uint32 width, uint32 height, VkFormat format,
+	VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage* OutMemoryImage)
+{
+
+	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pMemProps);
+	LE_DEBUG_ASSERT(OutMemoryImage);
+
+	// Make the texture image
+
+	VkImageCreateInfo ImageInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = format,
+		.extent = VkExtent3D {.width = width, .height = height, .depth = 1},
+		.mipLevels = 1,
+		.arrayLayers = 1,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.tiling = Tiling,
+		.usage = Usage,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 0,
+		.pQueueFamilyIndices = NULL,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+	};
+
+	OutMemoryImage->device = Device;
+
+	// Step 1: create the image
+	VkResult res = vkCreateImage(Device, &ImageInfo, NULL, &OutMemoryImage->image);
+	LE_CHECK_VK_RESULT(res);
+
+
+	// Step 2: get the buffer memory requirements
+	VkMemoryRequirements MemReqs = { 0 };
+	vkGetImageMemoryRequirements(Device, OutMemoryImage->image, &MemReqs);
+
+	// Step 3: get the memory type index
+	uint32 MemoryTypeIndex = LeVkGetMemoryTypeIndex(pMemProps, MemReqs.memoryTypeBits, Properties);
+
+	// Step 4: allocate memory
+	VkMemoryAllocateInfo MemAllocInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.pNext = NULL,
+		.allocationSize = MemReqs.size,
+		.memoryTypeIndex = MemoryTypeIndex
+	};
+
+	OutMemoryImage->allocationSize = MemReqs.size;
+
+	res = vkAllocateMemory(Device, &MemAllocInfo, NULL, &OutMemoryImage->mem);
+	LE_CHECK_VK_RESULT(res);
+
+	// Step 5: bind memory. This bind is permanent
+	res = vkBindImageMemory(Device, OutMemoryImage->image, OutMemoryImage->mem, 0);
+	LE_CHECK_VK_RESULT(res);
+}
+
+void LeVkDestroyImage(LeVkMemoryImage* OutMemoryImage)
+{
+	LE_DEBUG_ASSERT(OutMemoryImage);
+	LE_DEBUG_ASSERT(OutMemoryImage->device != VK_NULL_HANDLE);
+
+	vkDestroyImage(OutMemoryImage->device, OutMemoryImage->image, NULL);
+	OutMemoryImage->image = VK_NULL_HANDLE;
+
+	vkFreeMemory(OutMemoryImage->device, OutMemoryImage->mem, NULL);
+	OutMemoryImage->mem = VK_NULL_HANDLE;
+
+	OutMemoryImage->allocationSize = 0;
+
+	OutMemoryImage->device = VK_NULL_HANDLE;
+}
+
 void LeVkTransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
 	VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
 	VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask)
@@ -43,49 +247,88 @@ void LeVkTransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLay
 	vkCmdPipelineBarrier2(cmdBuf, &DependencyInfo);
 }
 
-void LeVkCreateCommandBuffers(VkDevice Device, VkCommandPool CommandPool, uint32 count, VkCommandBuffer* cmdBufs)
+VkImageView LeVkCreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
+	VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels)
 {
-	VkCommandBufferAllocateInfo cmdBufAllocInfo =
+
+	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(Image != VK_NULL_HANDLE);
+
+	VkImageViewCreateInfo ViewInfo =
 	{
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-		.pNext = NULL,
-		.commandPool = CommandPool,
-		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		.commandBufferCount = count
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.image = Image,
+		.viewType = ViewType,
+		.format = Format,
+		.components = {
+			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.a = VK_COMPONENT_SWIZZLE_IDENTITY
+		},
+		.subresourceRange = {
+			.aspectMask = AspectFlags,
+			.baseMipLevel = 0,
+			.levelCount = mipLevels,
+			.baseArrayLayer = 0,
+			.layerCount = LayerCount
+		}
 	};
 
-	VkResult res = vkAllocateCommandBuffers(Device, &cmdBufAllocInfo, cmdBufs);
-	LE_CHECK_VK_RESULT(res, "vkAllocateCommandBuffers");
-
-	LE_DEBUG_MESSAGE("%d command buffers created", count);
-}
-
-void LeVkFreeCommandBuffers(VkDevice Device, VkCommandPool CommandPool, uint32 Count, VkCommandBuffer* pCmdBufs)
-{
-	vkFreeCommandBuffers(Device, CommandPool, Count, pCmdBufs);
+	VkImageView ImageView;
+	VkResult res = vkCreateImageView(Device, &ViewInfo, NULL, &ImageView);
+	LE_CHECK_VK_RESULT(res, "vkCreateImageView");
+	return ImageView;
 }
 
 
-void LeVkBeginCommandBuffer(VkCommandBuffer CommandBuffer, VkCommandBufferUsageFlags UsageFlags)
+void LeVkDestroyImageView(VkDevice Device, VkImageView ImageView)
 {
-	VkCommandBufferBeginInfo BeginInfo =
+	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(ImageView != VK_NULL_HANDLE);
+
+
+	vkDestroyImageView(Device, ImageView, NULL);
+}
+
+VkSampler LeVkCreateSampler(VkDevice Device, const LeVkTextureAttributes& Attribs, LeBool bEnableAnisotropy, float32 fMaxAnisotropy)
+{
+
+	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+
+	VkSamplerCreateInfo SamplerCreateInfo =
 	{
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.pNext = NULL,
-		.flags = UsageFlags,
-		.pInheritanceInfo = NULL
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		.magFilter = Attribs.MagFilter,
+		.minFilter = Attribs.MinFilter,
+		.mipmapMode = Attribs.MipmapMode,
+		.addressModeU = Attribs.AddressModeU,
+		.addressModeV = Attribs.AddressModeV,
+		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.anisotropyEnable = VK_TRUE,
+		.maxAnisotropy = fMaxAnisotropy,
+		.compareEnable = VK_FALSE,
+		.compareOp = VK_COMPARE_OP_ALWAYS,
+		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+		.unnormalizedCoordinates = VK_FALSE,
 	};
 
-	VkResult res = vkBeginCommandBuffer(CommandBuffer, &BeginInfo);
-	LE_CHECK_VK_RESULT(res, "vkBeginCommandBuffer");
+	VkSampler Sampler;
+	VkResult res = vkCreateSampler(Device, &SamplerCreateInfo, NULL, &Sampler);
+	LE_CHECK_VK_RESULT(res);
+
+
+	return Sampler;
 }
 
-void LeVkEndCommandBuffer(VkCommandBuffer CommandBuffer)
+void LeVkDestroySampler(VkDevice Device, VkSampler Sampler)
 {
-	VkResult res = vkEndCommandBuffer(CommandBuffer);
-	LE_CHECK_VK_RESULT(res, "vkEndCommandBuffer");
-}
 
+	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(Sampler != VK_NULL_HANDLE);
+
+	vkDestroySampler(Device, Sampler, NULL);
+}
 
 uint32 LeVkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMemProps,
 	uint32 MemTypeBitsMask, VkMemoryPropertyFlags ReqMemPropFlags)
@@ -187,6 +430,5 @@ uint32_t GetVkBytesPerTexFormat(VkFormat Format)
 
 	return 0;
 }
-
 
 

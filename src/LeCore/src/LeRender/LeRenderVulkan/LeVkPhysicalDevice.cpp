@@ -64,7 +64,7 @@ static void PrintMemoryProperty(VkMemoryPropertyFlags PropertyFlags)
 }
 
 
-void LeVulkanPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& Surface)
+void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& Surface)
 {
     uint32 NumDevices = 0;
 
@@ -174,7 +174,7 @@ void LeVulkanPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKH
     LE_DEBUG_MESSAGE("Physical devices inited");
 }
 
-void LeVulkanPhysicalDevices::DeInit()
+void LeVkPhysicalDevices::DeInit()
 {
     m_devices.clear();
     m_devIndex = -1;
@@ -182,7 +182,7 @@ void LeVulkanPhysicalDevices::DeInit()
     LE_DEBUG_MESSAGE("Physical devices cleared");
 }
 
-uint32 LeVulkanPhysicalDevices::SelectDevice(VkQueueFlags RequiredQueueType, LeBool SupportsPresent)
+uint32 LeVkPhysicalDevices::SelectDevice(VkQueueFlags RequiredQueueType, LeBool SupportsPresent)
 {
     for (uint32 i = 0; i < m_devices.size(); i++) {
 
@@ -204,10 +204,10 @@ uint32 LeVulkanPhysicalDevices::SelectDevice(VkQueueFlags RequiredQueueType, LeB
 }
 
 
-const LePhysicalDevice& LeVulkanPhysicalDevices::Selected() const
+const LeVkPhysicalDevice* LeVkPhysicalDevices::Selected() const
 {
     if (m_devIndex < 0)
         LE_ERROR("A physical device has not been selected");
 
-    return m_devices[m_devIndex];
+    return &m_devices[m_devIndex];
 }

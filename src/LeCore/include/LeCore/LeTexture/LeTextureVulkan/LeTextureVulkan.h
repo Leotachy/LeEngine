@@ -4,18 +4,52 @@
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 
-class LeVulkanTexture : public LeTexture
+
+VkFilter GetVkFilterForLeFilterMode(LeTextureFilterMode LeFilterMode);
+VkSamplerMipmapMode GetVkSamplerMipmapModeForLeMipmapMode(LeTextureMipmapMode LeMipmapMode);
+VkSamplerAddressMode GetVkSamplerAddressModeForLeAddressMode(LeTextureAddressMode LeMipmapMode);
+
+
+struct LeVkTextureAttributes
+{
+
+    LeVkTextureAttributes(const LeTextureAttributes& BaseAttribs);
+
+    VkFilter MinFilter, MagFilter;
+    VkSamplerMipmapMode MipmapMode;
+    VkSamplerAddressMode AddressModeU, AddressModeV;
+
+};
+
+
+
+class LeTextureVk : public LeTexture
 {
 public:
-    LeVulkanTexture();
-    ~LeVulkanTexture();
+    LeTextureVk();
+    ~LeTextureVk();
+
+
+    virtual void SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height) override;
+    virtual void ClearPixels(void) override;
+    virtual LeBool ArePixelsSet(void) override;
+
+    VkFormat GetVkFormat(void) const { return m_format; }
+
+    VkDevice device;
+    const LeVkPhysicalDevice* physicalDevice;
+
+    LeVkMemoryBuffer2 stagingBuffer;
+    LeVkMemoryImage textureImage;
+    VkImageView view;
+    VkSampler sampler;
+
 
 private:
 
-    VkDevice m_device;
 
-    VkImage m_image;
-    VkDeviceMemory m_mem;
-    VkImageView m_view;
-    VkSampler m_sampler;
+
+    VkFormat m_format;
+
+
 };

@@ -3,6 +3,7 @@
 
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMatBlock.h"
 
 class LeMatBlockVk : public LeMatBlock
 {
@@ -22,6 +23,8 @@ private:
 
 	LeVkMemoryBuffer m_vb;
 	LeVkMemoryBuffer m_ib;
+
+
 };
 
 

@@ -4,12 +4,12 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
-#include "LeCore/LeRender/LeRenderVulkan/LePhysicalDevice.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeSwapchain.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVulkanQueue.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptorSet.h"
 #include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
+#include "LeCore/LeTexture/LeTextureVulkan/LeTextureVulkan.h"
 
 // Lukas Andrijauskas
 // 10th March, 2026
@@ -20,23 +20,102 @@ static GLFWwindow* s_pWindow = NULL;
 
 static VkDevice s_LogicalDevice = VK_NULL_HANDLE;
 static VkInstance s_Instance = VK_NULL_HANDLE;
-static VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
+static VkDebugUtilsMessengerEXT s_DebugMessenger = VK_NULL_HANDLE;
 static VkSurfaceKHR s_Surface = VK_NULL_HANDLE;
-static LeVulkanPhysicalDevices m_physicalDevices;
-static uint32 m_queueFamily = 0;
+static LeVkPhysicalDevices s_PhysicalDevices;
+static uint32 s_QueueFamily = 0;
 
 
-static LeSwapchain m_swapChain;
+static LeSwapchain s_Swapchain;
 
-static VkCommandPool m_cmdBufPool;
-static VkCommandPool m_cmdBufPoolTransient; // Command pool for short lived commands
-static LeVulkanQueue m_queue;
+static VkCommandPool s_CommandBufferPool;
+static VkCommandPool s_TransientCommandBufferPool; // Command pool for one shot commands
+static LeVulkanQueue s_Queue;
 
 
-struct FrameUniformBufferObject
+
+static void createCommandBuffers(uint32 Count, VkCommandBuffer* CommandBuffers)
 {
-	glm::mat4 MVP;
-};
+	VkCommandBufferAllocateInfo CommandBufferAllocateInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.pNext = NULL,
+		.commandPool = s_CommandBufferPool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = Count
+	};
+
+	VkResult res = vkAllocateCommandBuffers(s_LogicalDevice, &CommandBufferAllocateInfo, CommandBuffers);
+	LE_CHECK_VK_RESULT(res);
+
+}
+
+static void freeCommandBuffers(uint32 Count, VkCommandBuffer* pCmdBufs)
+{
+	vkFreeCommandBuffers(s_LogicalDevice, s_CommandBufferPool, Count, pCmdBufs);
+}
+
+
+static void beginCommandBuffer(VkCommandBuffer CommandBuffer)
+{
+	VkCommandBufferBeginInfo CommandBufferBeginInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.pInheritanceInfo = NULL
+	};
+
+	VkResult res = vkBeginCommandBuffer(CommandBuffer, &CommandBufferBeginInfo);
+	LE_CHECK_VK_RESULT(res, "vkBeginCommandBuffer");
+}
+
+static void endCommandBuffer(VkCommandBuffer CommandBuffer)
+{
+	VkResult res = vkEndCommandBuffer(CommandBuffer);
+	LE_CHECK_VK_RESULT(res, "vkEndCommandBuffer");
+}
+
+static void createOneShotCommandBuffers(uint32 Count, VkCommandBuffer* CommandBuffers)
+{
+
+	VkCommandBufferAllocateInfo cmdBufAllocInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.pNext = NULL,
+		.commandPool = s_TransientCommandBufferPool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = Count
+	};
+
+	VkResult res = vkAllocateCommandBuffers(s_LogicalDevice, &cmdBufAllocInfo, CommandBuffers);
+	LE_CHECK_VK_RESULT(res);
+}
+
+static void beginOneShotCommandBuffer(VkCommandBuffer CommandBuffer)
+{
+	VkCommandBufferBeginInfo BeginInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = NULL,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+		.pInheritanceInfo = NULL
+	};
+
+	VkResult res = vkBeginCommandBuffer(CommandBuffer, &BeginInfo);
+	LE_CHECK_VK_RESULT(res);
+}
+
+
+static void endOneShotCommandBuffer(VkCommandBuffer CommandBuffer)
+{
+	VkResult res = vkEndCommandBuffer(CommandBuffer);
+	LE_CHECK_VK_RESULT(res, "vkEndCommandBuffer");
+
+
+}
+
+
 
 
 static void createBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties,
@@ -67,7 +146,7 @@ static void createBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPr
 	OutMemoryBuffer->allocationSize = MemReqs.size;
 
 	// Step 3: get the memory type index
-	uint32 MemoryTypeIndex = LeVkGetMemoryTypeIndex(&m_physicalDevices.Selected().m_memProps, MemReqs.memoryTypeBits, Properties);
+	uint32 MemoryTypeIndex = LeVkGetMemoryTypeIndex(&s_PhysicalDevices.Selected()->m_memProps, MemReqs.memoryTypeBits, Properties);
 
 	// Step 4: allocate memory
 	VkMemoryAllocateInfo MemAllocInfo =
@@ -101,19 +180,25 @@ static void createUniformBuffers(size_t Size, std::vector<LeVkMemoryBuffer>& Out
 {
 
 	OutMemoryBuffers.clear();
-	OutMemoryBuffers.resize(m_swapChain.GetNumImages());
+	OutMemoryBuffers.resize(s_Swapchain.GetNumImages());
 
 	for (int i = 0; i < OutMemoryBuffers.size(); i++)
 		createUniformBuffer(Size, &OutMemoryBuffers[i]);
 
 }
 
+struct FrameUniformBufferObject
+{
+	glm::mat4 MVP;
+};
+
+
 struct CurrentRenderFrame
 {
 
 	void Init()
 	{
-		LeVkCreateCommandBuffers(s_LogicalDevice, m_cmdBufPool, 1, &CommandBuffer);
+		createCommandBuffers(1, &CommandBuffer);
 
 		ImageIndex = -1;
 
@@ -124,7 +209,7 @@ struct CurrentRenderFrame
 	}
 	void DeInit()
 	{
-		LeVkFreeCommandBuffers(s_LogicalDevice, m_cmdBufPool, 1, &CommandBuffer);
+		freeCommandBuffers(1, &CommandBuffer);
 		FrameUBOMemoryBuffer.DeAlloc();
 	}
 
@@ -139,6 +224,7 @@ struct CurrentRenderFrame
 };
 static CurrentRenderFrame s_CurrentRenderFrame[LE_MAX_FRAMES_IN_FLIGHT];
 static int32 s_FrameIndex;
+//static LeVkDescriptor
 
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -259,7 +345,7 @@ static void createDebugCallback()
 		LE_ERROR("Cannot find address of vkCreateDebugUtilsMessenger");
 	}
 
-	VkResult res = vkCreateDebugUtilsMessenger(s_Instance, &MessengerCreateInfo, NULL, &m_debugMessenger);
+	VkResult res = vkCreateDebugUtilsMessenger(s_Instance, &MessengerCreateInfo, NULL, &s_DebugMessenger);
 	LE_CHECK_VK_RESULT(res, "debug utils messenger");
 
 	LE_DEBUG_MESSAGE("Debug utils messenger created");
@@ -285,7 +371,7 @@ static void createLogicalDevice()
 		.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0, // must be zero
-		.queueFamilyIndex = m_queueFamily,
+		.queueFamilyIndex = s_QueueFamily,
 		.queueCount = 1,
 		.pQueuePriorities = &qPriorities[0]
 	};
@@ -297,18 +383,21 @@ static void createLogicalDevice()
 		VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
 	};
 
-	if (m_physicalDevices.Selected().m_features.geometryShader == VK_FALSE)
+	if (s_PhysicalDevices.Selected()->m_features.geometryShader == VK_FALSE)
 		LE_ERROR("The Geometry Shader is not supported!");
 
-	if (m_physicalDevices.Selected().m_features.tessellationShader == VK_FALSE)
+	if (s_PhysicalDevices.Selected()->m_features.tessellationShader == VK_FALSE)
 		LE_ERROR("The Tessellation Shader is not supported!");
+
+	if (s_PhysicalDevices.Selected()->m_features.samplerAnisotropy == VK_FALSE)
+		LE_ERROR("Sampler Anisotropy is not supported!");
 
 
 	VkPhysicalDeviceVulkan13Features vk13 =
 	{
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
 		.synchronization2 = VK_TRUE,
-		.dynamicRendering = VK_TRUE
+		.dynamicRendering = VK_TRUE,
 	};
 
 
@@ -320,6 +409,7 @@ static void createLogicalDevice()
 
 	features2.features.geometryShader = VK_TRUE;
 	features2.features.tessellationShader = VK_TRUE;
+	features2.features.samplerAnisotropy = VK_TRUE;
 
 	VkDeviceCreateInfo DeviceCreateInfo =
 	{
@@ -334,7 +424,7 @@ static void createLogicalDevice()
 		.ppEnabledExtensionNames = DevExts
 	};
 
-	VkResult res = vkCreateDevice(m_physicalDevices.Selected().m_physDevice, &DeviceCreateInfo, NULL, &s_LogicalDevice);
+	VkResult res = vkCreateDevice(s_PhysicalDevices.Selected()->m_physDevice, &DeviceCreateInfo, NULL, &s_LogicalDevice);
 	LE_CHECK_VK_RESULT(res, "Create logical device");
 
 	LE_DEBUG_MESSAGE("Logical device created");
@@ -368,10 +458,10 @@ static VkCommandPool createCommandBufferPool(VkCommandPoolCreateFlags Flags, uin
 static void copyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size)
 {
 
-	VkCommandBuffer copyCmdBuf;
-	LeVkCreateCommandBuffers(s_LogicalDevice, m_cmdBufPoolTransient, 1, &copyCmdBuf);
+	VkCommandBuffer CopyCommandBuffer;
+	createOneShotCommandBuffers(1, &CopyCommandBuffer);
+	beginOneShotCommandBuffer(CopyCommandBuffer);
 
-	LeVkBeginCommandBuffer(copyCmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	VkBufferCopy BufferCopy =
 	{
@@ -380,13 +470,33 @@ static void copyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size)
 		.size = Size
 	};
 
-	vkCmdCopyBuffer(copyCmdBuf, Src, Dst, 1, &BufferCopy);
+	vkCmdCopyBuffer(CopyCommandBuffer, Src, Dst, 1, &BufferCopy);
 
-	LeVkEndCommandBuffer(copyCmdBuf);
+	endOneShotCommandBuffer(CopyCommandBuffer);
 
-	m_queue.SubmitSync(copyCmdBuf);
+	// Need to wait because we dealloc buffer memory after this function call >:(
+	// FIXME
+	s_Queue.SubmitSync(CopyCommandBuffer);
+	s_Queue.WaitIdle();
 
-	m_queue.WaitIdle();
+}
+
+static void copyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkBuffer Src, uint32 width, uint32 height)
+{
+	VkBufferImageCopy Region =
+	{
+		.bufferOffset = 0,
+		.bufferRowLength = 0,
+		.bufferImageHeight = 0,
+		.imageSubresource = 
+		{
+			VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1
+		},
+		.imageOffset = {0, 0, 0},
+		.imageExtent = {width, height, 1}
+	};
+
+	vkCmdCopyBufferToImage(CommandBuffer, Src, Dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &Region);
 }
 
 
@@ -495,12 +605,12 @@ static void recreateSwapChain(void)
 	}
 
 
-	m_queue.WaitIdle();
+	s_Queue.WaitIdle();
 
 
 
-	m_swapChain.Destroy();
-	m_swapChain.Init(s_LogicalDevice, &m_physicalDevices.Selected(), s_Surface, m_queueFamily);
+	s_Swapchain.Destroy();
+	s_Swapchain.Init(s_LogicalDevice, s_PhysicalDevices.Selected(), s_Surface, s_QueueFamily);
 }
 
 
@@ -525,8 +635,8 @@ static LeBool refreshGraphicsPipelineForMatblock(LeMatBlockVk* pMbVk)
 	// Test if pipeline is still valid
 	LeGraphicsPipelineVkKey PipelineKey =
 	{
-		.NumImages = (int32)m_swapChain.GetNumImages(),
-		.RenderColFormat = m_swapChain.GetImageFormat(),
+		.NumImages = (int32)s_Swapchain.GetNumImages(),
+		.RenderColFormat = s_Swapchain.GetImageFormat(),
 		.ShaderHash = pShader->GetNameHash(),
 	};
 
@@ -548,8 +658,8 @@ static LeBool refreshGraphicsPipelineForMatblock(LeMatBlockVk* pMbVk)
 			LeShaderVk* pShaderVk = static_cast<LeShaderVk*>(pShader);
 			LE_DEBUG_ASSERT(pShaderVk);
 
-			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, m_swapChain.GetNumImages(),
-				pShaderVk, m_swapChain.GetImageFormat());
+			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, s_Swapchain.GetNumImages(),
+				pShaderVk, s_Swapchain.GetImageFormat());
 
 			LeVkGraphicsPipelineDictionary::Singleton()->Add(NewGraphicsPipeline);
 
@@ -603,6 +713,34 @@ static LeBool setupIndexBufferForMatBlock(LeMatBlockVk* pMbVk)
 }
 
 
+
+static void updateVkImage(VkCommandBuffer CommandBuffer, LeTextureVk* pTex)
+{
+
+	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pTex);
+
+	int BytesPerPixel = GetVkBytesPerTexFormat(pTex->GetVkFormat());
+
+	VkDeviceSize LayerSize = pTex->GetWidth() * pTex->GetHeight() * BytesPerPixel;
+	int LayerCount = 1;
+	VkDeviceSize ImageSize = LayerCount * LayerSize;
+
+	LeVkTransitionImageLayout(CommandBuffer, pTex->textureImage.image,
+		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		0, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+
+	copyBufferToImage(CommandBuffer, pTex->textureImage.image, pTex->stagingBuffer.buffer, pTex->GetWidth(), pTex->GetHeight());
+
+	LeVkTransitionImageLayout(CommandBuffer, pTex->textureImage.image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT,
+		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT);
+}
+
+
+
 void LeInitVulkan(const char* pAppName, GLFWwindow* pWindow)
 {
 	LE_DEBUG_ASSERT(pAppName);
@@ -613,15 +751,15 @@ void LeInitVulkan(const char* pAppName, GLFWwindow* pWindow)
 	createInstance(pAppName);
 	createDebugCallback();
 	createSurface(pWindow);
-	m_physicalDevices.Init(s_Instance, s_Surface);
-	m_queueFamily = m_physicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
+	s_PhysicalDevices.Init(s_Instance, s_Surface);
+	s_QueueFamily = s_PhysicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 	createLogicalDevice();
-	m_swapChain.Init(s_LogicalDevice, &m_physicalDevices.Selected(), s_Surface, m_queueFamily);
+	s_Swapchain.Init(s_LogicalDevice, s_PhysicalDevices.Selected(), s_Surface, s_QueueFamily);
 
 	LeVkInitDescriptorSets(s_LogicalDevice);
 
-	m_cmdBufPool = createCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_queueFamily);
-	m_cmdBufPoolTransient = createCommandBufferPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queueFamily);
+	s_CommandBufferPool = createCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, s_QueueFamily);
+	s_TransientCommandBufferPool = createCommandBufferPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, s_QueueFamily);
 
 	for (int32 i = 0; i < LE_MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -631,7 +769,7 @@ void LeInitVulkan(const char* pAppName, GLFWwindow* pWindow)
 
 	s_FrameIndex = 0;
 	
-	m_queue.Init(s_LogicalDevice, &m_swapChain, m_queueFamily, 0);
+	s_Queue.Init(s_LogicalDevice, &s_Swapchain, s_QueueFamily, 0);
 
 
 }
@@ -639,7 +777,7 @@ void LeInitVulkan(const char* pAppName, GLFWwindow* pWindow)
 void LeShutDownVulkan(void)
 {
 	// currently just this.. hack until I sort my world objects
-	m_queue.WaitIdle();
+	s_Queue.WaitIdle();
 }
 
 void LeDeInitVulkan(void)
@@ -649,21 +787,21 @@ void LeDeInitVulkan(void)
 	LeVkGraphicsPipelineDictionary::Singleton()->Purge();
 
 	// Destroy the render queue
-	m_queue.Destroy();
+	s_Queue.Destroy();
 
 	for (int32 i = 0; i < LE_MAX_FRAMES_IN_FLIGHT; i++)
 		s_CurrentRenderFrame[i].DeInit();
 
 	// Destroy command pool
-	vkDestroyCommandPool(s_LogicalDevice, m_cmdBufPoolTransient, NULL);
-	vkDestroyCommandPool(s_LogicalDevice, m_cmdBufPool, NULL);
+	vkDestroyCommandPool(s_LogicalDevice, s_TransientCommandBufferPool, NULL);
+	vkDestroyCommandPool(s_LogicalDevice, s_CommandBufferPool, NULL);
 
 	// Destroy descriptor sets
 
 	LeVkDeInitDescriptorSets();
 
 	// Destroy swapchain
-	m_swapChain.Destroy();
+	s_Swapchain.Destroy();
 
 	// Destroy logical device
 
@@ -672,7 +810,7 @@ void LeDeInitVulkan(void)
 
 	// Clear physical devices
 
-	m_physicalDevices.DeInit();
+	s_PhysicalDevices.DeInit();
 
 	// Destroy surface
 
@@ -691,7 +829,7 @@ void LeDeInitVulkan(void)
 	if (!vkDestroyDebugUtilsMessenger)
 		LE_ERROR("Cannot find address of vkDestroyDebugUtilsMessenger");
 
-	vkDestroyDebugUtilsMessenger(s_Instance, m_debugMessenger, NULL);
+	vkDestroyDebugUtilsMessenger(s_Instance, s_DebugMessenger, NULL);
 	LE_DEBUG_MESSAGE("Vulkan debug utils messenger destroyed");
 
 	// Destroy instance
@@ -705,19 +843,19 @@ LeBool LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 {
 	LE_DEBUG_ASSERT(pCam);
 
-	m_queue.WaitForFences(s_FrameIndex);
+	s_Queue.WaitForFences(s_FrameIndex);
 
 	CurrentRenderFrame* pRenderFrame = &s_CurrentRenderFrame[s_FrameIndex];
 	pRenderFrame->bFramebufferResized = bFramebufferResized;
 
-	pRenderFrame->ImageIndex = m_queue.AcquireNextImage(s_FrameIndex);
+	pRenderFrame->ImageIndex = s_Queue.AcquireNextImage(s_FrameIndex);
 	if (pRenderFrame->ImageIndex == -1)
 	{
 		recreateSwapChain();
 		return false;
 	}
 
-	m_queue.ResetFences(s_FrameIndex);
+	s_Queue.ResetFences(s_FrameIndex);
 
 	// Update frame UBOs
 
@@ -729,11 +867,11 @@ LeBool LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 	// Begin recording the command buffer
 
 	VkCommandBuffer pCommandBuffer = s_CurrentRenderFrame[s_FrameIndex].CommandBuffer;
-	LeVkBeginCommandBuffer(pCommandBuffer, 0);
+	beginCommandBuffer(pCommandBuffer);
 
 	// setup image barrier for clearing the color
 
-	LeVkTransitionImageLayout(pCommandBuffer, m_swapChain.GetImage(pRenderFrame->ImageIndex),
+	LeVkTransitionImageLayout(pCommandBuffer, s_Swapchain.GetImage(pRenderFrame->ImageIndex),
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_NONE,
@@ -742,13 +880,13 @@ LeBool LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
 
-	VkExtent2D swapchainExtent = m_swapChain.GetExtent();
+	VkExtent2D swapchainExtent = s_Swapchain.GetExtent();
 
 	VkClearValue ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 	VkRenderingAttachmentInfo colorAttachment{};
 	colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	colorAttachment.imageView = m_swapChain.GetImageView(pRenderFrame->ImageIndex);
+	colorAttachment.imageView = s_Swapchain.GetImageView(pRenderFrame->ImageIndex);
 	colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -848,7 +986,7 @@ LeBool LeVkEndRender(void)
 
 	// transition the image for presenting
 
-	LeVkTransitionImageLayout(pCommandBuffer, m_swapChain.GetImage(pRenderFrame->ImageIndex),
+	LeVkTransitionImageLayout(pCommandBuffer, s_Swapchain.GetImage(pRenderFrame->ImageIndex),
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
@@ -856,12 +994,12 @@ LeBool LeVkEndRender(void)
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
 
-	LeVkEndCommandBuffer(pCommandBuffer);
+	endCommandBuffer(pCommandBuffer);
 
-	m_queue.SubmitAsync(pCommandBuffer, pRenderFrame->ImageIndex, s_FrameIndex);
+	s_Queue.SubmitAsync(pCommandBuffer, pRenderFrame->ImageIndex, s_FrameIndex);
 
 
-	if (!m_queue.Present(pRenderFrame->ImageIndex, s_FrameIndex) || pRenderFrame->bFramebufferResized)
+	if (!s_Queue.Present(pRenderFrame->ImageIndex, s_FrameIndex) || pRenderFrame->bFramebufferResized)
 		recreateSwapChain();
 
 	s_FrameIndex++;
@@ -872,9 +1010,16 @@ LeBool LeVkEndRender(void)
 
 // global functions
 
-VkDevice LeGetVkLogicalDevice(void)
+VkDevice LeVkGetLogicalDevice(void)
 {
 	LE_DEBUG_ASSERT(s_LogicalDevice);
 	return s_LogicalDevice;
 }
 
+const LeVkPhysicalDevice* LeVkGetPhysicalDevice(void)
+{
+	const LeVkPhysicalDevice* pPhysicalDevice = s_PhysicalDevices.Selected();
+	LE_DEBUG_ASSERT(pPhysicalDevice);
+
+	return pPhysicalDevice;
+}

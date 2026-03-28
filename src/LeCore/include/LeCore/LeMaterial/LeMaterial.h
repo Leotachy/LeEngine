@@ -13,11 +13,12 @@ struct LeMaterialAttributes
 
 class LeMaterial : public LeRenderResource
 {
-
-public:
-
+protected:
 	LeMaterial();
-	~LeMaterial();
+public:
+	virtual ~LeMaterial();
+	static LeMaterial* Create(void);
+
 
 	void SetShader(LeShader* pShader) { m_pShader = pShader; }
 	LeShader* GetShader(void) const { return m_pShader; }

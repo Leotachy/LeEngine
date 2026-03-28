@@ -45,6 +45,6 @@ void LeVkMemoryBuffer::Update(const void* pData, size_t Size)
 	void* pMem = NULL;
 	VkResult res = vkMapMemory(device, mem, 0, Size, 0, &pMem);
 	LE_CHECK_VK_RESULT(res, "vkMapMemory");
-	memcpy(pMem, pData, Size);
+	LeMemcpy(pMem, pData, Size);
 	vkUnmapMemory(device, mem);
 }

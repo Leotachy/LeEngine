@@ -14,10 +14,21 @@ struct LeVkMemoryBuffer
 
     void Update(const void* pData, size_t Size);
 
-    VkDevice device;
+    VkDevice device = VK_NULL_HANDLE;
 
-    VkBuffer buffer;
-    VkDeviceMemory mem;
-    VkDeviceSize allocationSize;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceMemory mem = VK_NULL_HANDLE;
+    VkDeviceSize allocationSize = 0;
 
+};
+
+// New version that's more intuitive
+struct LeVkMemoryBuffer2
+{
+
+    VkDevice device = VK_NULL_HANDLE;
+
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceMemory mem = VK_NULL_HANDLE;
+    VkDeviceSize allocationSize = 0;
 };

@@ -138,6 +138,7 @@ int main(void)
 
 	int32 w, h, ch;
 	void* pPixelData = stbi_load(TESTAPP_RESOURCES_PATH "textures/awesomeface.png", &w, &h, &ch, 4);
+	stbi_image_free(pPixelData);
 
 	LE_DEBUG_ASSERT(ch == 4);
 

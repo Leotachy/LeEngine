@@ -2,8 +2,8 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
-#include "LeCore/LeRender/LeRenderVulkan/LePhysicalDevice.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeSwapchain.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 
 static VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& PresentModes)
 {
@@ -51,37 +51,6 @@ static VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkS
 	return SurfaceFormats[0];
 }
 
-static VkImageView CreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
-	VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels)
-{
-	VkImageViewCreateInfo ViewInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.image = Image,
-		.viewType = ViewType,
-		.format = Format,
-		.components = {
-			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.a = VK_COMPONENT_SWIZZLE_IDENTITY
-		},
-		.subresourceRange = {
-			.aspectMask = AspectFlags,
-			.baseMipLevel = 0,
-			.levelCount = mipLevels,
-			.baseArrayLayer = 0,
-			.layerCount = LayerCount
-		}
-	};
-
-	VkImageView ImageView;
-	VkResult res = vkCreateImageView(Device, &ViewInfo, NULL, &ImageView);
-	LE_CHECK_VK_RESULT(res, "vkCreateImageView");
-	return ImageView;
-}
 
 LeSwapchain::LeSwapchain()
 {
@@ -99,7 +68,7 @@ LeSwapchain::~LeSwapchain()
 {
 }
 
-void LeSwapchain::Init(VkDevice Device, const LePhysicalDevice* pPhysicalDevice,
+void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevice,
 	VkSurfaceKHR Surface, uint32 QueueFamily)
 {
 
@@ -173,7 +142,7 @@ void LeSwapchain::Init(VkDevice Device, const LePhysicalDevice* pPhysicalDevice,
 	int MipLevels = 1;
 	for (uint32 i = 0; i < NumSwapChainImages; i++)
 	{
-		m_imageViews[i] = CreateImageView(Device, m_images[i], SurfaceFormat.format,
+		m_imageViews[i] = LeVkCreateImageView(Device, m_images[i], SurfaceFormat.format,
 			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, LayerCount, MipLevels);
 	}
 
@@ -187,7 +156,7 @@ void LeSwapchain::Destroy()
 
 	for (uint32 i = 0; i < m_numImages; i++)
 	{
-		vkDestroyImageView(m_device, m_imageViews[i], NULL);
+		LeVkDestroyImageView(m_device, m_imageViews[i]);
 		m_imageViews[i] = NULL;
 	}
 		

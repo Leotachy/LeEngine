@@ -23,7 +23,7 @@ static std::vector<LeByte> readShaderBinaryFile(const char* pShaderBinaryPath)
 
 LeShaderVk::LeShaderVk(const LeChar* name, const LeChar* pShaderFilepath) : LeShader(name, pShaderFilepath)
 {
-	m_Device = LeGetVkLogicalDevice();
+	m_Device = LeVkGetLogicalDevice();
 	LE_DEBUG_ASSERT(m_Device);
 
 	std::vector<LeByte> bin = readShaderBinaryFile(pShaderFilepath);
