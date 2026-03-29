@@ -164,9 +164,9 @@ int main(void)
 		processInput(pWindow, deltaTime);
 
 
-		if (LeRenderInterface::LeBeginRender(pCam, s_bFramebufferResized))
-			if (LeRenderInterface::LeRender(&Mesh))
-				LeRenderInterface::LeEndRender();
+		if (LeRenderInterface::BeginRender(pCam, s_bFramebufferResized))
+			if (LeRenderInterface::Render(&Mesh))
+				LeRenderInterface::EndRender();
 
 		s_bFramebufferResized = false;
 	}

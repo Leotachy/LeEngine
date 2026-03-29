@@ -140,7 +140,7 @@ void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevic
 	int MipLevels = 1;
 	for (uint32 i = 0; i < NumSwapChainImages; i++)
 	{
-		m_imageViews[i] = LeVkUtils::LeVkCreateImageView(Device, m_images[i], SurfaceFormat.format,
+		m_imageViews[i] = LeVkUtils::CreateImageView(Device, m_images[i], SurfaceFormat.format,
 			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, LayerCount, MipLevels);
 	}
 
@@ -154,7 +154,7 @@ void LeSwapchain::DeInit()
 
 	for (uint32 i = 0; i < m_numImages; i++)
 	{
-		LeVkUtils::LeVkDestroyImageView(m_device, m_imageViews[i]);
+		LeVkUtils::DestroyImageView(m_device, m_imageViews[i]);
 		m_imageViews[i] = NULL;
 	}
 		

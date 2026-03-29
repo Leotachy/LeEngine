@@ -30,21 +30,21 @@ typedef LeBool(*LeEndRenderFunc)(void);
 class LeRenderInterface
 {
 public:
-	static LeRenderApi LeGetRenderApi(void);
+	static LeRenderApi GetRenderApi(void);
 
-	static void LeInitRenderer(InitRendererParams& params);
-	static void LeShutdownRenderer();
-	static void LeDeInitRenderer(void);
+	static void InitRenderer(InitRendererParams& params);
+	static void ShutdownRenderer();
+	static void InitRenderer(void);
 
-	static LeBool LeBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
-	static LeBool LeRender(LeMesh* pMesh);
-	static LeBool LeEndRender(void);
+	static LeBool BeginRender(LeCamera* pCam, LeBool bFramebufferResized);
+	static LeBool Render(LeMesh* pMesh);
+	static LeBool EndRender(void);
 
 private:
 
-	static LeBool LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
-	static LeBool LeVkRender(LeMesh* pMesh);
-	static LeBool LeVkEndRender(void);
+	static LeBool VkBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
+	static LeBool VkRender(LeMesh* pMesh);
+	static LeBool VkEndRender(void);
 
 	static LeRenderApi RenderApi;
 

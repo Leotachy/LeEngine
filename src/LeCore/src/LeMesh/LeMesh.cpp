@@ -20,7 +20,7 @@ LeMatBlock::~LeMatBlock()
 LeMatBlock* LeMatBlock::Create(void)
 {
 
-	switch (LeRenderInterface::LeGetRenderApi())
+	switch (LeRenderInterface::GetRenderApi())
 	{
 	case LeRenderApi::LE_RENDER_API_VULKAN:
 		return new LeMatBlockVk();

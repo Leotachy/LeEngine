@@ -110,7 +110,7 @@ void LeVkCore::DeInit(void)
 	{
 		LeVkCurrentRenderFrame& CurrentRenderFrame = m_CurrentRenderFrame[i];
 		FreeCommandBuffers(1, &CurrentRenderFrame.CommandBuffer);
-		LeVkUtils::LeVkDestroyBuffer(&CurrentRenderFrame.FrameUBOMemoryBuffer);
+		LeVkUtils::DestroyBuffer(&CurrentRenderFrame.FrameUBOMemoryBuffer);
 	}
 
 	// DeInit command pool
@@ -181,7 +181,7 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 
 	pRenderFrame->FrameUBO.MVP = *pCam->GetViewProjMatrix();
 
-	LeVkUtils::LeVkUpdateBuffer(&m_CurrentRenderFrame[m_FrameIndex].FrameUBOMemoryBuffer,
+	LeVkUtils::UpdateBuffer(&m_CurrentRenderFrame[m_FrameIndex].FrameUBOMemoryBuffer,
 		&m_CurrentRenderFrame[m_FrameIndex].FrameUBO,
 		sizeof(m_CurrentRenderFrame[m_FrameIndex].FrameUBO));
 
@@ -192,7 +192,7 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 
 	// setup image barrier for clearing the color
 
-	LeVkUtils::LeVkTransitionImageLayout(pCommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+	LeVkUtils::TransitionImageLayout(pCommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_NONE,
@@ -308,7 +308,7 @@ LeBool LeVkCore::LeVkEndRender(void)
 
 	// transition the image for presenting
 
-	LeVkUtils::LeVkTransitionImageLayout(pCommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+	LeVkUtils::TransitionImageLayout(pCommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
@@ -451,7 +451,7 @@ void LeVkCore::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemor
 	OutMemoryBuffer->allocationSize = MemReqs.size;
 
 	// Step 3: get the memory type index
-	uint32 MemoryTypeIndex = LeVkUtils::LeVkGetMemoryTypeIndex(&m_physicalDevices.Selected()->m_memProps, MemReqs.memoryTypeBits, Properties);
+	uint32 MemoryTypeIndex = LeVkUtils::GetMemoryTypeIndex(&m_physicalDevices.Selected()->m_memProps, MemReqs.memoryTypeBits, Properties);
 
 	// Step 4: allocate memory
 	VkMemoryAllocateInfo MemAllocInfo =
@@ -761,7 +761,7 @@ void LeVkCore::SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryB
 
 	if (OutMemoryBuffer->allocationSize && Size > OutMemoryBuffer->allocationSize)
 	{
-		LeVkUtils::LeVkDestroyBuffer(OutMemoryBuffer);
+		LeVkUtils::DestroyBuffer(OutMemoryBuffer);
 	}
 
 	if (!OutMemoryBuffer->allocationSize)
@@ -808,7 +808,7 @@ void LeVkCore::SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuf
 	vkUnmapMemory(m_logicalDevice, StagingVB.mem);
 	if (OutMemoryBuffer->allocationSize && Size > OutMemoryBuffer->allocationSize)
 	{
-		LeVkUtils::LeVkDestroyBuffer(OutMemoryBuffer);
+		LeVkUtils::DestroyBuffer(OutMemoryBuffer);
 	}
 
 	if (!OutMemoryBuffer->allocationSize)
@@ -953,14 +953,14 @@ void LeVkCore::UpdateVkImage(VkCommandBuffer CommandBuffer, LeTextureVk* pTex)
 	int LayerCount = 1;
 	VkDeviceSize ImageSize = LayerCount * LayerSize;
 
-	LeVkUtils::LeVkTransitionImageLayout(CommandBuffer, pTex->textureImage.image,
+	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->textureImage.image,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		0, VK_ACCESS_2_TRANSFER_WRITE_BIT,
 		VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
 
 	copyBufferToImage(CommandBuffer, pTex->textureImage.image, pTex->stagingBuffer.buffer, pTex->GetWidth(), pTex->GetHeight());
 
-	LeVkUtils::LeVkTransitionImageLayout(CommandBuffer, pTex->textureImage.image,
+	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->textureImage.image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT,
 		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT);

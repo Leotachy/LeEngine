@@ -17,28 +17,28 @@ class LeVkUtils
 {
 public:
 
-	static void LeVkCreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
+	static void CreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
 		VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryBuffer* OutMemoryBuffer);
-	static void LeVkUpdateBuffer(LeVkMemoryBuffer* OutMemoryBuffer, const void* pData, size_t Size);
-	static void LeVkDestroyBuffer(LeVkMemoryBuffer* OutMemoryBuffer);
+	static void UpdateBuffer(LeVkMemoryBuffer* OutMemoryBuffer, const void* pData, size_t Size);
+	static void DestroyBuffer(LeVkMemoryBuffer* OutMemoryBuffer);
 
-	static void LeVkCreateImage(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
+	static void CreateImage(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
 		uint32 width, uint32 height, VkFormat format,
 		VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage* OutMemoryImage);
-	static void LeVkDestroyImage(LeVkMemoryImage* OutMemoryImage);
+	static void DestroyImage(LeVkMemoryImage* OutMemoryImage);
 
-	static void LeVkTransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+	static void TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
 		VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask);
 
-	static VkImageView LeVkCreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
+	static VkImageView CreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
 		VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels);
-	static void LeVkDestroyImageView(VkDevice Device, VkImageView ImageView);
+	static void DestroyImageView(VkDevice Device, VkImageView ImageView);
 
-	static VkSampler LeVkCreateSampler(VkDevice Device, const LeVkTextureAttributes& Attribs, LeBool bEnableAnisotropy = true, float32 fMaxAnisotropy = 1.0f);
-	static void LeVkDestroySampler(VkDevice Device, VkSampler Sampler);
+	static VkSampler CreateSampler(VkDevice Device, const LeVkTextureAttributes& Attribs, LeBool bEnableAnisotropy = true, float32 fMaxAnisotropy = 1.0f);
+	static void DestroySampler(VkDevice Device, VkSampler Sampler);
 
-	static uint32 LeVkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMemProps,
+	static uint32 GetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMemProps,
 		uint32 MemTypeBitsMask, VkMemoryPropertyFlags ReqMemPropFlags);
 
 	static const LeChar* GetVkDebugUtilsMessageSeverityStr(VkDebugUtilsMessageSeverityFlagBitsEXT Severity);

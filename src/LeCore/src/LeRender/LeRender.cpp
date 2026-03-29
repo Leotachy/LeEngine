@@ -3,12 +3,12 @@
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 
-LeRenderApi LeRenderInterface::LeGetRenderApi(void)
+LeRenderApi LeRenderInterface::GetRenderApi(void)
 {
 	return RenderApi;
 }
 
-void LeRenderInterface::LeInitRenderer(InitRendererParams& params)
+void LeRenderInterface::InitRenderer(InitRendererParams& params)
 {
 
 	RenderApi = params.api;
@@ -22,15 +22,15 @@ void LeRenderInterface::LeInitRenderer(InitRendererParams& params)
 	case LeRenderApi::LE_RENDER_API_VULKAN:
 		LeVkCore::Singleton().Init(params.pAppName, params.pWindow);
 
-		BeginRenderFunc = LeVkBeginRender;
-		RenderFunc = LeVkRender;
-		EndRenderFunc = LeVkEndRender;
+		BeginRenderFunc = VkBeginRender;
+		RenderFunc = VkRender;
+		EndRenderFunc = VkEndRender;
 
 		break;
 	}
 }
 
-void LeRenderInterface::LeShutdownRenderer()
+void LeRenderInterface::ShutdownRenderer()
 {
 	switch (RenderApi)
 	{
@@ -43,7 +43,7 @@ void LeRenderInterface::LeShutdownRenderer()
 	}
 }
 
-void LeRenderInterface::LeDeInitRenderer(void)
+void LeRenderInterface::InitRenderer(void)
 {
 	switch (RenderApi)
 	{
@@ -63,32 +63,32 @@ void LeRenderInterface::LeDeInitRenderer(void)
 	RenderApi = LeRenderApi::LE_RENDER_API_NONE;
 }
 
-LeBool LeRenderInterface::LeBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
+LeBool LeRenderInterface::BeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 {
 	return BeginRenderFunc(pCam, bFramebufferResized);
 }
 
-LeBool LeRenderInterface::LeRender(LeMesh* pMesh)
+LeBool LeRenderInterface::Render(LeMesh* pMesh)
 {
 	return RenderFunc(pMesh);
 }
 
-LeBool LeRenderInterface::LeEndRender(void)
+LeBool LeRenderInterface::EndRender(void)
 {
 	return EndRenderFunc();
 }
 
-LeBool LeRenderInterface::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
+LeBool LeRenderInterface::VkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 {
 	return LeVkCore::Singleton().LeVkBeginRender(pCam, bFramebufferResized);
 }
 
-LeBool LeRenderInterface::LeVkRender(LeMesh* pMesh)
+LeBool LeRenderInterface::VkRender(LeMesh* pMesh)
 {
 	return LeVkCore::Singleton().LeVkRender(pMesh);
 }
 
-LeBool LeRenderInterface::LeVkEndRender(void)
+LeBool LeRenderInterface::VkEndRender(void)
 {
 	return LeVkCore::Singleton().LeVkEndRender();
 }

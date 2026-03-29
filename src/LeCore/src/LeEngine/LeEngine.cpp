@@ -5,15 +5,15 @@
 
 void LeEngineInit(InitEngineParams& Params)
 {
-	LeRenderInterface::LeInitRenderer(Params.RendererParams);
+	LeRenderInterface::InitRenderer(Params.RendererParams);
 }
 
 void LeEngineShutDown(void)
 {
-	LeRenderInterface::LeShutdownRenderer();
+	LeRenderInterface::ShutdownRenderer();
 }
 
 void LeEngineDeInit(void)
 {
-	LeRenderInterface::LeDeInitRenderer();
+	LeRenderInterface::InitRenderer();
 }

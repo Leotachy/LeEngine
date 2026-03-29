@@ -82,23 +82,23 @@ void LeTextureVk::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
 
     VkDeviceSize imageSize = width * height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
 
-    LeVkUtils::LeVkCreateBuffer(device, &physicalDevice->m_memProps, imageSize,
+    LeVkUtils::CreateBuffer(device, &physicalDevice->m_memProps, imageSize,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &stagingBuffer);
-    LeVkUtils::LeVkUpdateBuffer(&stagingBuffer, pPixels, imageSize);
+    LeVkUtils::UpdateBuffer(&stagingBuffer, pPixels, imageSize);
     
     // Make the image itself
-    LeVkUtils::LeVkCreateImage(device, &physicalDevice->m_memProps,
+    LeVkUtils::CreateImage(device, &physicalDevice->m_memProps,
         m_width, m_height, m_format,
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &textureImage);
    
     // And the image view :3
-    view = LeVkUtils::LeVkCreateImageView(device, textureImage.image, m_format,
+    view = LeVkUtils::CreateImageView(device, textureImage.image, m_format,
         VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
     LE_DEBUG_ASSERT(view != VK_NULL_HANDLE);
 
     // And the sampler
     LeVkTextureAttributes VkTextureAttribs(m_attribs);
-    sampler = LeVkUtils::LeVkCreateSampler(device, VkTextureAttribs, true, physicalDevice->m_devProps.limits.maxSamplerAnisotropy);
+    sampler = LeVkUtils::CreateSampler(device, VkTextureAttribs, true, physicalDevice->m_devProps.limits.maxSamplerAnisotropy);
     LE_DEBUG_ASSERT(sampler != VK_NULL_HANDLE);
 
     AddFlags(TEXTURE_PIXELS_DIRTY);
@@ -107,14 +107,14 @@ void LeTextureVk::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
 
 void LeTextureVk::ClearPixels(void)
 {
-    LeVkUtils::LeVkDestroySampler(device, sampler);
+    LeVkUtils::DestroySampler(device, sampler);
     sampler = VK_NULL_HANDLE;
 
-    LeVkUtils::LeVkDestroyImageView(device, view);
+    LeVkUtils::DestroyImageView(device, view);
     view = VK_NULL_HANDLE;
 
-    LeVkUtils::LeVkDestroyImage(&textureImage);
-    LeVkUtils::LeVkDestroyBuffer(&stagingBuffer);
+    LeVkUtils::DestroyImage(&textureImage);
+    LeVkUtils::DestroyBuffer(&stagingBuffer);
 }
 
 LeBool LeTextureVk::ArePixelsSet(void)
