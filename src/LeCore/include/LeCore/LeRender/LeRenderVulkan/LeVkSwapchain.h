@@ -6,7 +6,7 @@
 *	Wrapper for VkSwapchainKHR
 */
 
-#include "LeCore/LeRender/LeRenderVulkan/LePhysicalDevice.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 
 class LeSwapchain
 {
@@ -18,7 +18,7 @@ public:
 	~LeSwapchain();
 
 	void Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevice, VkSurfaceKHR Surface, uint32 QueueFamily);
-	void Destroy(void);
+	void DeInit(void);
 
 	VkSwapchainKHR GetSwapchain(void) { return m_swapChain; }
 

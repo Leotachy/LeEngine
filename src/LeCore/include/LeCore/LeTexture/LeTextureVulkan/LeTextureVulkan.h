@@ -3,6 +3,7 @@
 
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryImage.h"
 
 
 VkFilter GetVkFilterForLeFilterMode(LeTextureFilterMode LeFilterMode);
@@ -39,7 +40,7 @@ public:
     VkDevice device;
     const LeVkPhysicalDevice* physicalDevice;
 
-    LeVkMemoryBuffer2 stagingBuffer;
+    LeVkMemoryBuffer stagingBuffer;
     LeVkMemoryImage textureImage;
     VkImageView view;
     VkSampler sampler;

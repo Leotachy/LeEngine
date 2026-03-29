@@ -19,12 +19,12 @@ LeVkDescriptorSetMatBlock::~LeVkDescriptorSetMatBlock()
 }
 
 
-void LeVkDescriptorSetMatBlock::UpdateSets(LeVkMemoryBuffer2* ModelMatrice)
+void LeVkDescriptorSetMatBlock::UpdateSets(LeVkMemoryBuffer* ModelMatrice)
 {
 
 	LE_DEBUG_ASSERT(ModelMatrice);
 
-	uint32 NumSets = m_descriptorSets.size();
+	uint32 NumSets = uint32(m_descriptorSets.size());
 	for (uint32 i = 0; i < NumSets; i++)
 	{
 

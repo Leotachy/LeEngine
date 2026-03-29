@@ -1,17 +1,16 @@
 
 #include "LeCore/LeCore.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
 
 
 LeMatBlockVk::LeMatBlockVk()
 {
-	m_pGraphicsPipeline = NULL;
 }
 
 
 LeMatBlockVk::~LeMatBlockVk()
 {
-
 }
 
 static const VkVertexInputBindingDescription s_BindingDescription =

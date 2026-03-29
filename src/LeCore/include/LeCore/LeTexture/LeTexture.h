@@ -11,21 +11,21 @@
 
 enum LeTextureFilterMode
 {
-	NONE = 0,
+	FILTER_NONE = 0,
 	FILTER_NEAREST,
 	FILTER_LINEAR
 };
 
 enum LeTextureMipmapMode
 {
-	NONE = 0,
+	MIPMAP_NONE = 0,
 	MIPMAP_NEAREST,
 	MIPMAP_LINEAR
 };
 
 enum LeTextureAddressMode
 {
-	NONE = 0,
+	ADDRESS_NONE = 0,
 	ADDRESS_REPEAT,     /* UV wraps (tiles)							 */
 	ADDRESS_MIRROR,     /* Alternate UV is flipped					 */
 	ADDRESS_CLAMP,      /* UV is clamped to 0-1						 */

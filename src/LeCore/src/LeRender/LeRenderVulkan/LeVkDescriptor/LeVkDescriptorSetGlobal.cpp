@@ -19,12 +19,12 @@ LeVkDescriptorSetGlobal::~LeVkDescriptorSetGlobal()
 }
 
 
-void LeVkDescriptorSetGlobal::UpdateSets(LeVkMemoryBuffer2* MvpMatrices)
+void LeVkDescriptorSetGlobal::UpdateSets(LeVkMemoryBuffer* MvpMatrices)
 {
 
 	LE_DEBUG_ASSERT(MvpMatrices);
 
-	uint32 NumSets = m_descriptorSets.size();
+	uint32 NumSets = uint32(m_descriptorSets.size());
 	for (uint32 i = 0; i < NumSets; i++)
 	{
 

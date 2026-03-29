@@ -24,5 +24,5 @@ LeVkDescriptorPoolMatBlock::LeVkDescriptorPoolMatBlock(uint32 DescriptorCount)
 
 
 	VkResult res = vkCreateDescriptorPool(m_device, &PoolInfo, NULL, &m_descriptorPool);
-	LE_CHECK_VK_RESULT(res, "vkCreateDescriptorPool");
+	LE_CHECK_VK_RESULT(res);
 }

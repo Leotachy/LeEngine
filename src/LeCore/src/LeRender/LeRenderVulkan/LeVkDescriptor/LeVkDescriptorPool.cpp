@@ -7,7 +7,7 @@
 LeVkDescriptorPool::LeVkDescriptorPool()
 {
 	m_type = LeVkDescriptorPoolType::NONE;
-	m_device = LeVkGetLogicalDevice();
+	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
 	m_descriptorPool = VK_NULL_HANDLE;
 }
 

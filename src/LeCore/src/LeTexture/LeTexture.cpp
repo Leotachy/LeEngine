@@ -1,6 +1,6 @@
 
-
 #include "LeCore/LeCore.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeTexture/LeTexture.h"
 #include "LeCore/LeTexture/LeTextureVulkan/LeTextureVulkan.h"
 
@@ -16,9 +16,9 @@ LeTexture::~LeTexture()
 
 LeTexture* LeTexture::Create(void)
 {
-	switch (LeGetRenderApi())
+	switch (LeRenderInterface::LeGetRenderApi())
 	{
-	case LeRenderApi::Vulkan:
+	case LeRenderApi::LE_RENDER_API_VULKAN:
 		return new LeTextureVk();
 		break;
 	}

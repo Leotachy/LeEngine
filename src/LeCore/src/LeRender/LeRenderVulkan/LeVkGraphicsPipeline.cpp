@@ -1,7 +1,7 @@
 
 #include "LeCore/LeCore.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptorSet.h"
 #include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
 
 LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShaderVk* pShader, VkFormat RenderColFormat)
@@ -12,7 +12,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShader
 
 	m_key = key;
 
-	m_device = LeVkGetLogicalDevice();
+	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
 
 	const VkPipelineShaderStageCreateInfo ShaderStageInfo[] =
 	{
@@ -111,14 +111,14 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShader
 	VkPipelineLayoutCreateInfo LayoutInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.setLayoutCount = (uint32)LeVkGetNumDescriptorSetLayouts(),
-		.pSetLayouts = LeVkGetDescriptorSetLayouts()
+		//.setLayoutCount = (uint32)LeVkGetNumDescriptorSetLayouts(),
+		//.pSetLayouts = LeVkGetDescriptorSetLayouts()
 	};
 
 
 
 	VkResult res = vkCreatePipelineLayout(m_device, &LayoutInfo, NULL, &m_pipelineLayout);
-	LE_CHECK_VK_RESULT(res, "vkCreatePipelineLayout");
+	LE_CHECK_VK_RESULT(res);
 
 	// Dynamic rendering config
 
@@ -152,7 +152,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShader
 	};
 
 	res = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &PipelineInfo, NULL, &m_pipeline);
-	LE_CHECK_VK_RESULT(res, "vkCreateGraphicsPipelines");
+	LE_CHECK_VK_RESULT(res);
 
 	LE_DEBUG_MESSAGE("Graphics pipeline created");
 

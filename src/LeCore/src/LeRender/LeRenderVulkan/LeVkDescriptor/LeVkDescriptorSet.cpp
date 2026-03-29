@@ -6,7 +6,7 @@
 LeVkDescriptorSet::LeVkDescriptorSet(VkDescriptorPool DescriptorPool, uint32 Count)
 {
 
-	m_device = LeVkGetLogicalDevice();
+	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
 
 	m_descriptorSetLayout = VK_NULL_HANDLE;
 	m_descriptorSets.clear();
@@ -33,7 +33,7 @@ void LeVkDescriptorSet::CreateLayout(void)
 	VkDescriptorSetLayoutCreateInfo LayoutInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-		.bindingCount = Bindings.size(),
+		.bindingCount = uint32(Bindings.size()),
 		.pBindings = Bindings.data()
 	};
 

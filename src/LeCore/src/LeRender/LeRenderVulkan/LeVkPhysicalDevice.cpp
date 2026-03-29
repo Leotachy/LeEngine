@@ -1,7 +1,7 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
-#include "LeCore/LeRender/LeRenderVulkan/LePhysicalDevice.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 
 
 static void PrintImageUsageFlags(const VkImageUsageFlags& flags)
@@ -69,7 +69,7 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
     uint32 NumDevices = 0;
 
     VkResult res = vkEnumeratePhysicalDevices(Instance, &NumDevices, NULL);
-    LE_CHECK_VK_RESULT(res, "vkEnumeratePhysicalDevices error (1)");
+    LE_CHECK_VK_RESULT(res);
 
     LE_DEBUG_MESSAGE("Num physical devices %d", NumDevices);
 
@@ -79,7 +79,7 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
     Devices.resize(NumDevices);
 
     res = vkEnumeratePhysicalDevices(Instance, &NumDevices, Devices.data());
-    LE_CHECK_VK_RESULT(res, "vkEnumeratePhysicalDevices error (2)");
+    LE_CHECK_VK_RESULT(res);
 
     for (uint32 i = 0; i < NumDevices; i++)
     {
@@ -117,18 +117,18 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
                 (Flags & VK_QUEUE_SPARSE_BINDING_BIT) ? "Yes" : "No");
 
             res = vkGetPhysicalDeviceSurfaceSupportKHR(PhysDev, q, Surface, &(m_devices[i].m_qSupportsPresent[q]));
-            LE_CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfaceSupportKHR error");
+            LE_CHECK_VK_RESULT(res);
         }
 
         uint32 NumFormats = 0;
         res = vkGetPhysicalDeviceSurfaceFormatsKHR(PhysDev, Surface, &NumFormats, NULL);
-        LE_CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfaceFormatsKHR (1)");
+        LE_CHECK_VK_RESULT(res);
         LE_DEBUG_ASSERT(NumFormats > 0);
 
         m_devices[i].m_surfaceFormats.resize(NumFormats);
 
         res = vkGetPhysicalDeviceSurfaceFormatsKHR(PhysDev, Surface, &NumFormats, m_devices[i].m_surfaceFormats.data());
-        LE_CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfaceFormatsKHR (2)");
+        LE_CHECK_VK_RESULT(res);
 
         for (uint32 j = 0; j < NumFormats; j++) {
             const VkSurfaceFormatKHR& SurfaceFormat = m_devices[i].m_surfaceFormats[j];
@@ -136,21 +136,21 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
         }
 
         res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhysDev, Surface, &(m_devices[i].m_surfaceCaps));
-        LE_CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+        LE_CHECK_VK_RESULT(res);
 
         PrintImageUsageFlags(m_devices[i].m_surfaceCaps.supportedUsageFlags);
 
         uint32 NumPresentModes = 0;
 
         res = vkGetPhysicalDeviceSurfacePresentModesKHR(PhysDev, Surface, &NumPresentModes, NULL);
-        LE_CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfacePresentModesKHR (1) error");
+        LE_CHECK_VK_RESULT(res);
 
         LE_DEBUG_ASSERT(NumPresentModes != 0);
 
         m_devices[i].m_presentModes.resize(NumPresentModes);
 
         res = vkGetPhysicalDeviceSurfacePresentModesKHR(PhysDev, Surface, &NumPresentModes, m_devices[i].m_presentModes.data());
-        LE_CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfacePresentModesKHR (2) error");
+        LE_CHECK_VK_RESULT(res);
 
         LE_DEBUG_MESSAGE("Number of presentation modes %d", NumPresentModes);
 

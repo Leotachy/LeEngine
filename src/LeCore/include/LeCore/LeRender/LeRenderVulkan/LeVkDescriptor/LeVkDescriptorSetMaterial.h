@@ -8,7 +8,7 @@ public:
 	LeVkDescriptorSetMaterial(VkDescriptorPool DescriptorPool, uint32 Count);
 	virtual ~LeVkDescriptorSetMaterial();
 
-	void UpdateSets(LeVkMemoryBuffer2* ModelMatrices);
+	void UpdateSets(LeVkMemoryBuffer* ModelMatrices);
 
 protected:
 

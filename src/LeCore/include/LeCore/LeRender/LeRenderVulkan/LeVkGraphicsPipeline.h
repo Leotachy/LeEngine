@@ -13,10 +13,10 @@ public:
 	LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShaderVk* pShader, VkFormat RenderColFormat);
 	~LeVkGraphicsPipeline();
 
-	uint64 GetKey() { return m_key; }
+	uint64 GetKey() const { return m_key; }
 
-	VkPipeline GetPipeline() { return m_pipeline; }
-	VkPipelineLayout GetPipelineLayout() { return m_pipelineLayout; }
+	VkPipeline GetPipeline() const { return m_pipeline; }
+	VkPipelineLayout GetPipelineLayout() const { return m_pipelineLayout; }
 
 private:
 

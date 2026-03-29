@@ -10,7 +10,7 @@ public:
 	~LeVkDescriptorSetGlobal();
 
 
-	void UpdateSets(LeVkMemoryBuffer2* MvpMatrices);
+	void UpdateSets(LeVkMemoryBuffer* MvpMatrices);
 
 protected:
 

@@ -5,55 +5,47 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryImage.h"
 #include "LeCore/LeTexture/LeTextureVulkan/LeTextureVulkan.h"
 
-#define LE_CHECK_VK_RESULT(res, msg)									\
-	if (res != VK_SUCCESS)												\
-    {																	\
-        LE_DEBUG_ERROR("Bad vulkan result - %s, code %x", msg, res);	\
-	}
 
-#define LE_CHECK_VK_RESULT(res)									\
+
+#define LE_CHECK_VK_RESULT(res)							\
 	if (res != VK_SUCCESS)										\
     {															\
         LE_DEBUG_ERROR("Bad vulkan result - code %x", res);		\
 	}
 
+class LeVkUtils
+{
+public:
 
-void LeVkCreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
-	VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryBuffer* OutMemoryBuffer);
+	static void LeVkCreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
+		VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryBuffer* OutMemoryBuffer);
+	static void LeVkUpdateBuffer(LeVkMemoryBuffer* OutMemoryBuffer, const void* pData, size_t Size);
+	static void LeVkDestroyBuffer(LeVkMemoryBuffer* OutMemoryBuffer);
 
-void LeVkCreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties * pMemProps,
-	VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryBuffer2* OutMemoryBuffer);
-void LeVkUpdateBuffer(LeVkMemoryBuffer2 * OutMemoryBuffer, const void* pData, size_t Size);
-void LeVkDestroyBuffer(LeVkMemoryBuffer2 * OutMemoryBuffer);
+	static void LeVkCreateImage(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
+		uint32 width, uint32 height, VkFormat format,
+		VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage* OutMemoryImage);
+	static void LeVkDestroyImage(LeVkMemoryImage* OutMemoryImage);
 
-void LeVkCreateImage(VkDevice Device, const VkPhysicalDeviceMemoryProperties * pMemProps,
-	uint32 width, uint32 height, VkFormat format,
-	VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage * OutMemoryImage);
-void LeVkDestroyImage(LeVkMemoryImage* OutMemoryImage);
+	static void LeVkTransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+		VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
+		VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask);
 
-void LeVkTransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
-	VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
-	VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask);
+	static VkImageView LeVkCreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
+		VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels);
+	static void LeVkDestroyImageView(VkDevice Device, VkImageView ImageView);
 
-VkImageView LeVkCreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
-	VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels);
-void LeVkDestroyImageView(VkDevice Device, VkImageView ImageView);
+	static VkSampler LeVkCreateSampler(VkDevice Device, const LeVkTextureAttributes& Attribs, LeBool bEnableAnisotropy = true, float32 fMaxAnisotropy = 1.0f);
+	static void LeVkDestroySampler(VkDevice Device, VkSampler Sampler);
 
-VkSampler LeVkCreateSampler(VkDevice Device, const LeVkTextureAttributes& Attribs, LeBool bEnableAnisotropy = true, float32 fMaxAnisotropy = 1.0f);
-void LeVkDestroySampler(VkDevice Device, VkSampler Sampler);
+	static uint32 LeVkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMemProps,
+		uint32 MemTypeBitsMask, VkMemoryPropertyFlags ReqMemPropFlags);
 
-uint32 LeVkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties * pMemProps,
-	uint32 MemTypeBitsMask, VkMemoryPropertyFlags ReqMemPropFlags);
+	static const LeChar* GetVkDebugUtilsMessageSeverityStr(VkDebugUtilsMessageSeverityFlagBitsEXT Severity);
+	static const LeChar* GetVkDebugUtilsMessageType(VkDebugUtilsMessageTypeFlagsEXT Type);
+	static uint32 GetVkBytesPerTexFormat(VkFormat Format);
 
-
-
-
-
-
-
-const LeChar* GetVkDebugUtilsMessageSeverityStr(VkDebugUtilsMessageSeverityFlagBitsEXT Severity);
-const LeChar* GetVkDebugUtilsMessageType(VkDebugUtilsMessageTypeFlagsEXT Type);
-uint32 GetVkBytesPerTexFormat(VkFormat Format);
+};
 
 
 

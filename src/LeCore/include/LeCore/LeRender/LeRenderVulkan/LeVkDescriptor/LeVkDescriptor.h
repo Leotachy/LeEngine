@@ -7,7 +7,7 @@
 class LeVkDescriptorPoolManager
 {
 public:
-	static LeVkDescriptorPoolManager* Singleton();
+	static LeVkDescriptorPoolManager& Singleton();
 
 	void Init(uint32 NumImages);
 	void DeInit();

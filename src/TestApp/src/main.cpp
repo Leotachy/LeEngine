@@ -92,7 +92,7 @@ int main(void)
 	{
 		.RendererParams = 
 		{
-			.api = LeRenderApi::Vulkan,
+			.api = LeRenderApi::LE_RENDER_API_VULKAN,
 			.pWindow = pWindow,
 			.pAppName = "TestApp"
 		}
@@ -106,12 +106,11 @@ int main(void)
 	// Construct the triangle mesh
 
 	LeShader* BasicShader = LeShader::Create("Basic", TESTAPP_SHADER_BIN_PATH "basic.spv");
-	LeMaterial Mat;
-	Mat.SetShader(BasicShader);
-
+	LeMaterial* Mat = LeMaterial::Create();
+	Mat->SetShader(BasicShader);
 
 	LeMatBlock* Mb = LeMatBlock::Create();
-	Mb->SetMaterial(&Mat);
+	Mb->SetMaterial(Mat);
 
 	const std::vector<LeVertex> Vertices =
 	{
@@ -144,7 +143,7 @@ int main(void)
 
 	LeTexture* pBaseTexture = LeTexture::Create();
 	pBaseTexture->SetPixels((LeRGBA*)pPixelData, w, h);
-	Mat.SetBaseTexture(pBaseTexture);
+	Mat->SetBaseTexture(pBaseTexture);
 
 	// The triangle is constructed!
 
@@ -165,9 +164,9 @@ int main(void)
 		processInput(pWindow, deltaTime);
 
 
-		if (LeBeginRender(pCam, s_bFramebufferResized))
-			if (LeRender(&Mesh))
-				LeEndRender();
+		if (LeRenderInterface::LeBeginRender(pCam, s_bFramebufferResized))
+			if (LeRenderInterface::LeRender(&Mesh))
+				LeRenderInterface::LeEndRender();
 
 		s_bFramebufferResized = false;
 	}
@@ -175,6 +174,7 @@ int main(void)
 	LeEngineShutDown();
 
 	delete pBaseTexture;
+	delete Mat;
 	delete BasicShader;
 	delete pCam;
 	Mesh.PurgeAllMatblocks();

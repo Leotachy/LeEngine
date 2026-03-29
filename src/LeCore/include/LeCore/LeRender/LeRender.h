@@ -12,11 +12,9 @@
 
 enum LeRenderApi
 {
-	None,
-	Vulkan,
+	LE_RENDER_API_NONE,
+	LE_RENDER_API_VULKAN,
 };
-
-LeRenderApi LeGetRenderApi(void);
 
 struct InitRendererParams
 {
@@ -25,12 +23,32 @@ struct InitRendererParams
 	const char* pAppName;
 };
 
-void LeInitRenderer(InitRendererParams& params);
-void LeShutdownRenderer();
-void LeDeInitRenderer(void);
+typedef LeBool(*LeBeginRenderFunc)(LeCamera*, LeBool);
+typedef LeBool(*LeRenderFunc)(LeMesh*);
+typedef LeBool(*LeEndRenderFunc)(void);
 
+class LeRenderInterface
+{
+public:
+	static LeRenderApi LeGetRenderApi(void);
 
+	static void LeInitRenderer(InitRendererParams& params);
+	static void LeShutdownRenderer();
+	static void LeDeInitRenderer(void);
 
-LeBool LeBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
-LeBool LeRender(LeMesh* pMesh);
-LeBool LeEndRender(void);
+	static LeBool LeBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
+	static LeBool LeRender(LeMesh* pMesh);
+	static LeBool LeEndRender(void);
+
+private:
+
+	static LeBool LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
+	static LeBool LeVkRender(LeMesh* pMesh);
+	static LeBool LeVkEndRender(void);
+
+	static LeRenderApi RenderApi;
+
+	static LeBeginRenderFunc BeginRenderFunc;
+	static LeRenderFunc RenderFunc;
+	static LeEndRenderFunc EndRenderFunc;
+};

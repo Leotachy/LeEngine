@@ -1,6 +1,7 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRender.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
 
@@ -19,9 +20,9 @@ LeMatBlock::~LeMatBlock()
 LeMatBlock* LeMatBlock::Create(void)
 {
 
-	switch (LeGetRenderApi())
+	switch (LeRenderInterface::LeGetRenderApi())
 	{
-	case LeRenderApi::Vulkan:
+	case LeRenderApi::LE_RENDER_API_VULKAN:
 		return new LeMatBlockVk();
 		break;
 	}

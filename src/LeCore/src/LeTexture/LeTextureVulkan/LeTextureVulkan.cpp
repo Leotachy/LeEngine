@@ -54,8 +54,8 @@ LeVkTextureAttributes::LeVkTextureAttributes(const LeTextureAttributes& BaseAttr
 
 LeTextureVk::LeTextureVk()
 {
-    device = LeVkGetLogicalDevice();
-    physicalDevice = LeVkGetPhysicalDevice();
+    device = LeVkCore::Singleton().LeVkGetLogicalDevice();
+    physicalDevice = LeVkCore::Singleton().LeVkGetPhysicalDevice();
 
     view = VK_NULL_HANDLE;
     sampler = VK_NULL_HANDLE;
@@ -80,25 +80,25 @@ void LeTextureVk::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
 
     // Make a staging buffer: this one will be used as source when transfering to image
 
-    VkDeviceSize imageSize = width * height * GetVkBytesPerTexFormat(m_format);
+    VkDeviceSize imageSize = width * height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
 
-    LeVkCreateBuffer(device, &physicalDevice->m_memProps, imageSize,
+    LeVkUtils::LeVkCreateBuffer(device, &physicalDevice->m_memProps, imageSize,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &stagingBuffer);
-    LeVkUpdateBuffer(&stagingBuffer, pPixels, imageSize);
+    LeVkUtils::LeVkUpdateBuffer(&stagingBuffer, pPixels, imageSize);
     
     // Make the image itself
-    LeVkCreateImage(device, &physicalDevice->m_memProps,
+    LeVkUtils::LeVkCreateImage(device, &physicalDevice->m_memProps,
         m_width, m_height, m_format,
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &textureImage);
    
     // And the image view :3
-    view = LeVkCreateImageView(device, textureImage.image, m_format,
+    view = LeVkUtils::LeVkCreateImageView(device, textureImage.image, m_format,
         VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
     LE_DEBUG_ASSERT(view != VK_NULL_HANDLE);
 
     // And the sampler
     LeVkTextureAttributes VkTextureAttribs(m_attribs);
-    sampler = LeVkCreateSampler(device, VkTextureAttribs, true, physicalDevice->m_devProps.limits.maxSamplerAnisotropy);
+    sampler = LeVkUtils::LeVkCreateSampler(device, VkTextureAttribs, true, physicalDevice->m_devProps.limits.maxSamplerAnisotropy);
     LE_DEBUG_ASSERT(sampler != VK_NULL_HANDLE);
 
     AddFlags(TEXTURE_PIXELS_DIRTY);
@@ -107,14 +107,14 @@ void LeTextureVk::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
 
 void LeTextureVk::ClearPixels(void)
 {
-    LeVkDestroySampler(device, sampler);
+    LeVkUtils::LeVkDestroySampler(device, sampler);
     sampler = VK_NULL_HANDLE;
 
-    LeVkDestroyImageView(device, view);
+    LeVkUtils::LeVkDestroyImageView(device, view);
     view = VK_NULL_HANDLE;
 
-    LeVkDestroyImage(&textureImage);
-    LeVkDestroyBuffer(&stagingBuffer);
+    LeVkUtils::LeVkDestroyImage(&textureImage);
+    LeVkUtils::LeVkDestroyBuffer(&stagingBuffer);
 }
 
 LeBool LeTextureVk::ArePixelsSet(void)

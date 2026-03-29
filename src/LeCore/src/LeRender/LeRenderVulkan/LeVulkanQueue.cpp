@@ -1,7 +1,7 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeSwapchain.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVulkanQueue.h"
 
 
@@ -13,8 +13,8 @@ static VkSemaphore createSemaphore(VkDevice Device)
 	};
 
 	VkSemaphore Semaphore;
-	VkResult Res = vkCreateSemaphore(Device, &CreateInfo, NULL, &Semaphore);
-	LE_CHECK_VK_RESULT(Res, "vkCreateSemaphore");
+	VkResult res = vkCreateSemaphore(Device, &CreateInfo, NULL, &Semaphore);
+	LE_CHECK_VK_RESULT(res);
 	return Semaphore;
 }
 
@@ -27,8 +27,8 @@ static VkFence createFence(VkDevice Device)
 	};
 
 	VkFence Fence;
-	VkResult Res = vkCreateFence(Device, &FenceInfo, NULL, &Fence);
-	LE_CHECK_VK_RESULT(Res, "vkCreateFence");
+	VkResult res = vkCreateFence(Device, &FenceInfo, NULL, &Fence);
+	LE_CHECK_VK_RESULT(res);
 	return Fence;
 }
 
@@ -102,7 +102,7 @@ uint32 LeVulkanQueue::AcquireNextImage(int32 frameIndex)
 		return -1; //TODO fix this
 
 
-	LE_CHECK_VK_RESULT(res, "vkAcquireNextImageKHR");
+	LE_CHECK_VK_RESULT(res);
 	return ImageIndex;
 }
 
@@ -122,7 +122,7 @@ void LeVulkanQueue::SubmitSync(VkCommandBuffer CmbBuf)
 	};
 
 	VkResult res = vkQueueSubmit(m_queue, 1, &SubmitInfo, NULL);
-	LE_CHECK_VK_RESULT(res, "vkQueueSubmit");
+	LE_CHECK_VK_RESULT(res);
 }
 
 void LeVulkanQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 frameIndex)
@@ -143,7 +143,7 @@ void LeVulkanQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32
 	};
 
 	VkResult res = vkQueueSubmit(m_queue, 1, &SubmitInfo, m_renderCompleteFences[frameIndex]);
-	LE_CHECK_VK_RESULT(res, "vkQueueSubmit");
+	LE_CHECK_VK_RESULT(res);
 }
 
 
@@ -167,7 +167,7 @@ bool LeVulkanQueue::Present(uint32 imageIndex, int32 frameIndex)
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 		return false; //TODO fix this
 
-	LE_CHECK_VK_RESULT(res, "vkQueuePresentKHR");
+	LE_CHECK_VK_RESULT(res);
 	return true;
 }
 
@@ -175,22 +175,24 @@ bool LeVulkanQueue::Present(uint32 imageIndex, int32 frameIndex)
 void LeVulkanQueue::CreateSyncObjects(void)
 {
 
+	uint32 NumImages = m_swapChain->GetNumImages();
+	uint32 MaxFramesInFlight = LeVkCore::Singleton().GetMaxFramesInFlight();
 
-	m_renderCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * m_swapChain->GetNumImages());
+	m_renderCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * NumImages);
 	LE_DEBUG_ASSERT(m_renderCompleteSems);
-	m_numRenderCompleteSems = m_swapChain->GetNumImages();
+	m_numRenderCompleteSems = NumImages;
 	for (int32 i = 0; i < m_numRenderCompleteSems; i++)
 		m_renderCompleteSems[i] = createSemaphore(m_device);
 
-	m_presentCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * LE_MAX_FRAMES_IN_FLIGHT);
+	m_presentCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * MaxFramesInFlight);
 	LE_DEBUG_ASSERT(m_presentCompleteSems);
-	m_numPresentCompleteSems = LE_MAX_FRAMES_IN_FLIGHT;
+	m_numPresentCompleteSems = MaxFramesInFlight;
 	for (int32 i = 0; i < m_numPresentCompleteSems; i++)
 		m_presentCompleteSems[i] = createSemaphore(m_device);
 
-	m_renderCompleteFences = (VkFence*)LeMalloc(sizeof(VkFence) * LE_MAX_FRAMES_IN_FLIGHT);
+	m_renderCompleteFences = (VkFence*)LeMalloc(sizeof(VkFence) * MaxFramesInFlight);
 	LE_DEBUG_ASSERT(m_renderCompleteFences);
-	m_numRenderCompleteFences = LE_MAX_FRAMES_IN_FLIGHT;
+	m_numRenderCompleteFences = MaxFramesInFlight;
 	for (int32 i = 0; i < m_numRenderCompleteFences; i++)
 		m_renderCompleteFences[i] = createFence(m_device);
 

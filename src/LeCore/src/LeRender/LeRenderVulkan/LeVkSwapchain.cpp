@@ -2,7 +2,7 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeSwapchain.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 
 static VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& PresentModes)
@@ -10,11 +10,9 @@ static VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& P
 
 
 #ifndef LE_DEBUG
-	for (int i = 0; i < PresentModes.size(); i++) {
-		if (PresentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+	for (int i = 0; i < PresentModes.size(); i++)
+		if (PresentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
 			return PresentModes[i];
-		}
-	}
 #endif
 
 	// Fallback to FIFO which is always supported
@@ -28,12 +26,10 @@ static uint32 ChooseNumImages(const VkSurfaceCapabilitiesKHR& Capabilities)
 
 	int FinalNumImages = 0;
 
-	if ((Capabilities.maxImageCount > 0) && (RequestedNumImages > Capabilities.maxImageCount)) {
+	if ((Capabilities.maxImageCount > 0) && (RequestedNumImages > Capabilities.maxImageCount))
 		FinalNumImages = Capabilities.maxImageCount;
-	}
-	else {
+	else
 		FinalNumImages = RequestedNumImages;
-	}
 
 	return FinalNumImages;
 }
@@ -41,9 +37,11 @@ static uint32 ChooseNumImages(const VkSurfaceCapabilitiesKHR& Capabilities)
 
 static VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkSurfaceFormatKHR>& SurfaceFormats)
 {
-	for (int i = 0; i < SurfaceFormats.size(); i++) {
+	for (int i = 0; i < SurfaceFormats.size(); i++)
+	{
 		if ((SurfaceFormats[i].format == VK_FORMAT_B8G8R8A8_SRGB) &&
-			(SurfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)) {
+			(SurfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR))
+		{
 			return SurfaceFormats[i];
 		}
 	}
@@ -112,7 +110,7 @@ void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevic
 	};
 
 	VkResult res = vkCreateSwapchainKHR(Device, &SwapChainInfo, NULL, &m_swapChain);
-	LE_CHECK_VK_RESULT(res, "vkCreateSwapchainKHR");
+	LE_CHECK_VK_RESULT(res);
 
 	LE_DEBUG_MESSAGE("Swap chain created");
 
@@ -120,7 +118,7 @@ void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevic
 
 	uint32 NumSwapChainImages = 0;
 	res = vkGetSwapchainImagesKHR(Device, m_swapChain, &NumSwapChainImages, NULL);
-	LE_CHECK_VK_RESULT(res, "vkGetSwapchainImagesKHR");
+	LE_CHECK_VK_RESULT(res);
 	LE_DEBUG_ASSERT(NumImages == NumSwapChainImages);
 
 	LE_DEBUG_MESSAGE("Number of images %d", NumSwapChainImages);
@@ -134,7 +132,7 @@ void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevic
 	LE_DEBUG_ASSERT(m_imageViews);
 
 	res = vkGetSwapchainImagesKHR(Device, m_swapChain, &NumSwapChainImages, m_images);
-	LE_CHECK_VK_RESULT(res, "vkGetSwapchainImagesKHR");
+	LE_CHECK_VK_RESULT(res);
 
 	// And the image views
 
@@ -142,21 +140,21 @@ void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevic
 	int MipLevels = 1;
 	for (uint32 i = 0; i < NumSwapChainImages; i++)
 	{
-		m_imageViews[i] = LeVkCreateImageView(Device, m_images[i], SurfaceFormat.format,
+		m_imageViews[i] = LeVkUtils::LeVkCreateImageView(Device, m_images[i], SurfaceFormat.format,
 			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, LayerCount, MipLevels);
 	}
 
 	LE_DEBUG_MESSAGE("Created image views");
 }
 
-void LeSwapchain::Destroy()
+void LeSwapchain::DeInit()
 {
 
-	// Destroy image views
+	// DeInit image views
 
 	for (uint32 i = 0; i < m_numImages; i++)
 	{
-		LeVkDestroyImageView(m_device, m_imageViews[i]);
+		LeVkUtils::LeVkDestroyImageView(m_device, m_imageViews[i]);
 		m_imageViews[i] = NULL;
 	}
 		
@@ -165,7 +163,7 @@ void LeSwapchain::Destroy()
 	LE_DEBUG_MESSAGE("Image views destroyed");
 
 
-	// Destroy the swap chain
+	// DeInit the swap chain
 
 	vkDestroySwapchainKHR(m_device, m_swapChain, NULL);
 	m_swapChain = NULL;

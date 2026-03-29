@@ -9,10 +9,10 @@
 
 
 
-LeVkDescriptorPoolManager* LeVkDescriptorPoolManager::Singleton()
+LeVkDescriptorPoolManager& LeVkDescriptorPoolManager::Singleton()
 {
 	static LeVkDescriptorPoolManager DescriptorPoolManager;
-	return &DescriptorPoolManager;
+	return DescriptorPoolManager;
 }
 
 void LeVkDescriptorPoolManager::Init(uint32 NumImages)

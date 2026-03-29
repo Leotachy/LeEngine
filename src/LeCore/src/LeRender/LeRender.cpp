@@ -3,85 +3,98 @@
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 
-static LeRenderApi s_RenderApi = LeRenderApi::None;
-
-LeRenderApi LeGetRenderApi(void)
+LeRenderApi LeRenderInterface::LeGetRenderApi(void)
 {
-	return s_RenderApi;
+	return RenderApi;
 }
 
-typedef LeBool (*LeBeginRenderFunc)(LeCamera*, LeBool);
-LeBeginRenderFunc s_beginRenderFunc = NULL;
-
-typedef LeBool (*LeRenderFunc)(LeMesh*);
-LeRenderFunc s_renderFunc = NULL;
-
-typedef LeBool (*LeEndRenderFunc)(void);
-LeEndRenderFunc s_endRenderFunc = NULL;
-
-
-void LeInitRenderer(InitRendererParams& params)
+void LeRenderInterface::LeInitRenderer(InitRendererParams& params)
 {
+
+	RenderApi = params.api;
 
 	switch (params.api)
 	{
-	case LeRenderApi::None:
+	case LeRenderApi::LE_RENDER_API_NONE:
 		LE_ASSERT(0);
 		break;
 
-	case LeRenderApi::Vulkan:
-		LeInitVulkan(params.pAppName, params.pWindow);
+	case LeRenderApi::LE_RENDER_API_VULKAN:
+		LeVkCore::Singleton().Init(params.pAppName, params.pWindow);
 
-		s_beginRenderFunc = LeVkBeginRender;
-		s_renderFunc = LeVkRender;
-		s_endRenderFunc = LeVkEndRender;
+		BeginRenderFunc = LeVkBeginRender;
+		RenderFunc = LeVkRender;
+		EndRenderFunc = LeVkEndRender;
 
 		break;
 	}
-
-	s_RenderApi = params.api;
 }
 
-void LeShutdownRenderer()
+void LeRenderInterface::LeShutdownRenderer()
 {
-	switch (s_RenderApi)
+	switch (RenderApi)
 	{
-	case LeRenderApi::None:
+	case LeRenderApi::LE_RENDER_API_NONE:
 		break;
 
-	case LeRenderApi::Vulkan:
-		LeShutDownVulkan();
+	case LeRenderApi::LE_RENDER_API_VULKAN:
+		LeVkCore::Singleton().ShutDown();
 		break;
 	}
 }
 
-void LeDeInitRenderer(void)
+void LeRenderInterface::LeDeInitRenderer(void)
 {
-	switch (s_RenderApi)
+	switch (RenderApi)
 	{
-	case LeRenderApi::None:
+	case LeRenderApi::LE_RENDER_API_NONE:
 		break;
 
-	case LeRenderApi::Vulkan:
-		LeDeInitVulkan();
+	case LeRenderApi::LE_RENDER_API_VULKAN:
+		LeVkCore::Singleton().DeInit();
+
+		BeginRenderFunc = NULL;
+		RenderFunc = NULL;
+		EndRenderFunc = NULL;
+
 		break;
 	}
 
-	s_RenderApi = LeRenderApi::None;
+	RenderApi = LeRenderApi::LE_RENDER_API_NONE;
 }
 
-
-LeBool LeBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
+LeBool LeRenderInterface::LeBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 {
-	return s_beginRenderFunc(pCam, bFramebufferResized);
+	return BeginRenderFunc(pCam, bFramebufferResized);
 }
 
-LeBool LeRender(LeMesh* pMesh)
+LeBool LeRenderInterface::LeRender(LeMesh* pMesh)
 {
-	return s_renderFunc(pMesh);
+	return RenderFunc(pMesh);
 }
 
-LeBool LeEndRender(void)
+LeBool LeRenderInterface::LeEndRender(void)
 {
-	return s_endRenderFunc();
+	return EndRenderFunc();
 }
+
+LeBool LeRenderInterface::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
+{
+	return LeVkCore::Singleton().LeVkBeginRender(pCam, bFramebufferResized);
+}
+
+LeBool LeRenderInterface::LeVkRender(LeMesh* pMesh)
+{
+	return LeVkCore::Singleton().LeVkRender(pMesh);
+}
+
+LeBool LeRenderInterface::LeVkEndRender(void)
+{
+	return LeVkCore::Singleton().LeVkEndRender();
+}
+
+LeRenderApi LeRenderInterface::RenderApi = LeRenderApi::LE_RENDER_API_NONE;
+
+LeBeginRenderFunc LeRenderInterface::BeginRenderFunc = NULL;
+LeRenderFunc LeRenderInterface::RenderFunc = NULL;
+LeEndRenderFunc LeRenderInterface::EndRenderFunc = NULL;

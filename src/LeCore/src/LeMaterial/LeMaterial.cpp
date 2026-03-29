@@ -1,8 +1,9 @@
 
 
 #include "LeCore/LeCore.h"
-#include "LeCore/LeMaterial/LeMaterial.h"
 #include "LeCore/LeRender/LeRender.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
+#include "LeCore/LeMaterial/LeMaterial.h"
 #include "LeCore/LeMaterial/LeMaterialVulkan/LeMaterialVulkan.h"
 
 LeMaterial::LeMaterial()
@@ -18,9 +19,9 @@ LeMaterial::~LeMaterial()
 
 LeMaterial* LeMaterial::Create(void)
 {
-	switch (LeGetRenderApi())
+	switch (LeRenderInterface::LeGetRenderApi())
 	{
-	case LeRenderApi::Vulkan:
+	case LeRenderApi::LE_RENDER_API_VULKAN:
 		return new LeMaterialVk();
 		break;
 	}

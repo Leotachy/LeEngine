@@ -2,7 +2,7 @@
 #pragma once
 
 #include "LeCore/LeCore.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeSwapchain.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
 
 class LeVulkanQueue
 {
