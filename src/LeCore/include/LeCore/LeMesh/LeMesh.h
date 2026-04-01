@@ -37,17 +37,17 @@ public:
 
 protected:
 
-	LeMaterial* m_pMaterial;
+	LeMaterial* m_material;
 
 };
 
 class LeMesh
 {
-
-public:
-
+protected:
 	LeMesh();
-	~LeMesh();
+public:
+	virtual ~LeMesh();
+	static LeMesh* Create(void);
 
 	void AddMatblock(LeMatBlock* pMb);
 	uint32 GetNumMatblocks(void);
@@ -55,7 +55,7 @@ public:
 	void RemoveMatblock(uint32 i);
 	void PurgeAllMatblocks(void);
 
-private:
+protected:
 
 	std::vector<LeMatBlock*> m_Matblocks;
 

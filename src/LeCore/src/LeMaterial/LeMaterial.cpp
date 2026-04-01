@@ -8,8 +8,8 @@
 
 LeMaterial::LeMaterial()
 {
-	m_pShader = NULL;
-	m_pBaseTexture = NULL;
+	m_shader = NULL;
+	m_baseTexture = NULL;
 }
 
 LeMaterial::~LeMaterial()
@@ -28,4 +28,10 @@ LeMaterial* LeMaterial::Create(void)
 
 	LE_DEBUG_ASSERT(0);
 	return NULL;
+}
+
+void LeMaterial::SetBaseTexture(LeTexture* pTexture)
+{
+	m_baseTexture = pTexture;
+	AddFlags(MATERIAL_BASE_TEXTURE_DIRTY);
 }

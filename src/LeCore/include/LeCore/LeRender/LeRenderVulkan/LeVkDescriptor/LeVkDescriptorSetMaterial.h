@@ -4,14 +4,13 @@
 
 class LeVkDescriptorSetMaterial : public LeVkDescriptorSet
 {
+
 public:
-	LeVkDescriptorSetMaterial(VkDescriptorPool DescriptorPool, uint32 Count);
-	virtual ~LeVkDescriptorSetMaterial();
 
-	void UpdateSets(LeVkMemoryBuffer* ModelMatrices);
+	LeVkDescriptorSetMaterial() {};
+	virtual ~LeVkDescriptorSetMaterial() {};
 
+	void UpdateSet(void* pData) override;
 protected:
-
-	void GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings) override;
-
+	LeVkDescriptorPoolType GetPoolType(void) override;
 };

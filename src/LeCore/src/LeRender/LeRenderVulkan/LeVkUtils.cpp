@@ -81,6 +81,17 @@ void LeVkUtils::DestroyBuffer(LeVkMemoryBuffer* OutMemoryBuffer)
 	OutMemoryBuffer->device = VK_NULL_HANDLE;
 }
 
+void LeVkUtils::CreateUniformBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
+	size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
+{
+
+	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+	CreateBuffer(Device, pMemProps, Size, Usage, MemProps, OutMemoryBuffer);
+}
+
 void LeVkUtils::CreateImage(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
 	uint32 width, uint32 height, VkFormat format,
 	VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage* OutMemoryImage)

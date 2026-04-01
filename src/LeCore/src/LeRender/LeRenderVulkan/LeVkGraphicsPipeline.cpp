@@ -108,11 +108,22 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShader
 		.pAttachments = &BlendAttachState
 	};
 
+	VkDescriptorSetLayout PipelineLayouts[LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS];
+
+	for (uint32 i = 0; i < LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS; i++)
+	{
+		LeVkDescriptorPoolType LePoolType = LeVkDescriptorPoolType(i);
+		LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Singleton().GetLeDescriptorPool(LePoolType);
+		LE_DEBUG_ASSERT(LeDescriptorPool);
+		PipelineLayouts[i] = LeDescriptorPool->GetDescriptorSetLayout();
+		LE_DEBUG_ASSERT(PipelineLayouts[i] != VK_NULL_HANDLE);
+	}
+
 	VkPipelineLayoutCreateInfo LayoutInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		//.setLayoutCount = (uint32)LeVkGetNumDescriptorSetLayouts(),
-		//.pSetLayouts = LeVkGetDescriptorSetLayouts()
+		.setLayoutCount = LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS,
+		.pSetLayouts = PipelineLayouts
 	};
 
 

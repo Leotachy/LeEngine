@@ -4,12 +4,13 @@
 
 class LeVkDescriptorPoolGlobal : public LeVkDescriptorPool
 {
-
 public:
 
-	LeVkDescriptorPoolGlobal(uint32 DescriptorCount);
-	~LeVkDescriptorPoolGlobal() {};
+	LeVkDescriptorPoolGlobal() {};
+	virtual ~LeVkDescriptorPoolGlobal() {};
 
-
-
+protected:
+	void GetPoolSizes(std::vector<VkDescriptorPoolSize>& PoolSizes) override;
+	uint32 GetMaxSets(void) override;
+	void GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings) override;
 };

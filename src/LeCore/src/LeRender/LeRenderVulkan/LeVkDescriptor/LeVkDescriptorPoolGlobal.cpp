@@ -2,27 +2,31 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolGlobal.h"
 
-LeVkDescriptorPoolGlobal::LeVkDescriptorPoolGlobal(uint32 DescriptorCount)
+
+
+void LeVkDescriptorPoolGlobal::GetPoolSizes(std::vector<VkDescriptorPoolSize>& PoolSizes)
 {
-	VkDescriptorPoolSize PoolSizes[] =
+
+	PoolSizes.emplace_back(VkDescriptorPoolSize
 	{
-		{
 			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = DescriptorCount
+			.descriptorCount = 2
+	});
+}
 
+uint32 LeVkDescriptorPoolGlobal::GetMaxSets(void)
+{
+	return 1;
+}
+
+void LeVkDescriptorPoolGlobal::GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings)
+{
+
+	Bindings.emplace_back(VkDescriptorSetLayoutBinding{
+			.binding = 0,
+			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			.descriptorCount = 1,
+			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
 		}
-	};
-
-	VkDescriptorPoolCreateInfo PoolInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.flags = 0,
-		.maxSets = DescriptorCount,
-		.poolSizeCount = ARRAY_SIZE(PoolSizes),
-		.pPoolSizes = PoolSizes
-	};
-
-
-	VkResult res = vkCreateDescriptorPool(m_device, &PoolInfo, NULL, &m_descriptorPool);
-	LE_CHECK_VK_RESULT(res);
+	);
 }

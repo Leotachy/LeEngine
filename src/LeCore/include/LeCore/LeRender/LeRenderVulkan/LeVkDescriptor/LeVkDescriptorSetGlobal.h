@@ -5,15 +5,13 @@
 
 class LeVkDescriptorSetGlobal : public LeVkDescriptorSet
 {
+
 public:
-	LeVkDescriptorSetGlobal(VkDescriptorPool DescriptorPool, uint32 Count);
-	~LeVkDescriptorSetGlobal();
+	LeVkDescriptorSetGlobal() {};
+	virtual ~LeVkDescriptorSetGlobal() {};
 
-
-	void UpdateSets(LeVkMemoryBuffer* MvpMatrices);
+	void UpdateSet(void* pData) override;
 
 protected:
-
-	void GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings) override;
-
+	LeVkDescriptorPoolType GetPoolType(void) override;
 };

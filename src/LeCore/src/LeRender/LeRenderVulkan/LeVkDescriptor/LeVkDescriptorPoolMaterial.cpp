@@ -2,27 +2,29 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMaterial.h"
 
-LeVkDescriptorPoolMaterial::LeVkDescriptorPoolMaterial(uint32 DescriptorCount)
+
+void LeVkDescriptorPoolMaterial::GetPoolSizes(std::vector<VkDescriptorPoolSize>& PoolSizes)
 {
-	VkDescriptorPoolSize PoolSizes[] =
-	{
+	PoolSizes.emplace_back(VkDescriptorPoolSize
 		{
 			.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.descriptorCount = DescriptorCount
+			.descriptorCount = 1
+		});
+}
 
+uint32 LeVkDescriptorPoolMaterial::GetMaxSets(void)
+{
+	return 1000;
+}
+
+void LeVkDescriptorPoolMaterial::GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings)
+{
+
+	Bindings.emplace_back(VkDescriptorSetLayoutBinding{
+			.binding = 0,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.descriptorCount = 1,
+			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
 		}
-	};
-
-	VkDescriptorPoolCreateInfo PoolInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.flags = 0,
-		.maxSets = DescriptorCount,
-		.poolSizeCount = ARRAY_SIZE(PoolSizes),
-		.pPoolSizes = PoolSizes
-	};
-
-
-	VkResult res = vkCreateDescriptorPool(m_device, &PoolInfo, NULL, &m_descriptorPool);
-	LE_CHECK_VK_RESULT(res);
+	);
 }

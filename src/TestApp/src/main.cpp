@@ -132,8 +132,8 @@ int main(void)
 	Mb->Faces = indices;
 	Mb->AddFlags(MATBLOCK_FACES_DIRTY);
 
-	LeMesh Mesh;
-	Mesh.AddMatblock(Mb);
+	LeMesh* pMesh = LeMesh::Create();
+	pMesh->AddMatblock(Mb);
 
 	int32 w, h, ch;
 	void* pPixelData = stbi_load(TESTAPP_RESOURCES_PATH "textures/awesomeface.png", &w, &h, &ch, 4);
@@ -165,7 +165,7 @@ int main(void)
 
 
 		if (LeRenderInterface::BeginRender(pCam, s_bFramebufferResized))
-			if (LeRenderInterface::Render(&Mesh))
+			if (LeRenderInterface::Render(&pMesh))
 				LeRenderInterface::EndRender();
 
 		s_bFramebufferResized = false;
@@ -177,7 +177,7 @@ int main(void)
 	delete Mat;
 	delete BasicShader;
 	delete pCam;
-	Mesh.PurgeAllMatblocks();
+	delete pMesh;
 
 	LeEngineDeInit();
 

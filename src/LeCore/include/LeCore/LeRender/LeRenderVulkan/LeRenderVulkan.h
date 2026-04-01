@@ -11,6 +11,7 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVulkanQueue.h"
 #include "LeCore/LeMaterial/LeMaterialVulkan/LeMaterialVulkan.h"
 #include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.h"
 
 
 
@@ -33,6 +34,7 @@ struct LeVkCurrentRenderFrame
 	LeVkFrameUniformData FrameUBO;
 	LeVkMemoryBuffer FrameUBOMemoryBuffer;
 	LeBool bFramebufferResized;
+	LeVkDescriptorSetGlobal DescriptorSet;
 };
 
 
@@ -48,7 +50,7 @@ public:
 
 
 	LeBool LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
-	LeBool LeVkRender(LeMesh* pMesh);
+	LeBool LeVkRender(LeMeshVk* pMesh);
 	LeBool LeVkEndRender(void);
 
 	VkDevice LeVkGetLogicalDevice(void);
@@ -75,10 +77,6 @@ private:
 	void BeginOneShotCommandBuffer(VkCommandBuffer CommandBuffer);
 	void EndOneShotCommandBuffer(VkCommandBuffer CommandBuffer);
 
-	void CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryBuffer* OutMemoryBuffer);
-	void CreateUniformBuffer(size_t Size, LeVkMemoryBuffer* OutMemoryBuffer);
-	void CreateUniformBuffers(size_t Size, std::vector<LeVkMemoryBuffer>& OutMemoryBuffers);
-
 	void CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size);
 
 	void SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer);
@@ -87,6 +85,7 @@ private:
 	void RecreateSwapChain(void);
 
 	LeBool RefreshGraphicsPipelineForMaterial(LeMaterialVk* pMaterial);
+	LeBool RefreshDescriptorSetForMaterial(LeMaterialVk* pMaterial);
 	LeBool SetupVertexBufferForMatBlock(LeMatBlockVk* pMbVk);
 	LeBool SetupIndexBufferForMatBlock(LeMatBlockVk* pMbVk);
 

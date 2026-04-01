@@ -9,7 +9,7 @@ LeMatBlock::LeMatBlock()
 {
 	m_Flags = 0;
 
-	m_pMaterial = NULL;
+	m_material = NULL;
 }
 
 LeMatBlock::~LeMatBlock()
@@ -36,12 +36,12 @@ LeMatBlock* LeMatBlock::Create(void)
 
 void LeMatBlock::SetMaterial(LeMaterial* m)
 {
-	m_pMaterial = m;
+	m_material = m;
 }
 
 LeMaterial* LeMatBlock::GetMaterial(void)
 {
-	return m_pMaterial;
+	return m_material;
 }
 
 
@@ -57,6 +57,19 @@ LeMesh::LeMesh()
 LeMesh::~LeMesh()
 {
 	PurgeAllMatblocks();
+}
+
+LeMesh* LeMesh::Create(void)
+{
+	switch (LeRenderInterface::GetRenderApi())
+	{
+	case LeRenderApi::LE_RENDER_API_VULKAN:
+		return new LeMeshVk();
+		break;
+	}
+
+	LE_DEBUG_ASSERT(0);
+	return NULL;
 }
 
 void LeMesh::AddMatblock(LeMatBlock* pMb)

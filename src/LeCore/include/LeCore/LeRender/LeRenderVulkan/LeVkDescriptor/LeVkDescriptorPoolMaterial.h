@@ -5,12 +5,13 @@
 
 class LeVkDescriptorPoolMaterial : public LeVkDescriptorPool
 {
-
 public:
 
-	LeVkDescriptorPoolMaterial(uint32 DescriptorCount);
-	~LeVkDescriptorPoolMaterial() {};
+	LeVkDescriptorPoolMaterial() {};
+	virtual ~LeVkDescriptorPoolMaterial() {};
 
-
-
+protected:
+	void GetPoolSizes(std::vector<VkDescriptorPoolSize>& PoolSizes) override;
+	uint32 GetMaxSets(void) override;
+	void GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings) override;
 };

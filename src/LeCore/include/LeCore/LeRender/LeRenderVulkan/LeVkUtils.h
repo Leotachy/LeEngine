@@ -22,6 +22,9 @@ public:
 	static void UpdateBuffer(LeVkMemoryBuffer* OutMemoryBuffer, const void* pData, size_t Size);
 	static void DestroyBuffer(LeVkMemoryBuffer* OutMemoryBuffer);
 
+	static void CreateUniformBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps, 
+		size_t Size, LeVkMemoryBuffer* OutMemoryBuffer);
+
 	static void CreateImage(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
 		uint32 width, uint32 height, VkFormat format,
 		VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage* OutMemoryImage);

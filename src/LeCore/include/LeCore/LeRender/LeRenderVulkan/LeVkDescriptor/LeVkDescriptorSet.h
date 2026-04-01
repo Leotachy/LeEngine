@@ -1,24 +1,24 @@
 #pragma once
 
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPool.h"
 
 class LeVkDescriptorSet
 {
 public:
-	LeVkDescriptorSet(VkDescriptorPool DescriptorPool, uint32 Count);
-	virtual ~LeVkDescriptorSet();
+	LeVkDescriptorSet();
+	virtual ~LeVkDescriptorSet() {};
+
+	virtual void UpdateSet(void* pData) = 0;
+
+	VkDescriptorSet GetDescriptorSet(void) { return m_descriptorSet; };
 
 protected:
-
-	virtual void GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings) = 0;
+	virtual LeVkDescriptorPoolType GetPoolType(void) = 0;
 
 	VkDevice m_device;
-
-	VkDescriptorSetLayout m_descriptorSetLayout;
-	std::vector<VkDescriptorSet> m_descriptorSets;
-
+	VkDescriptorSet m_descriptorSet;
 
 private:
 
-	void CreateLayout();
-	void CreateSets(VkDescriptorPool DescriptorPool, uint32 Count);
+	void CreateSet(VkDescriptorPool DescriptorPool, VkDescriptorSetLayout DescriptorSetLayout);
 };

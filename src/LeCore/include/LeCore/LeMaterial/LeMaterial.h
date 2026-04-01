@@ -11,6 +11,8 @@ struct LeMaterialAttributes
 
 };
 
+#define MATERIAL_BASE_TEXTURE_DIRTY (1<<0)
+
 class LeMaterial : public LeRenderResource
 {
 protected:
@@ -20,17 +22,17 @@ public:
 	static LeMaterial* Create(void);
 
 
-	void SetShader(LeShader* pShader) { m_pShader = pShader; }
-	LeShader* GetShader(void) const { return m_pShader; }
+	void SetShader(LeShader* pShader) { m_shader = pShader; }
+	LeShader* GetShader(void) const { return m_shader; }
 
-	void SetBaseTexture(LeTexture* pTexture) { m_pBaseTexture = pTexture; }
-	LeTexture* GetBaseTexture(void) { return m_pBaseTexture; }
+	void SetBaseTexture(LeTexture* pTexture);
+	LeTexture* GetBaseTexture(void) { return m_baseTexture; }
 
 private:
 
 
-	LeShader* m_pShader;
+	LeShader* m_shader;
 
-	LeTexture* m_pBaseTexture;
+	LeTexture* m_baseTexture;
 
 };

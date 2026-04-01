@@ -70,7 +70,7 @@ void LeVkCore::Init(const char* pAppName, GLFWwindow* pWindow)
 	CreateLogicalDevice();
 	m_swapchain.Init(m_logicalDevice, m_physicalDevices.Selected(), m_surface, m_queueFamily);
 
-	// make descriptor pool
+	LeVkDescriptorPoolManager::Singleton().Init();
 
 	m_commandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_queueFamily);
 	m_transientCommandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queueFamily);
@@ -81,10 +81,10 @@ void LeVkCore::Init(const char* pAppName, GLFWwindow* pWindow)
 		CreateCommandBuffers(1, &CurrentRenderFrame.CommandBuffer);
 		CurrentRenderFrame.ImageIndex = -1;
 		CurrentRenderFrame.FrameUBO.MVP = glm::mat4(1.0f);
-		CreateUniformBuffer(sizeof(LeVkFrameUniformData), &CurrentRenderFrame.FrameUBOMemoryBuffer);
+		LeVkUtils::CreateUniformBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, 
+			sizeof(LeVkFrameUniformData), &CurrentRenderFrame.FrameUBOMemoryBuffer);
 		CurrentRenderFrame.bFramebufferResized = false;
-
-		//LeVkLinkDescriptorSets(&m_CurrentRenderFrame[i].FrameUBOMemoryBuffer, i);
+		CurrentRenderFrame.DescriptorSet.UpdateSet(&CurrentRenderFrame.FrameUBOMemoryBuffer);
 	}
 
 	m_FrameIndex = 0;
@@ -113,13 +113,15 @@ void LeVkCore::DeInit(void)
 		LeVkUtils::DestroyBuffer(&CurrentRenderFrame.FrameUBOMemoryBuffer);
 	}
 
+
+
 	// DeInit command pool
 	vkDestroyCommandPool(m_logicalDevice, m_transientCommandBufferPool, NULL);
 	vkDestroyCommandPool(m_logicalDevice, m_commandBufferPool, NULL);
 
-	// DeInit descriptor sets
+	// DeInit descriptor pools
 
-	//LeVkDeInitDescriptorSets();
+	LeVkDescriptorPoolManager::Singleton().DeInit();
 
 	// DeInit swapchain
 	m_swapchain.DeInit();
@@ -255,12 +257,14 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 	return true;
 }
 
-LeBool LeVkCore::LeVkRender(LeMesh* pMesh)
+LeBool LeVkCore::LeVkRender(LeMeshVk* pMesh)
 {
 	LE_DEBUG_ASSERT(pMesh);
 
 	LeVkCurrentRenderFrame* pRenderFrame = &m_CurrentRenderFrame[m_FrameIndex];
 	VkCommandBuffer pCommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
+
+
 
 	for (uint32 i = 0; i < pMesh->GetNumMatblocks(); i++)
 	{
@@ -273,15 +277,9 @@ LeBool LeVkCore::LeVkRender(LeMesh* pMesh)
 		LeMaterialVk* pMaterialVk = static_cast<LeMaterialVk*>(pMbVk->GetMaterial());
 
 		RefreshGraphicsPipelineForMaterial(pMaterialVk);
+		RefreshDescriptorSetForMaterial(pMaterialVk);
 
 		vkCmdBindPipeline(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipeline());
-
-		//vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
-		//	0,  // firstSet
-		//	1,  // descriptorSetCount
-		//	LeVkGetDescriptorSet(m_FrameIndex),
-		//	0,	// dynamicOffsetCount
-		//	NULL);	// pDynamicOffsets
 
 		SetupVertexBufferForMatBlock(pMbVk);
 		VkDeviceSize offsets[] = { 0 };
@@ -290,8 +288,24 @@ LeBool LeVkCore::LeVkRender(LeMesh* pMesh)
 		SetupIndexBufferForMatBlock(pMbVk);
 		vkCmdBindIndexBuffer(pCommandBuffer, pMbVk->GetIndexBuffer()->buffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
 
-		vkCmdDrawIndexed(pCommandBuffer, uint32(pMbVk->Faces.size()) * 3, 1, 0, 0, 0);
+		VkDescriptorSet DescriptorSets[] =
+		{
+			pRenderFrame->DescriptorSet.GetDescriptorSet(),			// First set - global data
+			pMesh->GetLeDescriptor()->GetDescriptorSet(),			// Second set - matblock data
+			pMaterialVk->GetLeDescriptorSet()->GetDescriptorSet()	// Third set - material data
+		};
 
+		uint32 NumDescriptorSets = ARRAY_SIZE(DescriptorSets);
+
+		vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
+			0,						// firstSet
+			NumDescriptorSets,		// descriptorSetCount
+			DescriptorSets,			// descriptor sets
+			0,						// dynamicOffsetCount
+			NULL);					// pDynamicOffsets
+
+
+		vkCmdDrawIndexed(pCommandBuffer, uint32(pMbVk->Faces.size()) * 3, 1, 0, 0, 0);
 	}
 
 	return true;
@@ -422,78 +436,6 @@ void LeVkCore::EndOneShotCommandBuffer(VkCommandBuffer CommandBuffer)
 	VkResult res = vkEndCommandBuffer(CommandBuffer);
 	LE_CHECK_VK_RESULT(res);
 }
-
-void LeVkCore::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties,
-	LeVkMemoryBuffer* OutMemoryBuffer)
-{
-
-	LE_DEBUG_ASSERT(OutMemoryBuffer);
-
-	VkBufferCreateInfo BufferCreateInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.size = Size,
-		.usage = Usage,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
-	};
-
-
-	OutMemoryBuffer->device = m_logicalDevice;
-
-	// Step 1: create a buffer
-	VkResult res = vkCreateBuffer(m_logicalDevice, &BufferCreateInfo, NULL, &OutMemoryBuffer->buffer);
-	LE_CHECK_VK_RESULT(res);
-
-	// Step 2: get the buffer memory requirements
-	VkMemoryRequirements MemReqs = {};
-	vkGetBufferMemoryRequirements(m_logicalDevice, OutMemoryBuffer->buffer, &MemReqs);
-
-	OutMemoryBuffer->allocationSize = MemReqs.size;
-
-	// Step 3: get the memory type index
-	uint32 MemoryTypeIndex = LeVkUtils::GetMemoryTypeIndex(&m_physicalDevices.Selected()->m_memProps, MemReqs.memoryTypeBits, Properties);
-
-	// Step 4: allocate memory
-	VkMemoryAllocateInfo MemAllocInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.allocationSize = MemReqs.size,
-		.memoryTypeIndex = MemoryTypeIndex
-	};
-
-	res = vkAllocateMemory(m_logicalDevice, &MemAllocInfo, NULL, &OutMemoryBuffer->mem);
-	LE_CHECK_VK_RESULT(res);
-
-	// Step 5: bind memory
-	res = vkBindBufferMemory(m_logicalDevice, OutMemoryBuffer->buffer, OutMemoryBuffer->mem, 0);
-	LE_CHECK_VK_RESULT(res);
-}
-
-
-void LeVkCore::CreateUniformBuffer(size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
-{
-
-	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-	CreateBuffer(Size, Usage, MemProps, OutMemoryBuffer);
-
-}
-
-void LeVkCore::CreateUniformBuffers(size_t Size, std::vector<LeVkMemoryBuffer>& OutMemoryBuffers)
-{
-
-	OutMemoryBuffers.clear();
-	OutMemoryBuffers.resize(m_swapchain.GetNumImages());
-
-	for (int i = 0; i < OutMemoryBuffers.size(); i++)
-		CreateUniformBuffer(Size, &OutMemoryBuffers[i]);
-
-}
-
-
-
 
 
 
@@ -744,7 +686,7 @@ void LeVkCore::SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryB
 	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	LeVkMemoryBuffer StagingVB;
-	CreateBuffer(Size, Usage, MemProps, &StagingVB);
+	LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, Size, Usage, MemProps, &StagingVB);
 
 	// Step 2: map the memory of the stage buffer
 	void* pMem = NULL;
@@ -770,7 +712,7 @@ void LeVkCore::SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryB
 		Usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		MemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-		CreateBuffer(Size, Usage, MemProps, OutMemoryBuffer);
+		LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, Size, Usage, MemProps, OutMemoryBuffer);
 	}
 	
 
@@ -778,7 +720,7 @@ void LeVkCore::SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryB
 	CopyBuffer(OutMemoryBuffer->buffer, StagingVB.buffer, Size);
 
 	// Step 7: release the resources of the staging buffer
-	//StagingVB.DeInit(m_LogicalDevice); // Destructor takes care of it now
+	LeVkUtils::DestroyBuffer(&StagingVB);
 }
 
 
@@ -792,7 +734,7 @@ void LeVkCore::SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuf
 	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	LeVkMemoryBuffer StagingVB;
-	CreateBuffer(Size, Usage, MemProps, &StagingVB);
+	LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, Size, Usage, MemProps, &StagingVB);
 
 	// Step 2: map the memory of the stage buffer
 	void* pMem = NULL;
@@ -817,7 +759,7 @@ void LeVkCore::SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuf
 		Usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		MemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-		CreateBuffer(Size, Usage, MemProps, OutMemoryBuffer);
+		LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, Size, Usage, MemProps, OutMemoryBuffer);
 	}
 
 
@@ -825,7 +767,7 @@ void LeVkCore::SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuf
 	CopyBuffer(OutMemoryBuffer->buffer, StagingVB.buffer, Size);
 
 	// Step 7: release the resources of the staging buffer
-	//StagingVB.DeInit(m_LogicalDevice); // Destructor takes care of it now
+	LeVkUtils::DestroyBuffer(&StagingVB);
 }
 
 void LeVkCore::RecreateSwapChain(void)
@@ -899,6 +841,21 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeMaterialVk* pMaterial)
 		return true;
 	}
 
+
+	return false;
+}
+
+LeBool LeVkCore::RefreshDescriptorSetForMaterial(LeMaterialVk* pMaterial)
+{
+	LE_DEBUG_ASSERT(pMaterial);
+
+	if (pMaterial->HasFlags(MATERIAL_BASE_TEXTURE_DIRTY))
+	{
+		pMaterial->UpdateDescriptorSet();
+		pMaterial->DeleteFlags(MATERIAL_BASE_TEXTURE_DIRTY);
+
+		return true;
+	}
 
 	return false;
 }

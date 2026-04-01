@@ -3,7 +3,7 @@
 
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMatBlock.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMesh.h"
 
 class LeMatBlockVk : public LeMatBlock
 {
@@ -14,16 +14,33 @@ public:
 	LeVkMemoryBuffer* GetVertexBuffer(void) { return &m_vb; }
 	LeVkMemoryBuffer* GetIndexBuffer(void) { return &m_ib; }
 
+	static const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
+	static const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
+	static uint32 LeVertexGetNumAttributeDescriptions();
+
 private:
 
 
 	LeVkMemoryBuffer m_vb;
 	LeVkMemoryBuffer m_ib;
 
+
 };
 
 
+class LeMeshVk : public LeMesh
+{
 
-const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
-const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
-uint32 LeVertexGetNumAttributeDescriptions();
+public:
+
+	LeMeshVk();
+	~LeMeshVk();
+
+	LeVkDescriptorSetMesh* GetLeDescriptor(void) { return &m_descriptorSet; }
+
+protected:
+
+	LeVkMemoryBuffer m_modelMatrix;
+
+	LeVkDescriptorSetMesh m_descriptorSet;
+};

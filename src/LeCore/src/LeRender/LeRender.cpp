@@ -85,7 +85,7 @@ LeBool LeRenderInterface::VkBeginRender(LeCamera* pCam, LeBool bFramebufferResiz
 
 LeBool LeRenderInterface::VkRender(LeMesh* pMesh)
 {
-	return LeVkCore::Singleton().LeVkRender(pMesh);
+	return LeVkCore::Singleton().LeVkRender((LeMeshVk*)pMesh);
 }
 
 LeBool LeRenderInterface::VkEndRender(void)

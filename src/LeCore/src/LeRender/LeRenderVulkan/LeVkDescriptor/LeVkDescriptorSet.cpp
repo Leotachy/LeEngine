@@ -3,58 +3,35 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSet.h"
 
-LeVkDescriptorSet::LeVkDescriptorSet(VkDescriptorPool DescriptorPool, uint32 Count)
+LeVkDescriptorSet::LeVkDescriptorSet()
 {
-
 	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
+	m_descriptorSet = NULL;
 
-	m_descriptorSetLayout = VK_NULL_HANDLE;
-	m_descriptorSets.clear();
+	LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Singleton().GetLeDescriptorPool(GetPoolType());
+	LE_DEBUG_ASSERT(LeDescriptorPool);
 
-	CreateLayout();
-	CreateSets(DescriptorPool, Count);
+	VkDescriptorPool DescriptorPool = LeDescriptorPool->GetDescriptorPool();
+	VkDescriptorSetLayout DescriptorSetLayout = LeDescriptorPool->GetDescriptorSetLayout();
+
+	CreateSet(DescriptorPool, DescriptorSetLayout);
 }
 
-LeVkDescriptorSet::~LeVkDescriptorSet()
+void LeVkDescriptorSet::CreateSet(VkDescriptorPool DescriptorPool, VkDescriptorSetLayout DescriptorSetLayout)
 {
-	if (m_descriptorSetLayout != VK_NULL_HANDLE)
-	{
-		LE_DEBUG_ASSERT(m_device != VK_NULL_HANDLE);
-
-		vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, NULL);
-	}
-}
-
-void LeVkDescriptorSet::CreateLayout(void)
-{
-	std::vector<VkDescriptorSetLayoutBinding> Bindings;
-	GetLayoutBindings(Bindings);
-
-	VkDescriptorSetLayoutCreateInfo LayoutInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-		.bindingCount = uint32(Bindings.size()),
-		.pBindings = Bindings.data()
-	};
-
-	VkResult res = vkCreateDescriptorSetLayout(m_device, &LayoutInfo, NULL, &m_descriptorSetLayout);
-	LE_CHECK_VK_RESULT(res);
-}
-
-void LeVkDescriptorSet::CreateSets(VkDescriptorPool DescriptorPool, uint32 Count)
-{
-	std::vector<VkDescriptorSetLayout> Layouts(Count, m_descriptorSetLayout);
+	LE_DEBUG_ASSERT(DescriptorPool != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(DescriptorSetLayout != VK_NULL_HANDLE);
 
 	VkDescriptorSetAllocateInfo AllocInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 		.pNext = NULL,
 		.descriptorPool = DescriptorPool,
-		.descriptorSetCount = Count,
-		.pSetLayouts = Layouts.data()
+		.descriptorSetCount = 1,
+		.pSetLayouts = &DescriptorSetLayout
 	};
 
-	m_descriptorSets.resize(Count);
-	VkResult res = vkAllocateDescriptorSets(m_device, &AllocInfo, m_descriptorSets.data());
+
+	VkResult res = vkAllocateDescriptorSets(m_device, &AllocInfo, &m_descriptorSet);
 	LE_CHECK_VK_RESULT(res);
 }

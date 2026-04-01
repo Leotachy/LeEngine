@@ -119,5 +119,3 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 // Extra header files that are "convenient" to have around
 #include "LeUtils/LeHash.h"
 #include "LeRGBA/LeRGBA.h"
-
-

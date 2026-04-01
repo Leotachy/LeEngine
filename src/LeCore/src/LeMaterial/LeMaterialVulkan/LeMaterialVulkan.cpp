@@ -10,5 +10,10 @@ LeMaterialVk::LeMaterialVk()
 
 LeMaterialVk::~LeMaterialVk()
 {
+}
 
+
+void LeMaterialVk::UpdateDescriptorSet(void)
+{
+	m_descriptorSet.UpdateSet(GetBaseTexture());
 }
