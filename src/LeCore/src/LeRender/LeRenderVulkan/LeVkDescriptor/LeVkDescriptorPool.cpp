@@ -3,14 +3,26 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPool.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolGlobal.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMatBlock.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMaterial.h"
 
 
 LeVkDescriptorPool::LeVkDescriptorPool()
 {
-	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
+	m_device = VK_NULL_HANDLE;
+	m_descriptorPool = VK_NULL_HANDLE;
+	m_descriptorSetLayout = VK_NULL_HANDLE;
+}
 
+LeVkDescriptorPool::~LeVkDescriptorPool()
+{
+	DeInit();
+}
+
+void LeVkDescriptorPool::Init(void)
+{
+
+	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
 
 	std::vector<VkDescriptorPoolSize> PoolSizes;
 	GetPoolSizes(PoolSizes);
@@ -38,24 +50,27 @@ LeVkDescriptorPool::LeVkDescriptorPool()
 		.pBindings = Bindings.data()
 	};
 
-	VkResult res = vkCreateDescriptorSetLayout(m_device, &LayoutInfo, NULL, &m_descriptorSetLayout);
+	res = vkCreateDescriptorSetLayout(m_device, &LayoutInfo, NULL, &m_descriptorSetLayout);
 	LE_CHECK_VK_RESULT(res);
 }
 
-LeVkDescriptorPool::~LeVkDescriptorPool()
+void LeVkDescriptorPool::DeInit(void)
 {
-
 	if (m_descriptorSetLayout != VK_NULL_HANDLE)
 	{
 		LE_DEBUG_ASSERT(m_device != VK_NULL_HANDLE);
 		vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, NULL);
+		m_descriptorSetLayout = VK_NULL_HANDLE;
 	}
 
 	if (m_descriptorPool)
 	{
 		LE_DEBUG_ASSERT(m_device != VK_NULL_HANDLE);
 		vkDestroyDescriptorPool(m_device, m_descriptorPool, NULL);
+		m_descriptorPool = VK_NULL_HANDLE;
 	}
+
+	m_device = VK_NULL_HANDLE;
 }
 
 VkDescriptorPool LeVkDescriptorPool::GetDescriptorPool(void) const
@@ -86,8 +101,13 @@ LeVkDescriptorPoolManager& LeVkDescriptorPoolManager::Singleton()
 void LeVkDescriptorPoolManager::Init()
 {
 	m_descriptorPools[LeVkDescriptorPoolType::GLOBAL] = new LeVkDescriptorPoolGlobal();
+	m_descriptorPools[LeVkDescriptorPoolType::GLOBAL]->Init();
+
 	m_descriptorPools[LeVkDescriptorPoolType::MATBLOCK] = new LeVkDescriptorPoolMesh();
+	m_descriptorPools[LeVkDescriptorPoolType::MATBLOCK]->Init();
+
 	m_descriptorPools[LeVkDescriptorPoolType::MATERIAL] = new LeVkDescriptorPoolMaterial();
+	m_descriptorPools[LeVkDescriptorPoolType::MATERIAL]->Init();
 }
 
 void LeVkDescriptorPoolManager::DeInit()

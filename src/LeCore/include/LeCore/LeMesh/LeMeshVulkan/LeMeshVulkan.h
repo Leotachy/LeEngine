@@ -14,10 +14,6 @@ public:
 	LeVkMemoryBuffer* GetVertexBuffer(void) { return &m_vb; }
 	LeVkMemoryBuffer* GetIndexBuffer(void) { return &m_ib; }
 
-	static const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
-	static const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
-	static uint32 LeVertexGetNumAttributeDescriptions();
-
 private:
 
 
@@ -37,6 +33,10 @@ public:
 	~LeMeshVk();
 
 	LeVkDescriptorSetMesh* GetLeDescriptor(void) { return &m_descriptorSet; }
+
+	static const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
+	static const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
+	static uint32 LeVertexGetNumAttributeDescriptions();
 
 protected:
 

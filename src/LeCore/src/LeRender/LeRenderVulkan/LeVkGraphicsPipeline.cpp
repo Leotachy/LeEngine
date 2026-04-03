@@ -55,9 +55,9 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShader
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		.vertexBindingDescriptionCount = 1,
-		.pVertexBindingDescriptions = LeVertexGetBindingDescription(),
-		.vertexAttributeDescriptionCount = LeVertexGetNumAttributeDescriptions(),
-		.pVertexAttributeDescriptions = LeVertexGetAttributeDescriptions()
+		.pVertexBindingDescriptions = LeMeshVk::LeVertexGetBindingDescription(),
+		.vertexAttributeDescriptionCount = LeMeshVk::LeVertexGetNumAttributeDescriptions(),
+		.pVertexAttributeDescriptions = LeMeshVk::LeVertexGetAttributeDescriptions()
 
 	};
 

@@ -165,7 +165,7 @@ int main(void)
 
 
 		if (LeRenderInterface::BeginRender(pCam, s_bFramebufferResized))
-			if (LeRenderInterface::Render(&pMesh))
+			if (LeRenderInterface::Render(pMesh))
 				LeRenderInterface::EndRender();
 
 		s_bFramebufferResized = false;

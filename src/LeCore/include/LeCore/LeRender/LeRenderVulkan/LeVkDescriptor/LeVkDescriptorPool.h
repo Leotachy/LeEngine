@@ -18,6 +18,9 @@ public:
 	LeVkDescriptorPool();
 	virtual ~LeVkDescriptorPool();
 
+	void Init(void);
+	void DeInit(void);
+
 	VkDescriptorPool GetDescriptorPool(void) const;
 	VkDescriptorSetLayout GetDescriptorSetLayout(void) const;
 

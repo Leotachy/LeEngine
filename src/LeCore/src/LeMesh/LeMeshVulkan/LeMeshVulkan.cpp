@@ -14,32 +14,6 @@ LeMatBlockVk::~LeMatBlockVk()
 {
 }
 
-static const VkVertexInputBindingDescription s_BindingDescription =
-{
-	0, sizeof(LeVertex), VK_VERTEX_INPUT_RATE_VERTEX
-};
-
-const VkVertexInputBindingDescription* LeMatBlockVk::LeVertexGetBindingDescription()
-{
-	return &s_BindingDescription;
-}
-
-static const VkVertexInputAttributeDescription s_AttributeDescriptions[] =
-{
-	{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LeVertex, pos) },
-	{ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LeVertex, color) },
-	{ 2, 0, VK_FORMAT_R32G32_SFLOAT,    offsetof(LeVertex, uv) }
-};
-
-const VkVertexInputAttributeDescription* LeMatBlockVk::LeVertexGetAttributeDescriptions()
-{
-	return s_AttributeDescriptions;
-}
-
-uint32 LeMatBlockVk::LeVertexGetNumAttributeDescriptions()
-{
-	return ARRAY_SIZE(s_AttributeDescriptions);
-}
 
 
 LeMeshVk::LeMeshVk()
@@ -58,4 +32,33 @@ LeMeshVk::LeMeshVk()
 LeMeshVk::~LeMeshVk()
 {
 	LeVkUtils::DestroyBuffer(&m_modelMatrix);
+}
+
+
+
+static const VkVertexInputBindingDescription s_BindingDescription =
+{
+	0, sizeof(LeVertex), VK_VERTEX_INPUT_RATE_VERTEX
+};
+
+const VkVertexInputBindingDescription* LeMeshVk::LeVertexGetBindingDescription()
+{
+	return &s_BindingDescription;
+}
+
+static const VkVertexInputAttributeDescription s_AttributeDescriptions[] =
+{
+	{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LeVertex, pos) },
+	{ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LeVertex, color) },
+	{ 2, 0, VK_FORMAT_R32G32_SFLOAT,    offsetof(LeVertex, uv) }
+};
+
+const VkVertexInputAttributeDescription* LeMeshVk::LeVertexGetAttributeDescriptions()
+{
+	return s_AttributeDescriptions;
+}
+
+uint32 LeMeshVk::LeVertexGetNumAttributeDescriptions()
+{
+	return ARRAY_SIZE(s_AttributeDescriptions);
 }
