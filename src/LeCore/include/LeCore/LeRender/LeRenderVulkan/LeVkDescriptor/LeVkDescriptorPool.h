@@ -1,16 +1,8 @@
 
 #pragma once
 
+
 // Base class for LeVkDescriptorPool
-
-enum LeVkDescriptorPoolType
-{
-	GLOBAL,
-	MATBLOCK,
-	MATERIAL,
-
-	NUM_DESCRIPTOR_POOLS
-};
 
 class LeVkDescriptorPool
 {
@@ -35,17 +27,3 @@ protected:
 	VkDescriptorSetLayout m_descriptorSetLayout;
 };
 
-class LeVkDescriptorPoolManager
-{
-public:
-	static LeVkDescriptorPoolManager& Singleton();
-
-	void Init();
-	void DeInit();
-
-	LeVkDescriptorPool* GetLeDescriptorPool(LeVkDescriptorPoolType Type);
-
-private:
-
-	LeVkDescriptorPool* m_descriptorPools[LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS];
-};

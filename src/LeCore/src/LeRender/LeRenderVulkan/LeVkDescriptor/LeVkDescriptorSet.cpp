@@ -2,11 +2,18 @@
 #include "LeCore/lecore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSet.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolManager.h"
 
 LeVkDescriptorSet::LeVkDescriptorSet()
 {
+	m_device = VK_NULL_HANDLE;
+	m_descriptorSet = VK_NULL_HANDLE;
+}
+
+void LeVkDescriptorSet::Init(void)
+{
+
 	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
-	m_descriptorSet = NULL;
 
 	LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Singleton().GetLeDescriptorPool(GetPoolType());
 	LE_DEBUG_ASSERT(LeDescriptorPool);
