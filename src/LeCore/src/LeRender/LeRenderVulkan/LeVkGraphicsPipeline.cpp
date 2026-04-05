@@ -2,9 +2,9 @@
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
-#include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
+#include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 
-LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShaderVk* pShader, VkFormat RenderColFormat)
+LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeVkShader* pShader, VkFormat RenderColFormat)
 {
 	LE_DEBUG_ASSERT(key);
 	LE_DEBUG_ASSERT(NumImages > 0);
@@ -55,9 +55,9 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeShader
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		.vertexBindingDescriptionCount = 1,
-		.pVertexBindingDescriptions = LeMeshVk::LeVertexGetBindingDescription(),
-		.vertexAttributeDescriptionCount = LeMeshVk::LeVertexGetNumAttributeDescriptions(),
-		.pVertexAttributeDescriptions = LeMeshVk::LeVertexGetAttributeDescriptions()
+		.pVertexBindingDescriptions = LeVkMesh::LeVertexGetBindingDescription(),
+		.vertexAttributeDescriptionCount = LeVkMesh::LeVertexGetNumAttributeDescriptions(),
+		.pVertexAttributeDescriptions = LeVkMesh::LeVertexGetAttributeDescriptions()
 
 	};
 

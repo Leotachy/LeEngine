@@ -5,11 +5,11 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMesh.h"
 
-class LeMatBlockVk : public LeMatBlock
+class LeVkMatBlock : public LeMatBlock
 {
 public:
-	LeMatBlockVk();
-	~LeMatBlockVk();
+	LeVkMatBlock();
+	~LeVkMatBlock();
 
 	LeVkMemoryBuffer* GetVertexBuffer(void) { return &m_vb; }
 	LeVkMemoryBuffer* GetIndexBuffer(void) { return &m_ib; }
@@ -24,13 +24,13 @@ private:
 };
 
 
-class LeMeshVk : public LeMesh
+class LeVkMesh : public LeMesh
 {
 
 public:
 
-	LeMeshVk();
-	~LeMeshVk();
+	LeVkMesh();
+	~LeVkMesh();
 
 	LeVkDescriptorSetMesh* GetLeDescriptor(void) { return &m_descriptorSet; }
 

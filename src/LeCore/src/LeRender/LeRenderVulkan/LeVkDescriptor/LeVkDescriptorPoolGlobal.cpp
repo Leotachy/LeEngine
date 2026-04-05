@@ -16,7 +16,7 @@ void LeVkDescriptorPoolGlobal::GetPoolSizes(std::vector<VkDescriptorPoolSize>& P
 
 uint32 LeVkDescriptorPoolGlobal::GetMaxSets(void)
 {
-	return 1;
+	return 2;
 }
 
 void LeVkDescriptorPoolGlobal::GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings)

@@ -4,7 +4,7 @@
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeMaterial/LeMaterial.h"
-#include "LeCore/LeMaterial/LeMaterialVulkan/LeMaterialVulkan.h"
+#include "LeCore/LeMaterial/LeVkMaterial/LeVkMaterial.h"
 
 LeMaterial::LeMaterial()
 {
@@ -22,7 +22,7 @@ LeMaterial* LeMaterial::Create(void)
 	switch (LeRenderInterface::GetRenderApi())
 	{
 	case LeRenderApi::LE_RENDER_API_VULKAN:
-		return new LeMaterialVk();
+		return new LeVkMaterial();
 		break;
 	}
 

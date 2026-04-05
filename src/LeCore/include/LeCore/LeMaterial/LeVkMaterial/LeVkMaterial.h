@@ -7,12 +7,12 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMaterial.h"
 
 
-class LeMaterialVk : public LeMaterial
+class LeVkMaterial : public LeMaterial
 {
 
 public:
-	LeMaterialVk();
-	virtual ~LeMaterialVk();
+	LeVkMaterial();
+	virtual ~LeVkMaterial();
 
 	const LeVkGraphicsPipeline* GetGraphicsPipeline(void) { return m_graphicsPipeline; }
 	void SetGraphicsPipeline(LeVkGraphicsPipeline* pPipeline) { m_graphicsPipeline = pPipeline; }

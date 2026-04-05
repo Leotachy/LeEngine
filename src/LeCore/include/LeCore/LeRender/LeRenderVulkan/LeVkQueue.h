@@ -4,12 +4,12 @@
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
 
-class LeVulkanQueue
+class LeVkQueue
 {
 
 public:
-	LeVulkanQueue();
-	~LeVulkanQueue();
+	LeVkQueue();
+	~LeVkQueue();
 
 	void Init(VkDevice Device, LeSwapchain* pSwapChain, uint32 QueueFamily, uint32 QueueIndex);
 

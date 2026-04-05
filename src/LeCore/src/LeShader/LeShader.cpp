@@ -3,7 +3,7 @@
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeShader/LeShader.h"
-#include "LeCore/LeShader/LeShaderVulkan/LeShaderVulkan.h"
+#include "LeCore/LeShader/LeVkShader/LeVkShader.h"
 
 
 
@@ -23,7 +23,7 @@ LeShader* LeShader::Create(const char* pName, const char* pShaderBinaryPath)
 	switch (LeRenderInterface::GetRenderApi())
 	{
 	case LeRenderApi::LE_RENDER_API_VULKAN:
-		return new LeShaderVk(pName, pShaderBinaryPath);
+		return new LeVkShader(pName, pShaderBinaryPath);
 		break;
 	}
 

@@ -24,11 +24,11 @@ struct LeVkTextureAttributes
 
 
 
-class LeTextureVk : public LeTexture
+class LeVkTexture : public LeTexture
 {
 public:
-    LeTextureVk();
-    ~LeTextureVk();
+    LeVkTexture();
+    ~LeVkTexture();
 
 
     virtual void SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height) override;

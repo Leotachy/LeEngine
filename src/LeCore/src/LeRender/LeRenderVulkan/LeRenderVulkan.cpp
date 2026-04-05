@@ -6,10 +6,10 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVulkanQueue.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkQueue.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
-#include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
-#include "LeCore/LeTexture/LeTextureVulkan/LeTextureVulkan.h"
+#include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
+#include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL leVkDebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT Severity,
@@ -68,6 +68,7 @@ void LeVkCore::Init(const char* pAppName, GLFWwindow* pWindow)
 	m_physicalDevices.Init(m_instance, m_surface);
 	m_queueFamily = m_physicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 	CreateLogicalDevice();
+	m_queueFamily = 0;
 	m_swapchain.Init(m_logicalDevice, m_physicalDevices.Selected(), m_surface, m_queueFamily);
 
 	LeVkDescriptorPoolManager::Singleton().Init();
@@ -84,6 +85,7 @@ void LeVkCore::Init(const char* pAppName, GLFWwindow* pWindow)
 		LeVkUtils::CreateUniformBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, 
 			sizeof(LeVkFrameUniformData), &CurrentRenderFrame.FrameUBOMemoryBuffer);
 		CurrentRenderFrame.bFramebufferResized = false;
+		CurrentRenderFrame.DescriptorSet.Init();
 		CurrentRenderFrame.DescriptorSet.UpdateSet(&CurrentRenderFrame.FrameUBOMemoryBuffer);
 	}
 
@@ -257,12 +259,12 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 	return true;
 }
 
-LeBool LeVkCore::LeVkRender(LeMeshVk* pMesh)
+LeBool LeVkCore::LeVkRender(LeVkMesh* pMesh)
 {
 	LE_DEBUG_ASSERT(pMesh);
 
 	LeVkCurrentRenderFrame* pRenderFrame = &m_CurrentRenderFrame[m_FrameIndex];
-	VkCommandBuffer pCommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
+	VkCommandBuffer CommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
 
 
 
@@ -271,22 +273,23 @@ LeBool LeVkCore::LeVkRender(LeMeshVk* pMesh)
 		LeMatBlock* pMb = pMesh->GetMatblock(i);
 		LE_DEBUG_ASSERT(pMb);
 
-		LeMatBlockVk* pMbVk = static_cast<LeMatBlockVk*>(pMb);
+		LeVkMatBlock* pMbVk = static_cast<LeVkMatBlock*>(pMb);
 		LE_DEBUG_ASSERT(pMbVk);
 
-		LeMaterialVk* pMaterialVk = static_cast<LeMaterialVk*>(pMbVk->GetMaterial());
+		LeVkMaterial* pMaterialVk = static_cast<LeVkMaterial*>(pMbVk->GetMaterial());
 
 		RefreshGraphicsPipelineForMaterial(pMaterialVk);
 		RefreshDescriptorSetForMaterial(pMaterialVk);
+		UpdateMaterialTextureImages(CommandBuffer, pMaterialVk);
 
-		vkCmdBindPipeline(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipeline());
+		vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipeline());
 
 		SetupVertexBufferForMatBlock(pMbVk);
 		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(pCommandBuffer, 0, 1, &pMbVk->GetVertexBuffer()->buffer, offsets);
+		vkCmdBindVertexBuffers(CommandBuffer, 0, 1, &pMbVk->GetVertexBuffer()->buffer, offsets);
 
 		SetupIndexBufferForMatBlock(pMbVk);
-		vkCmdBindIndexBuffer(pCommandBuffer, pMbVk->GetIndexBuffer()->buffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(CommandBuffer, pMbVk->GetIndexBuffer()->buffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
 
 		VkDescriptorSet DescriptorSets[] =
 		{
@@ -297,7 +300,7 @@ LeBool LeVkCore::LeVkRender(LeMeshVk* pMesh)
 
 		uint32 NumDescriptorSets = ARRAY_SIZE(DescriptorSets);
 
-		vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
+		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
 			0,						// firstSet
 			NumDescriptorSets,		// descriptorSetCount
 			DescriptorSets,			// descriptor sets
@@ -305,7 +308,7 @@ LeBool LeVkCore::LeVkRender(LeMeshVk* pMesh)
 			NULL);					// pDynamicOffsets
 
 
-		vkCmdDrawIndexed(pCommandBuffer, uint32(pMbVk->Faces.size()) * 3, 1, 0, 0, 0);
+		vkCmdDrawIndexed(CommandBuffer, uint32(pMbVk->Faces.size()) * 3, 1, 0, 0, 0);
 	}
 
 	return true;
@@ -315,14 +318,14 @@ LeBool LeVkCore::LeVkEndRender(void)
 {
 
 	LeVkCurrentRenderFrame* pRenderFrame = &m_CurrentRenderFrame[m_FrameIndex];
-	VkCommandBuffer pCommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
+	VkCommandBuffer CommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
 
-	vkCmdEndRendering(pCommandBuffer);
+	vkCmdEndRendering(CommandBuffer);
 
 
 	// transition the image for presenting
 
-	LeVkUtils::TransitionImageLayout(pCommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
@@ -330,9 +333,9 @@ LeBool LeVkCore::LeVkEndRender(void)
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
 
-	EndCommandBuffer(pCommandBuffer);
+	EndCommandBuffer(CommandBuffer);
 
-	m_queue.SubmitAsync(pCommandBuffer, pRenderFrame->ImageIndex, m_FrameIndex);
+	m_queue.SubmitAsync(CommandBuffer, pRenderFrame->ImageIndex, m_FrameIndex);
 
 
 	if (!m_queue.Present(pRenderFrame->ImageIndex, m_FrameIndex) || pRenderFrame->bFramebufferResized)
@@ -447,7 +450,7 @@ void LeVkCore::CreateInstance(const char* pAppName)
 
 	const char* Layers[] =
 	{
-		"VK_LAYER_KHRONOm_validation"
+		"VK_LAYER_KHRONOS_validation"
 	};
 
 	const char* Extensions[] =
@@ -793,7 +796,7 @@ void LeVkCore::RecreateSwapChain(void)
 
 // returns true if graphics pipeline changed
 // TODO: optimize this
-LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeMaterialVk* pMaterial)
+LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 {
 
 	LE_DEBUG_ASSERT(pMaterial);
@@ -828,7 +831,7 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeMaterialVk* pMaterial)
 		}
 		else
 		{
-			LeShaderVk* pShaderVk = static_cast<LeShaderVk*>(pShader);
+			LeVkShader* pShaderVk = static_cast<LeVkShader*>(pShader);
 			LE_DEBUG_ASSERT(pShaderVk);
 
 			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, m_swapchain.GetNumImages(), pShaderVk, m_swapchain.GetImageFormat());
@@ -845,7 +848,7 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeMaterialVk* pMaterial)
 	return false;
 }
 
-LeBool LeVkCore::RefreshDescriptorSetForMaterial(LeMaterialVk* pMaterial)
+LeBool LeVkCore::RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial)
 {
 	LE_DEBUG_ASSERT(pMaterial);
 
@@ -860,8 +863,25 @@ LeBool LeVkCore::RefreshDescriptorSetForMaterial(LeMaterialVk* pMaterial)
 	return false;
 }
 
+LeBool LeVkCore::UpdateMaterialTextureImages(VkCommandBuffer CommandBuffer, LeVkMaterial* pMaterial)
+{
+	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pMaterial);
+
+	LeVkTexture* pBaseTexture = static_cast<LeVkTexture*>(pMaterial->GetBaseTexture());
+
+	if (pBaseTexture && pBaseTexture->HasFlags(TEXTURE_PIXELS_DIRTY))
+	{
+		UpdateVkImage(CommandBuffer, pBaseTexture);
+
+		pBaseTexture->DeleteFlags(TEXTURE_PIXELS_DIRTY);
+	}
+
+	return false;
+}
+
 // returns true if buffer was created or updated
-LeBool LeVkCore::SetupVertexBufferForMatBlock(LeMatBlockVk* pMbVk)
+LeBool LeVkCore::SetupVertexBufferForMatBlock(LeVkMatBlock* pMbVk)
 {
 	LE_DEBUG_ASSERT(pMbVk);
 
@@ -878,7 +898,7 @@ LeBool LeVkCore::SetupVertexBufferForMatBlock(LeMatBlockVk* pMbVk)
 }
 
 // returns true if buffer was created or updated
-LeBool LeVkCore::SetupIndexBufferForMatBlock(LeMatBlockVk* pMbVk)
+LeBool LeVkCore::SetupIndexBufferForMatBlock(LeVkMatBlock* pMbVk)
 {
 	LE_DEBUG_ASSERT(pMbVk);
 
@@ -898,7 +918,7 @@ LeBool LeVkCore::SetupIndexBufferForMatBlock(LeMatBlockVk* pMbVk)
 
 
 
-void LeVkCore::UpdateVkImage(VkCommandBuffer CommandBuffer, LeTextureVk* pTex)
+void LeVkCore::UpdateVkImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex)
 {
 
 	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);

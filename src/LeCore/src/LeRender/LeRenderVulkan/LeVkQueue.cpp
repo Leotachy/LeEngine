@@ -2,7 +2,7 @@
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVulkanQueue.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkQueue.h"
 
 
 static VkSemaphore createSemaphore(VkDevice Device)
@@ -32,7 +32,7 @@ static VkFence createFence(VkDevice Device)
 	return Fence;
 }
 
-LeVulkanQueue::LeVulkanQueue()
+LeVkQueue::LeVkQueue()
 {
 	m_queue = NULL;
 
@@ -50,13 +50,13 @@ LeVulkanQueue::LeVulkanQueue()
 	m_swapChain = NULL;
 }
 
-LeVulkanQueue::~LeVulkanQueue()
+LeVkQueue::~LeVkQueue()
 {
 
 
 }
 
-void LeVulkanQueue::Init(VkDevice Device, LeSwapchain* pSwapChain, uint32 QueueFamily, uint32 QueueIndex)
+void LeVkQueue::Init(VkDevice Device, LeSwapchain* pSwapChain, uint32 QueueFamily, uint32 QueueIndex)
 {
 
 	LE_DEBUG_ASSERT(Device);
@@ -72,27 +72,27 @@ void LeVulkanQueue::Init(VkDevice Device, LeSwapchain* pSwapChain, uint32 QueueF
 	CreateSyncObjects();
 }
 
-void LeVulkanQueue::Destroy()
+void LeVkQueue::Destroy()
 {
 	FreeSyncObjects();
 }
 
-void LeVulkanQueue::WaitIdle()
+void LeVkQueue::WaitIdle()
 {
 	vkQueueWaitIdle(m_queue);
 }
 
-void LeVulkanQueue::WaitForFences(int32 frameIndex)
+void LeVkQueue::WaitForFences(int32 frameIndex)
 {
 	vkWaitForFences(m_device, 1, &m_renderCompleteFences[frameIndex], true, UINT64_MAX);
 }
 
-void LeVulkanQueue::ResetFences(int32 frameIndex)
+void LeVkQueue::ResetFences(int32 frameIndex)
 {
 	vkResetFences(m_device, 1, &m_renderCompleteFences[frameIndex]);
 }
 
-uint32 LeVulkanQueue::AcquireNextImage(int32 frameIndex)
+uint32 LeVkQueue::AcquireNextImage(int32 frameIndex)
 {
 	uint32 ImageIndex = 0;
 	VkResult res = vkAcquireNextImageKHR(m_device,
@@ -106,7 +106,7 @@ uint32 LeVulkanQueue::AcquireNextImage(int32 frameIndex)
 	return ImageIndex;
 }
 
-void LeVulkanQueue::SubmitSync(VkCommandBuffer CmbBuf)
+void LeVkQueue::SubmitSync(VkCommandBuffer CmbBuf)
 {
 	VkSubmitInfo SubmitInfo =
 	{
@@ -125,7 +125,7 @@ void LeVulkanQueue::SubmitSync(VkCommandBuffer CmbBuf)
 	LE_CHECK_VK_RESULT(res);
 }
 
-void LeVulkanQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 frameIndex)
+void LeVkQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 frameIndex)
 {
 	VkPipelineStageFlags waitFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -147,7 +147,7 @@ void LeVulkanQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32
 }
 
 
-bool LeVulkanQueue::Present(uint32 imageIndex, int32 frameIndex)
+bool LeVkQueue::Present(uint32 imageIndex, int32 frameIndex)
 {
 
 	VkSwapchainKHR Swapchain = m_swapChain->GetSwapchain();
@@ -172,7 +172,7 @@ bool LeVulkanQueue::Present(uint32 imageIndex, int32 frameIndex)
 }
 
 
-void LeVulkanQueue::CreateSyncObjects(void)
+void LeVkQueue::CreateSyncObjects(void)
 {
 
 	uint32 NumImages = m_swapChain->GetNumImages();
@@ -198,7 +198,7 @@ void LeVulkanQueue::CreateSyncObjects(void)
 
 }
 
-void LeVulkanQueue::FreeSyncObjects(void)
+void LeVkQueue::FreeSyncObjects(void)
 {
 
 	for (int32 i = 0; i < m_numRenderCompleteSems; i++)

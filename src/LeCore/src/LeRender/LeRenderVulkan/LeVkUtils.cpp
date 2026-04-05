@@ -383,6 +383,8 @@ uint32_t LeVkUtils::GetVkBytesPerTexFormat(VkFormat Format)
 		return 4;
 	case VK_FORMAT_R8G8B8A8_UNORM:
 		return 4;
+	case VK_FORMAT_R8G8B8A8_UINT:
+		return 4;
 	case VK_FORMAT_R16G16B16A16_SFLOAT:
 		return 4 * sizeof(uint16);
 	case VK_FORMAT_R32G32B32A32_SFLOAT:

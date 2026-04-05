@@ -34,7 +34,7 @@ public:
 
 	static void InitRenderer(InitRendererParams& params);
 	static void ShutdownRenderer();
-	static void InitRenderer(void);
+	static void DeInitRenderer(void);
 
 	static LeBool BeginRender(LeCamera* pCam, LeBool bFramebufferResized);
 	static LeBool Render(LeMesh* pMesh);

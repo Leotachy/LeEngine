@@ -1,12 +1,12 @@
 #include "LeCore/lecore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMaterial.h"
-#include "LeCore/LeTexture/LeTextureVulkan/LeTextureVulkan.h"
+#include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
 void LeVkDescriptorSetMaterial::UpdateSet(void* pData)
 {
 
-	LeTextureVk* Texture = (LeTextureVk*)pData;
+	LeVkTexture* Texture = (LeVkTexture*)pData;
 	LE_DEBUG_ASSERT(Texture);
 
 	VkDescriptorImageInfo DescriptorImageInfo =

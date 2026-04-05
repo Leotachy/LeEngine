@@ -15,5 +15,5 @@ void LeEngineShutDown(void)
 
 void LeEngineDeInit(void)
 {
-	LeRenderInterface::InitRenderer();
+	LeRenderInterface::DeInitRenderer();
 }

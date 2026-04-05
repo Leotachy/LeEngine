@@ -1,22 +1,22 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
-#include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
+#include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 
 
-LeMatBlockVk::LeMatBlockVk()
+LeVkMatBlock::LeVkMatBlock()
 {
 	
 }
 
 
-LeMatBlockVk::~LeMatBlockVk()
+LeVkMatBlock::~LeVkMatBlock()
 {
 }
 
 
 
-LeMeshVk::LeMeshVk()
+LeVkMesh::LeVkMesh()
 {
 	VkDevice Device = LeVkCore::Singleton().LeVkGetLogicalDevice();
 	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().LeVkGetPhysicalDevice();
@@ -26,10 +26,11 @@ LeMeshVk::LeMeshVk()
 	glm::mat4 GlobalMatrix = glm::mat4(1.0f);
 	LeVkUtils::UpdateBuffer(&m_modelMatrix, &GlobalMatrix, sizeof(GlobalMatrix));
 
+	m_descriptorSet.Init();
 	m_descriptorSet.UpdateSet(&m_modelMatrix);
 }
 
-LeMeshVk::~LeMeshVk()
+LeVkMesh::~LeVkMesh()
 {
 	LeVkUtils::DestroyBuffer(&m_modelMatrix);
 }
@@ -41,7 +42,7 @@ static const VkVertexInputBindingDescription s_BindingDescription =
 	0, sizeof(LeVertex), VK_VERTEX_INPUT_RATE_VERTEX
 };
 
-const VkVertexInputBindingDescription* LeMeshVk::LeVertexGetBindingDescription()
+const VkVertexInputBindingDescription* LeVkMesh::LeVertexGetBindingDescription()
 {
 	return &s_BindingDescription;
 }
@@ -53,12 +54,12 @@ static const VkVertexInputAttributeDescription s_AttributeDescriptions[] =
 	{ 2, 0, VK_FORMAT_R32G32_SFLOAT,    offsetof(LeVertex, uv) }
 };
 
-const VkVertexInputAttributeDescription* LeMeshVk::LeVertexGetAttributeDescriptions()
+const VkVertexInputAttributeDescription* LeVkMesh::LeVertexGetAttributeDescriptions()
 {
 	return s_AttributeDescriptions;
 }
 
-uint32 LeMeshVk::LeVertexGetNumAttributeDescriptions()
+uint32 LeVkMesh::LeVertexGetNumAttributeDescriptions()
 {
 	return ARRAY_SIZE(s_AttributeDescriptions);
 }

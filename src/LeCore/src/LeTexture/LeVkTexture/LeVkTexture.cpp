@@ -1,7 +1,7 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
-#include "LeCore/LeTexture/LeTextureVulkan/LeTextureVulkan.h"
+#include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
 
 VkFilter GetVkFilterForLeFilterMode(LeTextureFilterMode LeFilterMode)
@@ -52,7 +52,7 @@ LeVkTextureAttributes::LeVkTextureAttributes(const LeTextureAttributes& BaseAttr
 }
 
 
-LeTextureVk::LeTextureVk()
+LeVkTexture::LeVkTexture()
 {
     device = LeVkCore::Singleton().LeVkGetLogicalDevice();
     physicalDevice = LeVkCore::Singleton().LeVkGetPhysicalDevice();
@@ -60,10 +60,10 @@ LeTextureVk::LeTextureVk()
     view = VK_NULL_HANDLE;
     sampler = VK_NULL_HANDLE;
 
-    m_format = VK_FORMAT_R8G8B8A8_UINT;
+    m_format = VK_FORMAT_R8G8B8A8_UNORM;
 }
 
-LeTextureVk::~LeTextureVk()
+LeVkTexture::~LeVkTexture()
 {
     ClearPixels();
 }
@@ -71,7 +71,7 @@ LeTextureVk::~LeTextureVk()
 // Creates a staging buffer with host visible memory and
 // image with device local memory
 // Does not update the image, that must be done during command buffer recording!
-void LeTextureVk::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
+void LeVkTexture::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
 {
     ClearPixels();
 
@@ -105,19 +105,34 @@ void LeTextureVk::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
     DeleteFlags(TEXTURE_ATTRIBUTES_DIRTY);
 }
 
-void LeTextureVk::ClearPixels(void)
+void LeVkTexture::ClearPixels(void)
 {
-    LeVkUtils::DestroySampler(device, sampler);
-    sampler = VK_NULL_HANDLE;
+    if (sampler != VK_NULL_HANDLE)
+    {
+        LeVkUtils::DestroySampler(device, sampler);
+        sampler = VK_NULL_HANDLE;
+    }
 
-    LeVkUtils::DestroyImageView(device, view);
-    view = VK_NULL_HANDLE;
+    if (view != VK_NULL_HANDLE)
+    {
+        LeVkUtils::DestroyImageView(device, view);
+        view = VK_NULL_HANDLE;
+    }
 
-    LeVkUtils::DestroyImage(&textureImage);
-    LeVkUtils::DestroyBuffer(&stagingBuffer);
+    if (textureImage.image != VK_NULL_HANDLE)
+    {
+        LeVkUtils::DestroyImage(&textureImage);
+    }
+
+    if (stagingBuffer.buffer != VK_NULL_HANDLE)
+    {
+        LeVkUtils::DestroyBuffer(&stagingBuffer);
+    }
+
+
 }
 
-LeBool LeTextureVk::ArePixelsSet(void)
+LeBool LeVkTexture::ArePixelsSet(void)
 {
     return textureImage.image != VK_NULL_HANDLE;
 }

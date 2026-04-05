@@ -2,7 +2,7 @@
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeTexture/LeTexture.h"
-#include "LeCore/LeTexture/LeTextureVulkan/LeTextureVulkan.h"
+#include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
 LeTexture::LeTexture()
 {
@@ -19,7 +19,7 @@ LeTexture* LeTexture::Create(void)
 	switch (LeRenderInterface::GetRenderApi())
 	{
 	case LeRenderApi::LE_RENDER_API_VULKAN:
-		return new LeTextureVk();
+		return new LeVkTexture();
 		break;
 	}
 

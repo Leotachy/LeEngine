@@ -8,11 +8,11 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVulkanQueue.h"
-#include "LeCore/LeMaterial/LeMaterialVulkan/LeMaterialVulkan.h"
-#include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkQueue.h"
+#include "LeCore/LeMaterial/LeVkMaterial/LeVkMaterial.h"
+#include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.h"
-
+#include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
 
 #define GLFW_INCLUDE_VULKAN
@@ -50,7 +50,7 @@ public:
 
 
 	LeBool LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
-	LeBool LeVkRender(LeMeshVk* pMesh);
+	LeBool LeVkRender(LeVkMesh* pMesh);
 	LeBool LeVkEndRender(void);
 
 	VkDevice LeVkGetLogicalDevice(void);
@@ -84,12 +84,13 @@ private:
 
 	void RecreateSwapChain(void);
 
-	LeBool RefreshGraphicsPipelineForMaterial(LeMaterialVk* pMaterial);
-	LeBool RefreshDescriptorSetForMaterial(LeMaterialVk* pMaterial);
-	LeBool SetupVertexBufferForMatBlock(LeMatBlockVk* pMbVk);
-	LeBool SetupIndexBufferForMatBlock(LeMatBlockVk* pMbVk);
+	LeBool RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial);
+	LeBool RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial);
+	LeBool UpdateMaterialTextureImages(VkCommandBuffer CommandBuffer, LeVkMaterial* pMaterial);
+	LeBool SetupVertexBufferForMatBlock(LeVkMatBlock* pMbVk);
+	LeBool SetupIndexBufferForMatBlock(LeVkMatBlock* pMbVk);
 
-	void UpdateVkImage(VkCommandBuffer CommandBuffer, LeTextureVk* pTex);
+	void UpdateVkImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex);
 
 
 
@@ -111,7 +112,7 @@ private:
 
 	VkCommandPool m_commandBufferPool;
 	VkCommandPool m_transientCommandBufferPool; // Command pool for one shot commands
-	LeVulkanQueue m_queue;
+	LeVkQueue m_queue;
 
 
 	LeVkCurrentRenderFrame m_CurrentRenderFrame[LE_MAX_FRAMES_IN_FLIGHT];

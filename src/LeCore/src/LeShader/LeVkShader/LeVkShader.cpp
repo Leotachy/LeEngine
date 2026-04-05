@@ -1,7 +1,7 @@
 
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
-#include "LeCore/LeShader/LeShaderVulkan/LeShaderVulkan.h"
+#include "LeCore/LeShader/LeVkShader/LeVkShader.h"
 
 // temp func until LeStore is done
 // TODO
@@ -21,7 +21,7 @@ static std::vector<LeByte> readShaderBinaryFile(const char* pShaderBinaryPath)
 	return buffer;
 }
 
-LeShaderVk::LeShaderVk(const LeChar* name, const LeChar* pShaderFilepath) : LeShader(name, pShaderFilepath)
+LeVkShader::LeVkShader(const LeChar* name, const LeChar* pShaderFilepath) : LeShader(name, pShaderFilepath)
 {
 	m_Device = LeVkCore::Singleton().LeVkGetLogicalDevice();
 	LE_DEBUG_ASSERT(m_Device);
@@ -30,7 +30,7 @@ LeShaderVk::LeShaderVk(const LeChar* name, const LeChar* pShaderFilepath) : LeSh
 	CreateShaderModule(bin);
 }
 
-LeShaderVk::~LeShaderVk(void)
+LeVkShader::~LeVkShader(void)
 {
 	if (m_Device)
 	{
@@ -41,7 +41,7 @@ LeShaderVk::~LeShaderVk(void)
 	}
 }
 
-VkShaderModule LeShaderVk::CreateShaderModule(std::vector<LeByte>& ShaderBinary)
+VkShaderModule LeVkShader::CreateShaderModule(std::vector<LeByte>& ShaderBinary)
 {
 
 	if (ShaderBinary.size() == 0)

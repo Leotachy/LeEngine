@@ -10,12 +10,12 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 #include "LeCore/LeShader/LeShader.h"
 
-class LeShaderVk : public LeShader
+class LeVkShader : public LeShader
 {
 public:
 
-    LeShaderVk(const LeChar* name, const LeChar* pShaderFilepath);
-    ~LeShaderVk(void);
+    LeVkShader(const LeChar* name, const LeChar* pShaderFilepath);
+    ~LeVkShader(void);
 
     VkShaderModule CreateShaderModule(std::vector<LeByte>& ShaderBinary);
 

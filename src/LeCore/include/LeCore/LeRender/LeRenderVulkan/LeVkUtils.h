@@ -3,7 +3,7 @@
 
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryImage.h"
-#include "LeCore/LeTexture/LeTextureVulkan/LeTextureVulkan.h"
+#include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
 
 

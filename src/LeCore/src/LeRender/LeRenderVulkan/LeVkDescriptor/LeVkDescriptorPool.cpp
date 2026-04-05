@@ -32,7 +32,7 @@ void LeVkDescriptorPool::Init(void)
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 		.flags = 0,
 		.maxSets = GetMaxSets(),
-		.poolSizeCount = ARRAY_SIZE(PoolSizes),
+		.poolSizeCount = uint32(PoolSizes.size()),
 		.pPoolSizes = PoolSizes.data()
 	};
 

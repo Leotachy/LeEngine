@@ -3,7 +3,7 @@
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeMesh/LeMesh.h"
-#include "LeCore/LeMesh/LeMeshVulkan/LeMeshVulkan.h"
+#include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 
 LeMatBlock::LeMatBlock()
 {
@@ -23,7 +23,7 @@ LeMatBlock* LeMatBlock::Create(void)
 	switch (LeRenderInterface::GetRenderApi())
 	{
 	case LeRenderApi::LE_RENDER_API_VULKAN:
-		return new LeMatBlockVk();
+		return new LeVkMatBlock();
 		break;
 	}
 
@@ -64,7 +64,7 @@ LeMesh* LeMesh::Create(void)
 	switch (LeRenderInterface::GetRenderApi())
 	{
 	case LeRenderApi::LE_RENDER_API_VULKAN:
-		return new LeMeshVk();
+		return new LeVkMesh();
 		break;
 	}
 
