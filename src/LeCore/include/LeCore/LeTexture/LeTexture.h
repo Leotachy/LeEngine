@@ -47,10 +47,10 @@ class LeTexture : public LeRenderResource
 {
 
 protected:
-	LeTexture();
+	LeTexture(const LeChar* pName);
 public:
 	virtual ~LeTexture();
-	static LeTexture* Create(void);
+	static LeTexture* Create(const LeChar* pName);
 
 	virtual void SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height) = 0;
 	virtual void ClearPixels(void) = 0;
@@ -67,7 +67,7 @@ protected:
 
 private:
 
-	LeChar m_name[TEXTURE_NAME_LENGTH];
+	LeChar* m_name;
 
 
 

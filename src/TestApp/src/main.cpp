@@ -7,6 +7,7 @@
 #include "LeCore/LeEngine/LeEngine.h"
 #include "LeCore/LeCamera/LeCamera.h"
 #include "LeCore/LeMesh/LeMesh.h"
+#include "LeCore/LeTexture/LeTextureDictionary.h"
 
 #define DEFAULT_SCREEN_WIDTH 800
 #define DEFAULT_SCREEN_HEIGHT 600
@@ -69,7 +70,7 @@ static void manipulateMatblockVertex(LeMatBlock* pMb, double dt)
 	static double LifeTime = 0;
 	LifeTime += dt;
 
-	pMb->Vertices[0].pos.z = (float)glm::sin(LifeTime);
+	pMb->Vertices[0].pos.z = (float)glm::cos(LifeTime);
 	pMb->Vertices[pMb->Vertices.size() - 1].pos.z = (float)glm::sin(LifeTime);
 
 	pMb->AddFlags(MATBLOCK_VERTS_DIRTY);
@@ -135,15 +136,8 @@ int main(void)
 	LeMesh* pMesh = LeMesh::Create();
 	pMesh->AddMatblock(Mb);
 
-	int32 w, h, ch;
-	void* pPixelData = stbi_load(TESTAPP_RESOURCES_PATH "textures/awesomeface.png", &w, &h, &ch, 4);
-
-	LE_DEBUG_ASSERT(ch == 4);
-
-	LeTexture* pBaseTexture = LeTexture::Create();
-	pBaseTexture->SetPixels((LeRGBA*)pPixelData, w, h);
-	stbi_image_free(pPixelData);
-
+	LeTexture* pBaseTexture = LeTextureDictionary::Singleton().LoadTexture(TESTAPP_RESOURCES_PATH "textures/", "awesomeface.png");
+	LE_ASSERT(pBaseTexture);
 	Mat->SetBaseTexture(pBaseTexture);
 
 	// The triangle is constructed!
@@ -159,6 +153,9 @@ int main(void)
 		double currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		double FPS = 1.0 / deltaTime;
+		LE_DEBUG_MESSAGE("FPS: %f", FPS);
 
 		manipulateMatblockVertex(Mb, deltaTime);
 

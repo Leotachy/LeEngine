@@ -11,6 +11,7 @@
 #include <fstream>
 #include <vector>
 #include <set>
+#include <queue>
 
 // third party headers
 

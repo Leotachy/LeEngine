@@ -52,7 +52,7 @@ LeVkTextureAttributes::LeVkTextureAttributes(const LeTextureAttributes& BaseAttr
 }
 
 
-LeVkTexture::LeVkTexture()
+LeVkTexture::LeVkTexture(const LeChar* pName) : LeTexture(pName)
 {
     device = LeVkCore::Singleton().LeVkGetLogicalDevice();
     physicalDevice = LeVkCore::Singleton().LeVkGetPhysicalDevice();
@@ -103,6 +103,8 @@ void LeVkTexture::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
 
     AddFlags(TEXTURE_PIXELS_DIRTY);
     DeleteFlags(TEXTURE_ATTRIBUTES_DIRTY);
+
+    LeVkCore::Singleton().QueueTextureForImageUpdate(this);
 }
 
 void LeVkTexture::ClearPixels(void)

@@ -27,7 +27,7 @@ struct LeVkTextureAttributes
 class LeVkTexture : public LeTexture
 {
 public:
-    LeVkTexture();
+    LeVkTexture(const LeChar* pName);
     ~LeVkTexture();
 
 

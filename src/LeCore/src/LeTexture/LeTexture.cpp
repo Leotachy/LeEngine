@@ -4,9 +4,11 @@
 #include "LeCore/LeTexture/LeTexture.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
-LeTexture::LeTexture()
+LeTexture::LeTexture(const LeChar* pName)
 {
-	m_name[0] = '\0';
+	LE_DEBUG_ASSERT(pName);
+
+	m_name = _strdup(pName);
 	m_width = m_height = 0;
 }
 
@@ -14,12 +16,12 @@ LeTexture::~LeTexture()
 {
 }
 
-LeTexture* LeTexture::Create(void)
+LeTexture* LeTexture::Create(const LeChar* pName)
 {
 	switch (LeRenderInterface::GetRenderApi())
 	{
 	case LeRenderApi::LE_RENDER_API_VULKAN:
-		return new LeVkTexture();
+		return new LeVkTexture(pName);
 		break;
 	}
 

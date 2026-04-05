@@ -57,6 +57,8 @@ public:
 	const LeVkPhysicalDevice* LeVkGetPhysicalDevice(void);
 	int32 GetMaxFramesInFlight(void) const { return LE_MAX_FRAMES_IN_FLIGHT; }
 
+	void QueueTextureForImageUpdate(LeVkTexture* pTexture);
+
 private:
 
 	void CreateInstance(const char* pAppName);
@@ -117,5 +119,7 @@ private:
 
 	LeVkCurrentRenderFrame m_CurrentRenderFrame[LE_MAX_FRAMES_IN_FLIGHT];
 	int32 m_FrameIndex;
+
+	std::queue<LeVkTexture*> m_updateImageTextureQueue;
 };
 

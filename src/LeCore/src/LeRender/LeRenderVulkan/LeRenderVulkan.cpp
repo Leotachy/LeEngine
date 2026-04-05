@@ -189,6 +189,27 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 		&m_CurrentRenderFrame[m_FrameIndex].FrameUBO,
 		sizeof(m_CurrentRenderFrame[m_FrameIndex].FrameUBO));
 
+	// Update texture image buffers
+	if (m_updateImageTextureQueue.empty() == false)
+	{
+		VkCommandBuffer UpdateImageCommandBuffer;
+		CreateOneShotCommandBuffers(1, &UpdateImageCommandBuffer);
+
+		BeginCommandBuffer(UpdateImageCommandBuffer);
+
+		for (uint32 i = 0; i < m_updateImageTextureQueue.size(); i++)
+		{
+			LeVkTexture* pTexture = m_updateImageTextureQueue.front();
+			UpdateVkImage(UpdateImageCommandBuffer, pTexture);
+			
+		}
+
+		EndCommandBuffer(UpdateImageCommandBuffer);
+
+		m_queue.SubmitSync(UpdateImageCommandBuffer);
+	}
+
+
 	// Begin recording the command buffer
 
 	VkCommandBuffer pCommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
@@ -280,7 +301,7 @@ LeBool LeVkCore::LeVkRender(LeVkMesh* pMesh)
 
 		RefreshGraphicsPipelineForMaterial(pMaterialVk);
 		RefreshDescriptorSetForMaterial(pMaterialVk);
-		UpdateMaterialTextureImages(CommandBuffer, pMaterialVk);
+		//UpdateMaterialTextureImages(CommandBuffer, pMaterialVk);
 
 		vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipeline());
 
@@ -359,6 +380,13 @@ const LeVkPhysicalDevice* LeVkCore::LeVkGetPhysicalDevice(void)
 	LE_DEBUG_ASSERT(pPhysicalDevice);
 
 	return pPhysicalDevice;
+}
+
+void LeVkCore::QueueTextureForImageUpdate(LeVkTexture* pTexture)
+{
+	LE_DEBUG_ASSERT(pTexture);
+
+	m_updateImageTextureQueue.push(pTexture);
 }
 
 void LeVkCore::CreateCommandBuffers(uint32 Count, VkCommandBuffer* CommandBuffers)

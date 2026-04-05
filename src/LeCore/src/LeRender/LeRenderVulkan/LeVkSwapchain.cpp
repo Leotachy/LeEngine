@@ -9,11 +9,11 @@ static VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& P
 {
 
 
-#ifndef LE_DEBUG
+
 	for (int i = 0; i < PresentModes.size(); i++)
 		if (PresentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
 			return PresentModes[i];
-#endif
+
 
 	// Fallback to FIFO which is always supported
 	return VK_PRESENT_MODE_FIFO_KHR;
