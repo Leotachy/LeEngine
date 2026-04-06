@@ -32,7 +32,7 @@ public:
 
 	static void TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
-		VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask);
+		VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask, VkImageAspectFlags aspectMask);
 
 	static VkImageView CreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
 		VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels);

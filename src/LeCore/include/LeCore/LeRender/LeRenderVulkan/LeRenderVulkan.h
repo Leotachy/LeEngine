@@ -67,7 +67,6 @@ private:
 	void CreateLogicalDevice();
 
 
-
 	VkCommandPool CreateCommandBufferPool(VkCommandPoolCreateFlags Flags, uint32 QueueFamilyIndex);
 
 	void CreateCommandBuffers(uint32 Count, VkCommandBuffer* CommandBuffers);
@@ -85,7 +84,10 @@ private:
 	void SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer);
 	void SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer);
 
-	void RecreateSwapChain(void);
+	void OnSurfaceSizeChanged(void);
+	
+	void CreateDepthResources(void);
+	void DestroyDepthResources(void);
 
 	LeBool RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial);
 	LeBool RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial);
@@ -120,6 +122,9 @@ private:
 
 	LeVkCurrentRenderFrame m_CurrentRenderFrame[LE_MAX_FRAMES_IN_FLIGHT];
 	int32 m_FrameIndex;
+
+	LeVkMemoryImage m_depthImage;
+	VkImageView m_depthImageView;
 
 	std::queue<LeVkTexture*> m_updateImageTextureQueue;
 };

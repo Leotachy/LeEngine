@@ -173,7 +173,7 @@ void LeVkUtils::DestroyImage(LeVkMemoryImage* OutMemoryImage)
 
 void LeVkUtils::TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
 	VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
-	VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask)
+	VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask, VkImageAspectFlags aspectMask)
 {
 
 	VkImageMemoryBarrier2 barrier
@@ -190,7 +190,7 @@ void LeVkUtils::TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkI
 		.image = image,
 		.subresourceRange =
 		{
-			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.aspectMask = aspectMask,
 			.baseMipLevel = 0,
 			.levelCount = 1,
 			.baseArrayLayer = 0,

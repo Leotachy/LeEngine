@@ -91,6 +91,8 @@ void LeVkCore::Init(const char* pAppName, GLFWwindow* pWindow)
 
 	m_FrameIndex = 0;
 
+	CreateDepthResources();
+
 	m_queue.Init(m_logicalDevice, &m_swapchain, m_queueFamily, 0);
 }
 
@@ -107,6 +109,8 @@ void LeVkCore::DeInit(void)
 
 	// DeInit the render queue
 	m_queue.Destroy();
+
+	DestroyDepthResources();
 
 	for (int32 i = 0; i < GetMaxFramesInFlight(); i++)
 	{
@@ -175,7 +179,7 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 	pRenderFrame->ImageIndex = m_queue.AcquireNextImage(m_FrameIndex);
 	if (pRenderFrame->ImageIndex == -1)
 	{
-		RecreateSwapChain();
+		OnSurfaceSizeChanged();
 		return false;
 	}
 
@@ -227,7 +231,17 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 		VK_ACCESS_2_NONE,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	LeVkUtils::TransitionImageLayout(pCommandBuffer, m_depthImage.image,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+		VK_IMAGE_ASPECT_DEPTH_BIT);
 
 
 	VkExtent2D swapchainExtent = m_swapchain.GetExtent();
@@ -242,6 +256,16 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.clearValue = ClearColor;
 
+	VkClearValue ClearDepthStencil = { 1.0f, 0 };
+
+	VkRenderingAttachmentInfo depthAttachment{};
+	depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	depthAttachment.imageView = m_depthImageView;
+	depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.clearValue = ClearDepthStencil;
+
 	VkRenderingInfo renderingInfo{};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 	renderingInfo.renderArea.offset = { 0, 0 };
@@ -249,6 +273,7 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 	renderingInfo.layerCount = 1;
 	renderingInfo.colorAttachmentCount = 1;
 	renderingInfo.pColorAttachments = &colorAttachment;
+	renderingInfo.pDepthAttachment = &depthAttachment;
 
 	vkCmdBeginRendering(pCommandBuffer, &renderingInfo);
 
@@ -356,7 +381,8 @@ LeBool LeVkCore::LeVkEndRender(void)
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		0,
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
+		VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	EndCommandBuffer(CommandBuffer);
 
@@ -364,7 +390,7 @@ LeBool LeVkCore::LeVkEndRender(void)
 
 
 	if (!m_queue.Present(pRenderFrame->ImageIndex, m_FrameIndex) || pRenderFrame->bFramebufferResized)
-		RecreateSwapChain();
+		OnSurfaceSizeChanged();
 
 	m_FrameIndex++;
 	m_FrameIndex = m_FrameIndex % LE_MAX_FRAMES_IN_FLIGHT;
@@ -812,7 +838,7 @@ void LeVkCore::SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuf
 	LeVkUtils::DestroyBuffer(&StagingVB);
 }
 
-void LeVkCore::RecreateSwapChain(void)
+void LeVkCore::OnSurfaceSizeChanged(void)
 {
 
 	// minimisation case.. TODO obv
@@ -830,8 +856,36 @@ void LeVkCore::RecreateSwapChain(void)
 
 	m_swapchain.DeInit();
 	m_swapchain.Init(m_logicalDevice, m_physicalDevices.Selected(), m_surface, m_queueFamily);
+
+	CreateDepthResources();
 }
 
+void LeVkCore::CreateDepthResources(void)
+{
+	DestroyDepthResources();
+
+	LeVkUtils::CreateImage(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps,
+		m_swapchain.GetExtent().width, m_swapchain.GetExtent().height, VK_FORMAT_D32_SFLOAT,
+		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		&m_depthImage);
+
+	m_depthImageView = LeVkUtils::CreateImageView(m_logicalDevice, m_depthImage.image, VK_FORMAT_D32_SFLOAT, VK_IMAGE_ASPECT_DEPTH_BIT,
+		VK_IMAGE_VIEW_TYPE_2D, 1, 1);
+}
+
+void LeVkCore::DestroyDepthResources(void)
+{
+	if (m_depthImageView != VK_NULL_HANDLE)
+	{
+		LeVkUtils::DestroyImageView(m_logicalDevice, m_depthImageView);
+		m_depthImageView = VK_NULL_HANDLE;
+	}
+
+	if (m_depthImage.IsAlloced())
+	{
+		LeVkUtils::DestroyImage(&m_depthImage);
+	}
+}
 
 // returns true if graphics pipeline changed
 // TODO: optimize this
@@ -873,7 +927,8 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 			LeVkShader* pShaderVk = static_cast<LeVkShader*>(pShader);
 			LE_DEBUG_ASSERT(pShaderVk);
 
-			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, m_swapchain.GetNumImages(), pShaderVk, m_swapchain.GetImageFormat());
+			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, m_swapchain.GetNumImages(), pShaderVk, m_swapchain.GetImageFormat(),
+				VK_FORMAT_D32_SFLOAT);
 			LeVkGraphicsPipelineDictionary::Singleton()->Add(NewGraphicsPipeline);
 
 			pMaterial->SetGraphicsPipeline(NewGraphicsPipeline);
@@ -972,14 +1027,16 @@ void LeVkCore::UpdateVkImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex)
 	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->textureImage.image,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		0, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	copyBufferToImage(CommandBuffer, pTex->textureImage.image, pTex->stagingBuffer.buffer, pTex->GetWidth(), pTex->GetHeight());
 
 	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->textureImage.image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT,
-		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT);
+		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 

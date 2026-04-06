@@ -71,7 +71,7 @@ static void manipulateMatblockVertex(LeMatBlock* pMb, double dt)
 	LifeTime += dt;
 
 	pMb->Vertices[0].pos.z = (float)glm::cos(LifeTime);
-	pMb->Vertices[pMb->Vertices.size() - 1].pos.z = (float)glm::sin(LifeTime);
+	pMb->Vertices[3].pos.z = (float)glm::sin(LifeTime);
 
 	pMb->AddFlags(MATBLOCK_VERTS_DIRTY);
 
@@ -118,13 +118,21 @@ int main(void)
 		{{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
 		{{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
 		{{0.5f, 0.5f,  0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+		{{ -0.5f, -0.5f, -2.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+		{{0.5f, -0.5f, -2.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+		{{0.5f, 0.5f,  -2.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-0.5f, 0.5f, -2.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 	};
 
 	const std::vector<LeFace> indices =
 	{
 		{0, 1, 2},
-		{2, 3, 0}
+		{2, 3, 0},
+
+		{4, 5, 6},
+		{6, 7, 4}
 	};
 
 	Mb->Vertices = Vertices;

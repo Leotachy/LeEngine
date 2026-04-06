@@ -4,7 +4,8 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 
-LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeVkShader* pShader, VkFormat RenderColFormat)
+LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeVkShader* pShader, VkFormat RenderColFormat,
+	VkFormat DepthAttachmentFormat)
 {
 	LE_DEBUG_ASSERT(key);
 	LE_DEBUG_ASSERT(NumImages > 0);
@@ -93,6 +94,16 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeVkShad
 		.minSampleShading = 1.0f
 	};
 
+	VkPipelineDepthStencilStateCreateInfo DepthStencilStateInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+		.depthTestEnable = VK_TRUE,
+		.depthWriteEnable = VK_TRUE,
+		.depthCompareOp = VK_COMPARE_OP_LESS,
+		.depthBoundsTestEnable = VK_FALSE,
+		.stencilTestEnable = VK_FALSE,
+	};
+
 	VkPipelineColorBlendAttachmentState BlendAttachState =
 	{
 		.blendEnable = VK_FALSE,
@@ -133,13 +144,12 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeVkShad
 
 	// Dynamic rendering config
 
-	VkFormat ColorAttachmentFormat = RenderColFormat;
-
 	VkPipelineRenderingCreateInfo RenderingInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
 		.colorAttachmentCount = 1,
-		.pColorAttachmentFormats = &ColorAttachmentFormat,
+		.pColorAttachmentFormats = &RenderColFormat,
+		.depthAttachmentFormat = DepthAttachmentFormat
 	};
 
 	VkGraphicsPipelineCreateInfo PipelineInfo =
@@ -153,6 +163,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeVkShad
 		.pViewportState = &ViewportStateInfo,
 		.pRasterizationState = &RasterizationStateInfo,
 		.pMultisampleState = &MultisampleStateInfo,
+		.pDepthStencilState = &DepthStencilStateInfo,
 		.pColorBlendState = &BlendStateInfo,
 		.pDynamicState = &DynamicStateInfo,
 		.layout = m_pipelineLayout,
