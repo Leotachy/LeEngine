@@ -32,6 +32,7 @@ public:
 	LeMaterial* GetMaterial(void);
 
 
+
 	std::vector<LeVertex> Vertices;
 	std::vector<LeFace> Faces;
 

@@ -171,7 +171,7 @@ int main(void)
 
 	LeEngineShutDown();
 
-	delete pBaseTexture;
+	LeTextureDictionary::Singleton().PurgeAllTextures();
 	delete Mat;
 	delete BasicShader;
 	delete pCam;

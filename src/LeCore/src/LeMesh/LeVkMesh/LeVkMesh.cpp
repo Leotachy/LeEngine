@@ -12,6 +12,11 @@ LeVkMatBlock::LeVkMatBlock()
 
 LeVkMatBlock::~LeVkMatBlock()
 {
+	if (m_vb.IsAlloced())
+		LeVkUtils::DestroyBuffer(&m_vb);
+
+	if (m_ib.IsAlloced())
+		LeVkUtils::DestroyBuffer(&m_ib);
 }
 
 

@@ -121,17 +121,11 @@ void LeVkTexture::ClearPixels(void)
         view = VK_NULL_HANDLE;
     }
 
-    if (textureImage.image != VK_NULL_HANDLE)
-    {
+    if (textureImage.IsAlloced())
         LeVkUtils::DestroyImage(&textureImage);
-    }
 
-    if (stagingBuffer.buffer != VK_NULL_HANDLE)
-    {
+    if (stagingBuffer.IsAlloced())
         LeVkUtils::DestroyBuffer(&stagingBuffer);
-    }
-
-
 }
 
 LeBool LeVkTexture::ArePixelsSet(void)

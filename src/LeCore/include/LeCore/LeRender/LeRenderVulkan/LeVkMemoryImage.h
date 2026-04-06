@@ -9,4 +9,6 @@ struct LeVkMemoryImage
     VkImage image = VK_NULL_HANDLE;
     VkDeviceMemory mem = VK_NULL_HANDLE;
     VkDeviceSize allocationSize = 0;
+
+    LeBool IsAlloced(void) const;
 };
