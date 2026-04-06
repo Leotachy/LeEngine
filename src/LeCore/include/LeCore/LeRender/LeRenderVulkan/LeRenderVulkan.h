@@ -76,6 +76,7 @@ private:
 	void EndCommandBuffer(VkCommandBuffer CommandBuffer);
 
 	void CreateOneShotCommandBuffers(uint32 Count, VkCommandBuffer* CommandBuffers);
+	void FreeOneShotCommandBuffers(uint32 Count, VkCommandBuffer* pCmdBufs);
 	void BeginOneShotCommandBuffer(VkCommandBuffer CommandBuffer);
 	void EndOneShotCommandBuffer(VkCommandBuffer CommandBuffer);
 

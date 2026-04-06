@@ -195,18 +195,22 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 		VkCommandBuffer UpdateImageCommandBuffer;
 		CreateOneShotCommandBuffers(1, &UpdateImageCommandBuffer);
 
-		BeginCommandBuffer(UpdateImageCommandBuffer);
+		BeginOneShotCommandBuffer(UpdateImageCommandBuffer);
 
-		for (uint32 i = 0; i < m_updateImageTextureQueue.size(); i++)
+		while (m_updateImageTextureQueue.empty() == false)
 		{
 			LeVkTexture* pTexture = m_updateImageTextureQueue.front();
 			UpdateVkImage(UpdateImageCommandBuffer, pTexture);
+			m_updateImageTextureQueue.pop();
 			
 		}
 
-		EndCommandBuffer(UpdateImageCommandBuffer);
+		EndOneShotCommandBuffer(UpdateImageCommandBuffer);
 
 		m_queue.SubmitSync(UpdateImageCommandBuffer);
+		m_queue.WaitIdle();
+
+		FreeOneShotCommandBuffers(1, &UpdateImageCommandBuffer);
 	}
 
 
@@ -447,6 +451,11 @@ void LeVkCore::CreateOneShotCommandBuffers(uint32 Count, VkCommandBuffer* Comman
 	LE_CHECK_VK_RESULT(res);
 }
 
+void LeVkCore::FreeOneShotCommandBuffers(uint32 Count, VkCommandBuffer* pCmdBufs)
+{
+	vkFreeCommandBuffers(m_logicalDevice, m_transientCommandBufferPool, Count, pCmdBufs);
+}
+
 void LeVkCore::BeginOneShotCommandBuffer(VkCommandBuffer CommandBuffer)
 {
 	VkCommandBufferBeginInfo BeginInfo =
@@ -684,6 +693,8 @@ void LeVkCore::CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size)
 	// FIXME
 	m_queue.SubmitSync(CopyCommandBuffer);
 	m_queue.WaitIdle();
+
+	FreeOneShotCommandBuffers(1, &CopyCommandBuffer);
 
 }
 
