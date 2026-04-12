@@ -17,7 +17,7 @@ public:
     LeVkShader(const LeChar* name, const LeChar* pShaderFilepath);
     ~LeVkShader(void);
 
-    VkShaderModule CreateShaderModule(std::vector<LeByte>& ShaderBinary);
+    VkShaderModule CreateShaderModule(const LeByte* ShaderBinary, uint32 ShaderBinarySize);
 
     VkShaderModule GetShaderModule(void) { return m_ShaderModule; }
 

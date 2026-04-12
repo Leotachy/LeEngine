@@ -2,32 +2,26 @@
 #include "LeCore/LeCore.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeShader/LeVkShader/LeVkShader.h"
+#include "LeCore/LeStream/LeStreamFile.h"
 
-// temp func until LeStore is done
-// TODO
-// FIXME
-static std::vector<LeByte> readShaderBinaryFile(const char* pShaderBinaryPath)
-{
-	std::ifstream file(pShaderBinaryPath, std::ios::ate | std::ios::binary);
-	if (!file.is_open())
-	{
-		LE_ERROR("Failed to open file %s", pShaderBinaryPath);
-	}
-
-	std::vector<LeByte> buffer(file.tellg());
-	file.seekg(0, std::ios::beg);
-	file.read((LeChar*)buffer.data(), static_cast<std::streamsize>(buffer.size()));
-	file.close();
-	return buffer;
-}
 
 LeVkShader::LeVkShader(const LeChar* name, const LeChar* pShaderFilepath) : LeShader(name, pShaderFilepath)
 {
 	m_Device = LeVkCore::Singleton().GetDevice();
 	LE_DEBUG_ASSERT(m_Device);
 
-	std::vector<LeByte> bin = readShaderBinaryFile(pShaderFilepath);
-	CreateShaderModule(bin);
+	LeByte ShaderBinary[128000];
+
+	LeStreamFile ShaderFileStream;
+	ShaderFileStream.Open(LeStreamAccessType::STREAM_ACCESS_READ, pShaderFilepath);
+	uint32 ShaderBinarySize = ShaderFileStream.Read(ShaderBinary, sizeof(ShaderBinary));
+	if (ShaderBinarySize == sizeof(ShaderBinary))
+	{
+		LE_WARN("Shader %s at path %s is too big for buffer", name, pShaderFilepath);
+	}
+
+
+	CreateShaderModule(ShaderBinary, ShaderBinarySize);
 }
 
 LeVkShader::~LeVkShader(void)
@@ -41,10 +35,10 @@ LeVkShader::~LeVkShader(void)
 	}
 }
 
-VkShaderModule LeVkShader::CreateShaderModule(std::vector<LeByte>& ShaderBinary)
+VkShaderModule LeVkShader::CreateShaderModule(const LeByte* ShaderBinary, uint32 ShaderBinarySize)
 {
 
-	if (ShaderBinary.size() == 0)
+	if (ShaderBinarySize == 0)
 	{
 		LE_ERROR("No binary to create a shader module from!");
 		return VK_NULL_HANDLE;
@@ -53,8 +47,8 @@ VkShaderModule LeVkShader::CreateShaderModule(std::vector<LeByte>& ShaderBinary)
 	VkShaderModuleCreateInfo CreateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-		.codeSize = ShaderBinary.size(),
-		.pCode = reinterpret_cast<const uint32*>(ShaderBinary.data())
+		.codeSize = ShaderBinarySize,
+		.pCode = reinterpret_cast<const uint32*>(ShaderBinary)
 	};
 
 

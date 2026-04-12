@@ -15,7 +15,7 @@ LeStream* LeStream::WriteString(const LeChar* str)
 {
 	LE_ASSERT(str);
 
-	int32 str_len = strlen(str);
+	int32 str_len = int32(strlen(str));
 
 	if (!WriteNumber(&str_len)) return NULL;
 
@@ -87,7 +87,7 @@ LeStream* LeStream::WriteNumber(float64* p, int32 num)
 }
 
 
-LeStream* LeStream::ReadString(LeChar* str, int32 buffer_len)
+uint32 LeStream::ReadString(LeChar* str, int32 buffer_len)
 {
 
 	LE_ASSERT(str);
@@ -110,62 +110,64 @@ LeStream* LeStream::ReadString(LeChar* str, int32 buffer_len)
 		str[read_len] = 0; // Terminate the string
 
 	// skip unread chars
-	if (read_len = stored_len - read_len)
-		Skip(read_len);
-	return this;
+	int32 skip_len = stored_len - read_len;
+	if (skip_len)
+		Skip(skip_len);
+
+	return read_len + skip_len + sizeof(stored_len);
 }
 
-LeStream* LeStream::ReadNumber(LeBool* p, int32 num)
+uint32 LeStream::ReadNumber(LeBool* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(LeBool));
 }
 
-LeStream* LeStream::ReadNumber(uint8* p, int32 num)
+uint32 LeStream::ReadNumber(uint8* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(uint8));
 }
 
-LeStream* LeStream::ReadNumber(int8* p, int32 num)
+uint32 LeStream::ReadNumber(int8* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(int8));
 }
 
-LeStream* LeStream::ReadNumber(uint16* p, int32 num)
+uint32 LeStream::ReadNumber(uint16* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(uint16));
 }
 
-LeStream* LeStream::ReadNumber(int16* p, int32 num)
+uint32 LeStream::ReadNumber(int16* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(int16));
 }
 
-LeStream* LeStream::ReadNumber(uint32* p, int32 num)
+uint32 LeStream::ReadNumber(uint32* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(uint32));
 }
 
-LeStream* LeStream::ReadNumber(int32* p, int32 num)
+uint32 LeStream::ReadNumber(int32* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(int32));
 }
 
-LeStream* LeStream::ReadNumber(uint64* p, int32 num)
+uint32 LeStream::ReadNumber(uint64* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(uint64));
 }
 
-LeStream* LeStream::ReadNumber(int64* p, int32 num)
+uint32 LeStream::ReadNumber(int64* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(int64));
 }
 
-LeStream* LeStream::ReadNumber(float32* p, int32 num)
+uint32 LeStream::ReadNumber(float32* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(float32));
 }
 
-LeStream* LeStream::ReadNumber(float64* p, int32 num)
+uint32 LeStream::ReadNumber(float64* p, int32 num)
 {
 	return Read((void*)p, num * sizeof(float64));
 }

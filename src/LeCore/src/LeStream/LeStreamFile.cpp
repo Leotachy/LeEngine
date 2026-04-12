@@ -11,7 +11,7 @@ LeStreamFile::LeStreamFile(void)
 	m_file = NULL;
 }
 
-LeStream* LeStreamFile::Open(LeStreamAccessType a, void* data)
+LeStream* LeStreamFile::Open(LeStreamAccessType a, const void* data)
 {
 	LE_DEBUG_ASSERT(data);
 
@@ -19,7 +19,7 @@ LeStream* LeStreamFile::Open(LeStreamAccessType a, void* data)
 
 	position = 0; 
 
-	strncpy(filename, (char*)data, MAX_LE_FILENAME-1);
+	strncpy(filename, (const char*)data, MAX_LE_FILENAME-1);
 	filename[MAX_LE_FILENAME - 1] = 0;
 
 
@@ -72,19 +72,17 @@ LeBool LeStreamFile::Close(void* data)
 	}
 }
 
-LeStream* LeStreamFile::Read(void* buffer, uint32 length)
+uint32 LeStreamFile::Read(void* buffer, uint32 length)
 {
 	LE_DEBUG_ASSERT(accessType == LeStreamAccessType::STREAM_ACCESS_READ || accessType == LeStreamAccessType::STREAM_ACCESS_READ_TEXT);
 	LE_DEBUG_ASSERT(buffer);
 	LE_DEBUG_ASSERT(length > 0);
 
-	LeStream* ret;
-
 	uint32 BytesRead = 0;
 
 	LE_DEBUG_ASSERT(m_file);
 
-	BytesRead = fread(buffer, sizeof(uint8), length, m_file);
+	BytesRead = int32(fread(buffer, sizeof(uint8), length, m_file));
 
 	position += BytesRead;
 
@@ -92,18 +90,11 @@ LeStream* LeStreamFile::Read(void* buffer, uint32 length)
 	{
 		if (feof(m_file))
 		{
-			LE_DEBUG_ERROR("Unexpected end of file!");
+			//LE_DEBUG_ERROR("Unexpected end of file!");
 		}
-
-		ret = NULL;
-	}
-	else
-	{
-		ret = this;
 	}
 
-	LE_DEBUG_ASSERT(ret);
-	return ret;
+	return BytesRead;
 }
 
 LeStream* LeStreamFile::Write(const void* buffer, uint32 length)
@@ -119,7 +110,7 @@ LeStream* LeStreamFile::Write(const void* buffer, uint32 length)
 	{
 		LE_DEBUG_ASSERT(m_file);
 
-		BytesWritten = fwrite(buffer, sizeof(uint8), length, m_file);
+		BytesWritten = int32(fwrite(buffer, sizeof(uint8), length, m_file));
 
 		position += BytesWritten;
 

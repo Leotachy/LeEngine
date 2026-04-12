@@ -30,9 +30,9 @@ public:
 	uint32 position;
 
 	// base functionality
-	virtual LeStream* Open(LeStreamType t, LeStreamAccessType a, void* data) = 0;
+	virtual LeStream* Open(LeStreamAccessType a, const void* data) = 0;
 	virtual LeBool Close(void* data) = 0;
-	virtual LeStream* Read(void* buffer, uint32 length) = 0;
+	virtual uint32 Read(void* buffer, uint32 length) = 0;
 	virtual LeStream* Write(const void* buffer, uint32 length) = 0;
 	virtual LeStream* Skip(uint32 offset) = 0;
 	virtual LeStream* SkipBack(uint32 offset) = 0;
@@ -52,17 +52,17 @@ public:
 	LeStream* WriteNumber(float64* p, int32 num = 1);
 
 
-	LeStream* ReadString(LeChar* str, int32 buffer_len);
+	uint32 ReadString(LeChar* str, int32 buffer_len);
 
-	LeStream* ReadNumber(LeBool* p, int32 num = 1);
-	LeStream* ReadNumber(uint8* p, int32 num = 1);
-	LeStream* ReadNumber(int8* p, int32 num = 1);
-	LeStream* ReadNumber(uint16* p, int32 num = 1);
-	LeStream* ReadNumber(int16* p, int32 num = 1);
-	LeStream* ReadNumber(uint32* p, int32 num = 1);
-	LeStream* ReadNumber(int32* p, int32 num = 1);
-	LeStream* ReadNumber(uint64* p, int32 num = 1);
-	LeStream* ReadNumber(int64* p, int32 num = 1);
-	LeStream* ReadNumber(float32* p, int32 num = 1);
-	LeStream* ReadNumber(float64* p, int32 num = 1);
+	uint32 ReadNumber(LeBool* p, int32 num = 1);
+	uint32 ReadNumber(uint8* p, int32 num = 1);
+	uint32 ReadNumber(int8* p, int32 num = 1);
+	uint32 ReadNumber(uint16* p, int32 num = 1);
+	uint32 ReadNumber(int16* p, int32 num = 1);
+	uint32 ReadNumber(uint32* p, int32 num = 1);
+	uint32 ReadNumber(int32* p, int32 num = 1);
+	uint32 ReadNumber(uint64* p, int32 num = 1);
+	uint32 ReadNumber(int64* p, int32 num = 1);
+	uint32 ReadNumber(float32* p, int32 num = 1);
+	uint32 ReadNumber(float64* p, int32 num = 1);
 };
