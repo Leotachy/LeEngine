@@ -54,8 +54,8 @@ LeVkTextureAttributes::LeVkTextureAttributes(const LeTextureAttributes& BaseAttr
 
 LeVkTexture::LeVkTexture(const LeChar* pName) : LeTexture(pName)
 {
-    device = LeVkCore::Singleton().LeVkGetLogicalDevice();
-    physicalDevice = LeVkCore::Singleton().LeVkGetPhysicalDevice();
+    device = LeVkCore::Singleton().GetDevice();
+    physicalDevice = LeVkCore::Singleton().GetPhysicalDevice();
 
     view = VK_NULL_HANDLE;
     sampler = VK_NULL_HANDLE;

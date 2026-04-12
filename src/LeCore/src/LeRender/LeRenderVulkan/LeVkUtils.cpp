@@ -396,4 +396,8 @@ uint32_t LeVkUtils::GetVkBytesPerTexFormat(VkFormat Format)
 	return 0;
 }
 
+void LeVkUtils::CheckVkResult(VkResult Res)
+{
+	LE_CHECK_VK_RESULT(Res);
+}
 

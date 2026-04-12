@@ -23,8 +23,8 @@ LeVkMatBlock::~LeVkMatBlock()
 
 LeVkMesh::LeVkMesh()
 {
-	VkDevice Device = LeVkCore::Singleton().LeVkGetLogicalDevice();
-	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().LeVkGetPhysicalDevice();
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
+	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetPhysicalDevice();
 
 	LeVkUtils::CreateUniformBuffer(Device, &pPhysicalDevice->m_memProps, sizeof(glm::mat4), &m_modelMatrix);
 

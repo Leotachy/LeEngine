@@ -2,16 +2,19 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolGlobal.h"
 
-
-
-void LeVkDescriptorPoolGlobal::GetPoolSizes(std::vector<VkDescriptorPoolSize>& PoolSizes)
+void LeVkDescriptorPoolGlobal::GetPoolSizes(VkDescriptorPoolSize** PoolSizes, uint32* NumSizes)
 {
 
-	PoolSizes.emplace_back(VkDescriptorPoolSize
+	LE_DEBUG_ASSERT(PoolSizes);
+	LE_DEBUG_ASSERT(NumSizes);
+
+	static VkDescriptorPoolSize DescriptorPoolSizes[] =
 	{
-			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = 2
-	});
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 }
+	};
+
+	*PoolSizes = DescriptorPoolSizes;
+	*NumSizes = ARRAY_SIZE(DescriptorPoolSizes);
 }
 
 uint32 LeVkDescriptorPoolGlobal::GetMaxSets(void)
@@ -19,14 +22,16 @@ uint32 LeVkDescriptorPoolGlobal::GetMaxSets(void)
 	return 2;
 }
 
-void LeVkDescriptorPoolGlobal::GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings)
+void LeVkDescriptorPoolGlobal::GetLayoutBindings(VkDescriptorSetLayoutBinding** Bindings, uint32* NumSizes)
 {
+	LE_DEBUG_ASSERT(Bindings);
+	LE_DEBUG_ASSERT(NumSizes);
 
-	Bindings.emplace_back(VkDescriptorSetLayoutBinding{
-			.binding = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-		}
-	);
+	static VkDescriptorSetLayoutBinding DescriptorSetLayoutBindings[] =
+	{
+		{ 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT }
+	};
+
+	*Bindings = DescriptorSetLayoutBindings;
+	*NumSizes = ARRAY_SIZE(DescriptorSetLayoutBindings);
 }

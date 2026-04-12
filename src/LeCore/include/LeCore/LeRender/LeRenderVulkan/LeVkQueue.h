@@ -29,6 +29,8 @@ public:
 
 	void ResetFences(int32 frameIndex);
 
+	VkQueue GetQueue(void) const;
+
 private:
 
 

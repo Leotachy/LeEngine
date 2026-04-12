@@ -17,11 +17,13 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPool.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolGlobal.h"
+	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolImGui.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMesh.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMaterial.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolManager.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSet.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.h"
+	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetImGui.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMesh.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMaterial.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
@@ -50,11 +52,13 @@ LeEngine_target_sources_grouped(
 	"src/LeRender/LeRenderVulkan/LeRenderVulkan.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPool.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolGlobal.cpp"
+	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolImGui.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMesh.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMaterial.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolManager.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSet.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.cpp"
+	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetImGui.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMesh.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMaterial.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkMemoryBuffer.cpp"
@@ -97,7 +101,7 @@ target_compile_definitions(${_target}
 
 target_link_libraries(${_target} glfw)
 target_link_libraries(${_target} glm)
-
+target_link_libraries(${_target} imgui)
 
 # Vulkan SDK needs to be installed on the local machine
 find_package(Vulkan REQUIRED)

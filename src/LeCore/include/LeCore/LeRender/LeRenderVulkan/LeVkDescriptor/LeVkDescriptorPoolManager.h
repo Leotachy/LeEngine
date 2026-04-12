@@ -4,6 +4,7 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolGlobal.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMaterial.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolImGui.h"
 
 enum LeVkDescriptorPoolType
 {
@@ -11,7 +12,9 @@ enum LeVkDescriptorPoolType
 	MATBLOCK,
 	MATERIAL,
 
-	NUM_DESCRIPTOR_POOLS
+	NUM_DESCRIPTOR_POOLS,
+
+	IMGUI
 };
 
 class LeVkDescriptorPoolManager
@@ -29,5 +32,6 @@ private:
 	LeVkDescriptorPoolGlobal m_descriptorPoolGlobal;
 	LeVkDescriptorPoolMesh m_descriptorPoolMesh;
 	LeVkDescriptorPoolMaterial m_descriptorPoolMaterial;
+	LeVkDescriptorPoolImGui m_descriptorPoolImGui;
 
 };

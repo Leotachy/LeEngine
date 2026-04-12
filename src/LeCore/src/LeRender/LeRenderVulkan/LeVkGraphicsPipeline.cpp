@@ -13,7 +13,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeVkShad
 
 	m_key = key;
 
-	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
+	m_device = LeVkCore::Singleton().GetDevice();
 
 	const VkPipelineShaderStageCreateInfo ShaderStageInfo[] =
 	{

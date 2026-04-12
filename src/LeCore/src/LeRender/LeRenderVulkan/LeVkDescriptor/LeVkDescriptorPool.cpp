@@ -22,36 +22,46 @@ LeVkDescriptorPool::~LeVkDescriptorPool()
 void LeVkDescriptorPool::Init(void)
 {
 
-	m_device = LeVkCore::Singleton().LeVkGetLogicalDevice();
+	m_device = LeVkCore::Singleton().GetDevice();
 
-	std::vector<VkDescriptorPoolSize> PoolSizes;
-	GetPoolSizes(PoolSizes);
+	VkDescriptorPoolSize* PoolSizes;
+	uint32 NumPoolSizes;
+
+	GetPoolSizes(&PoolSizes, &NumPoolSizes);
+
+	LE_DEBUG_ASSERT(PoolSizes != NULL);
+	LE_DEBUG_ASSERT(NumPoolSizes > 0);
 
 	VkDescriptorPoolCreateInfo PoolInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 		.flags = 0,
 		.maxSets = GetMaxSets(),
-		.poolSizeCount = uint32(PoolSizes.size()),
-		.pPoolSizes = PoolSizes.data()
+		.poolSizeCount = NumPoolSizes,
+		.pPoolSizes = PoolSizes
 	};
 
 	VkResult res = vkCreateDescriptorPool(m_device, &PoolInfo, NULL, &m_descriptorPool);
 	LE_CHECK_VK_RESULT(res);
 
 
-	std::vector<VkDescriptorSetLayoutBinding> Bindings;
-	GetLayoutBindings(Bindings);
+	VkDescriptorSetLayoutBinding* Bindings;
+	uint32 NumBindingsSizes;
 
-	VkDescriptorSetLayoutCreateInfo LayoutInfo =
+	GetLayoutBindings(&Bindings, &NumBindingsSizes);
+
+	if (NumBindingsSizes > 0)
 	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-		.bindingCount = uint32(Bindings.size()),
-		.pBindings = Bindings.data()
-	};
+		VkDescriptorSetLayoutCreateInfo LayoutInfo =
+		{
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			.bindingCount = NumBindingsSizes,
+			.pBindings = Bindings
+		};
 
-	res = vkCreateDescriptorSetLayout(m_device, &LayoutInfo, NULL, &m_descriptorSetLayout);
-	LE_CHECK_VK_RESULT(res);
+		res = vkCreateDescriptorSetLayout(m_device, &LayoutInfo, NULL, &m_descriptorSetLayout);
+		LE_CHECK_VK_RESULT(res);
+	}
 }
 
 void LeVkDescriptorPool::DeInit(void)

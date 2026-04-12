@@ -11,7 +11,7 @@ public:
 	virtual ~LeVkDescriptorPoolMaterial() {};
 
 protected:
-	void GetPoolSizes(std::vector<VkDescriptorPoolSize>& PoolSizes) override;
+	void GetPoolSizes(VkDescriptorPoolSize** PoolSizes, uint32* NumSizes) override;
 	uint32 GetMaxSets(void) override;
-	void GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings) override;
+	void GetLayoutBindings(VkDescriptorSetLayoutBinding** Bindings, uint32* NumSizes) override;
 };

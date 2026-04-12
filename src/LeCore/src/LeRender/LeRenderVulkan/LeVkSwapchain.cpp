@@ -79,6 +79,8 @@ void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevic
 
 	m_extent = SurfaceCaps.currentExtent;
 
+	m_minNumImages = SurfaceCaps.minImageCount;
+
 	uint32 NumImages = ChooseNumImages(SurfaceCaps);
 
 	const std::vector<VkPresentModeKHR>& PresentModes = pPhysicalDevice->m_presentModes;
@@ -159,6 +161,7 @@ void LeSwapchain::DeInit()
 	}
 		
 	m_numImages = 0;
+	m_minNumImages = 0;
 
 	LE_DEBUG_MESSAGE("Image views destroyed");
 

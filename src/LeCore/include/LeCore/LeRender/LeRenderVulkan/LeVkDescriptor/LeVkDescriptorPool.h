@@ -18,9 +18,9 @@ public:
 
 protected:
 
-	virtual void GetPoolSizes(std::vector<VkDescriptorPoolSize>& PoolSizes) = 0;
+	virtual void GetPoolSizes(VkDescriptorPoolSize** PoolSizes, uint32* NumSizes) = 0;
 	virtual uint32 GetMaxSets(void) = 0;
-	virtual void GetLayoutBindings(std::vector<VkDescriptorSetLayoutBinding>& Bindings) = 0;
+	virtual void GetLayoutBindings(VkDescriptorSetLayoutBinding** Bindings, uint32* NumSizes) = 0;
 
 	VkDevice m_device;
 	VkDescriptorPool m_descriptorPool;

@@ -48,6 +48,8 @@ public:
 	static const LeChar* GetVkDebugUtilsMessageType(VkDebugUtilsMessageTypeFlagsEXT Type);
 	static uint32 GetVkBytesPerTexFormat(VkFormat Format);
 
+	static void CheckVkResult(VkResult Res);
+
 };
 
 

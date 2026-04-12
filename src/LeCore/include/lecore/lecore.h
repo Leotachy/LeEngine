@@ -1,6 +1,8 @@
 
 #pragma once
 
+#define SUPPORT_IMGUI
+
 // system headers
 
 #include <cstdio> 

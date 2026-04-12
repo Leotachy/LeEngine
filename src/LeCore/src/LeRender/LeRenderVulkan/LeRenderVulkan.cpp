@@ -11,6 +11,8 @@
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
+
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL leVkDebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT Severity,
 	VkDebugUtilsMessageTypeFlagsEXT Type,
@@ -94,6 +96,10 @@ void LeVkCore::Init(const char* pAppName, GLFWwindow* pWindow)
 	CreateDepthResources();
 
 	m_queue.Init(m_logicalDevice, &m_swapchain, m_queueFamily, 0);
+
+#ifdef SUPPORT_IMGUI
+	InitImGui();
+#endif
 }
 
 void LeVkCore::ShutDown(void)
@@ -106,6 +112,10 @@ void LeVkCore::DeInit(void)
 {
 	// DeInit graphics pipelines
 	LeVkGraphicsPipelineDictionary::Singleton()->Purge();
+
+#ifdef SUPPORT_IMGUI
+	DeInitImGui();
+#endif
 
 	// DeInit the render queue
 	m_queue.Destroy();
@@ -220,12 +230,12 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 
 	// Begin recording the command buffer
 
-	VkCommandBuffer pCommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
-	BeginCommandBuffer(pCommandBuffer);
+	VkCommandBuffer CommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
+	BeginCommandBuffer(CommandBuffer);
 
 	// setup image barrier for clearing the color
 
-	LeVkUtils::TransitionImageLayout(pCommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_NONE,
@@ -234,7 +244,7 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT);
 
-	LeVkUtils::TransitionImageLayout(pCommandBuffer, m_depthImage.image,
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_depthImage.image,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
@@ -275,7 +285,7 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 	renderingInfo.pColorAttachments = &colorAttachment;
 	renderingInfo.pDepthAttachment = &depthAttachment;
 
-	vkCmdBeginRendering(pCommandBuffer, &renderingInfo);
+	vkCmdBeginRendering(CommandBuffer, &renderingInfo);
 
 	VkViewport Viewport =
 	{
@@ -302,9 +312,12 @@ LeBool LeVkCore::LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
 	};
 
 
-	vkCmdSetViewport(pCommandBuffer, 0, 1, &Viewport);
-	vkCmdSetScissor(pCommandBuffer, 0, 1, &Scissor);
+	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
+	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
 
+#ifdef SUPPORT_IMGUI
+	RenderImGui(CommandBuffer);
+#endif
 
 	return true;
 }
@@ -398,18 +411,23 @@ LeBool LeVkCore::LeVkEndRender(void)
 	return true;
 }
 
-VkDevice LeVkCore::LeVkGetLogicalDevice(void)
+VkDevice LeVkCore::GetDevice(void)
 {
 	LE_DEBUG_ASSERT(m_logicalDevice);
 	return m_logicalDevice;
 }
 
-const LeVkPhysicalDevice* LeVkCore::LeVkGetPhysicalDevice(void)
+const LeVkPhysicalDevice* LeVkCore::GetPhysicalDevice(void)
 {
 	const LeVkPhysicalDevice* pPhysicalDevice = m_physicalDevices.Selected();
 	LE_DEBUG_ASSERT(pPhysicalDevice);
 
 	return pPhysicalDevice;
+}
+
+const LeSwapchain* LeVkCore::GetLeSwapchain(void) const
+{
+	return &m_swapchain;
 }
 
 void LeVkCore::QueueTextureForImageUpdate(LeVkTexture* pTexture)
@@ -673,6 +691,80 @@ void LeVkCore::CreateLogicalDevice()
 	LE_DEBUG_MESSAGE("Logical device created");
 
 }
+
+#ifdef SUPPORT_IMGUI
+
+void LeVkCore::InitImGui(void)
+{
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	IO.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
+	IO.DisplaySize.x = float32(m_swapchain.GetExtent().width);
+	IO.DisplaySize.y = float32(m_swapchain.GetExtent().height);
+
+	ImGui::StyleColorsDark();
+
+	LeBool bInstallGlfwCallbacks = true;
+	ImGui_ImplGlfw_InitForVulkan(m_gltfWindow, bInstallGlfwCallbacks);
+
+	LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Singleton().GetLeDescriptorPool(LeVkDescriptorPoolType::IMGUI);
+	LE_DEBUG_ASSERT(LeDescriptorPool);
+
+	VkFormat ColorAttachmentFormat = m_swapchain.GetImageFormat();
+
+	ImGui_ImplVulkan_InitInfo init_info = {};
+	init_info.ApiVersion = VK_API_VERSION_1_4;
+	init_info.Instance = m_instance;
+	init_info.PhysicalDevice = m_physicalDevices.Selected()->m_physDevice;
+	init_info.Device = m_logicalDevice;
+	init_info.QueueFamily = m_queueFamily;
+	init_info.Queue = m_queue.GetQueue();
+	init_info.PipelineCache = NULL;
+	init_info.DescriptorPool = LeDescriptorPool->GetDescriptorPool();
+	init_info.MinImageCount = m_swapchain.GetMinNumImages();
+	init_info.ImageCount = m_swapchain.GetNumImages();
+	init_info.Allocator = NULL;
+	init_info.PipelineInfoMain.RenderPass = NULL;
+	init_info.PipelineInfoMain.Subpass = 0;
+	init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.PipelineInfoMain.PipelineRenderingCreateInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+		.pNext = NULL,
+		.viewMask = 0,
+		.colorAttachmentCount = 1,
+		.pColorAttachmentFormats = &ColorAttachmentFormat,
+		.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
+		.stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
+	};
+	init_info.UseDynamicRendering = true;
+	init_info.CheckVkResultFn = LeVkUtils::CheckVkResult;
+	ImGui_ImplVulkan_Init(&init_info);
+}
+
+void LeVkCore::DeInitImGui(void)
+{
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+}
+
+void LeVkCore::RenderImGui(VkCommandBuffer CommandBuffer)
+{
+	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);
+
+	ImDrawData* pDrawData = ImGui::GetDrawData();
+	if (pDrawData)
+	{
+		ImGui_ImplVulkan_RenderDrawData(pDrawData, CommandBuffer);
+	}
+}
+
+#endif
 
 VkCommandPool LeVkCore::CreateCommandBufferPool(VkCommandPoolCreateFlags Flags, uint32 QueueFamilyIndex)
 {

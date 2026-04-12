@@ -14,7 +14,11 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
-
+#ifdef SUPPORT_IMGUI
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
+#endif
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -53,8 +57,9 @@ public:
 	LeBool LeVkRender(LeVkMesh* pMesh);
 	LeBool LeVkEndRender(void);
 
-	VkDevice LeVkGetLogicalDevice(void);
-	const LeVkPhysicalDevice* LeVkGetPhysicalDevice(void);
+	VkDevice GetDevice(void);
+	const LeVkPhysicalDevice* GetPhysicalDevice(void);
+	const LeSwapchain* GetLeSwapchain(void) const;
 	int32 GetMaxFramesInFlight(void) const { return LE_MAX_FRAMES_IN_FLIGHT; }
 
 	void QueueTextureForImageUpdate(LeVkTexture* pTexture);
@@ -66,6 +71,11 @@ private:
 	void CreateSurface(GLFWwindow* pWindow);
 	void CreateLogicalDevice();
 
+#ifdef SUPPORT_IMGUI
+	void InitImGui(void);
+	void DeInitImGui(void);
+	void RenderImGui(VkCommandBuffer CommandBuffer);
+#endif
 
 	VkCommandPool CreateCommandBufferPool(VkCommandPoolCreateFlags Flags, uint32 QueueFamilyIndex);
 

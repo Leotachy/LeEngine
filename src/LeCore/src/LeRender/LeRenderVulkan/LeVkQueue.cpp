@@ -92,6 +92,11 @@ void LeVkQueue::ResetFences(int32 frameIndex)
 	vkResetFences(m_device, 1, &m_renderCompleteFences[frameIndex]);
 }
 
+VkQueue LeVkQueue::GetQueue(void) const
+{
+	return m_queue;
+}
+
 uint32 LeVkQueue::AcquireNextImage(int32 frameIndex)
 {
 	uint32 ImageIndex = 0;

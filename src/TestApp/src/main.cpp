@@ -162,8 +162,12 @@ int main(void)
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		double FPS = 1.0 / deltaTime;
-		LE_DEBUG_MESSAGE("FPS: %f", FPS);
+		if (deltaTime > 0.0)
+		{
+			int32 FPS = int32(1.0 / deltaTime);
+			LE_DEBUG_MESSAGE("FPS: %d", FPS);
+		}
+
 
 		manipulateMatblockVertex(Mb, deltaTime);
 
