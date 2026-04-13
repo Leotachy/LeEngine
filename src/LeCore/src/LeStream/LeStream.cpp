@@ -13,8 +13,15 @@ LeStream::LeStream()
 
 LeStream* LeStream::WriteString(const LeChar* str)
 {
-	LE_ASSERT(str);
 
+	if (!str)
+	{
+		int32 zero = 0;
+		if (!WriteNumber(&zero))
+			return NULL;
+		return this;
+	}
+		
 	int32 str_len = int32(strlen(str));
 
 	if (!WriteNumber(&str_len)) return NULL;
@@ -31,57 +38,57 @@ LeStream* LeStream::WriteString(const LeChar* str)
 
 // raw read / write functions
 
-LeStream* LeStream::WriteNumber(LeBool* p, int32 num)
+LeStream* LeStream::WriteNumber(const LeBool* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(LeBool));
 }
 
-LeStream* LeStream::WriteNumber(uint8* p, int32 num)
+LeStream* LeStream::WriteNumber(const uint8* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(uint8));
 }
 
-LeStream* LeStream::WriteNumber(int8* p, int32 num)
+LeStream* LeStream::WriteNumber(const int8* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(int8));
 }
 
-LeStream* LeStream::WriteNumber(uint16* p, int32 num)
+LeStream* LeStream::WriteNumber(const uint16* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(uint16));
 }
 
-LeStream* LeStream::WriteNumber(int16* p, int32 num)
+LeStream* LeStream::WriteNumber(const int16* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(int16));
 }
 
-LeStream* LeStream::WriteNumber(uint32* p, int32 num)
+LeStream* LeStream::WriteNumber(const uint32* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(uint32));
 }
 
-LeStream* LeStream::WriteNumber(int32* p, int32 num)
+LeStream* LeStream::WriteNumber(const int32* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(int32));
 }
 
-LeStream* LeStream::WriteNumber(uint64* p, int32 num)
+LeStream* LeStream::WriteNumber(const uint64* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(uint64));
 }
 
-LeStream* LeStream::WriteNumber(int64* p, int32 num)
+LeStream* LeStream::WriteNumber(const int64* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(int64));
 }
 
-LeStream* LeStream::WriteNumber(float32* p, int32 num)
+LeStream* LeStream::WriteNumber(const float32* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(float32));
 }
 
-LeStream* LeStream::WriteNumber(float64* p, int32 num)
+LeStream* LeStream::WriteNumber(const float64* p, int32 num)
 {
 	return Write((void*)p, num * sizeof(float64));
 }

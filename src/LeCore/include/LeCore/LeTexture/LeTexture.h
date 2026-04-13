@@ -4,6 +4,8 @@
 #include "stb_image.h"
 #include "LeCore/LeRender/LeRenderResource.h"
 
+#include "LeCore/LeBinary/LeBinaryChunk.h"
+
 #define TEXTURE_NAME_LENGTH 64
 
 #define TEXTURE_PIXELS_DIRTY		(1<<0)		// Pixels changed and need to be updated
@@ -42,32 +44,43 @@ struct LeTextureAttributes
 };
 
 
+#define LE_TEXTURE_MAX_NAME 128
+
 // Supports only 32bit RGBA textures - super primitive
 class LeTexture : public LeRenderResource
 {
 
 protected:
-	LeTexture(const LeChar* pName);
+	LeTexture();
 public:
 	virtual ~LeTexture();
-	static LeTexture* Create(const LeChar* pName);
+	static LeTexture* Create();
 
-	virtual void SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height) = 0;
-	virtual void ClearPixels(void) = 0;
-	virtual LeBool ArePixelsSet(void) = 0;
+	const LeChar* GetName(void) { return m_name; }
+	void SetName(const LeChar* pName);
+
+	void SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height);
+	void ClearPixels(void);
+	LeBool ArePixelsSet(void) const;
+	const LeRGBA* GetPixels(void);
+
+	virtual void Compile(void) = 0;
 
 	uint32 GetWidth(void) { return m_width; }
 	uint32 GetHeight(void) { return m_height; }
 
+	LeTextureAttributes attribs;
+
 protected:
 
 	uint32 m_width, m_height;
-
-	LeTextureAttributes m_attribs;
+	LeRGBA* m_pixels;
 
 private:
 
-	LeChar* m_name;
+	friend class LeTextureDictionary;
+
+	LeChar m_name[LE_TEXTURE_MAX_NAME];
 
 
 

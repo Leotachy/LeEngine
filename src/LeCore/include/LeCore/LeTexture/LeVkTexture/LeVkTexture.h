@@ -27,13 +27,11 @@ struct LeVkTextureAttributes
 class LeVkTexture : public LeTexture
 {
 public:
-    LeVkTexture(const LeChar* pName);
+    LeVkTexture();
     ~LeVkTexture();
 
 
-    virtual void SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height) override;
-    virtual void ClearPixels(void) override;
-    virtual LeBool ArePixelsSet(void) override;
+    void Compile(void) override;
 
     VkFormat GetVkFormat(void) const { return m_format; }
 
@@ -48,7 +46,7 @@ public:
 
 private:
 
-
+    void DestroyVulkanResources(void);
 
     VkFormat m_format;
 

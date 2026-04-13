@@ -30,6 +30,12 @@ LeMaterial* LeMaterial::Create(void)
 	return NULL;
 }
 
+uint64 LeMaterial::CalculateAttributeHash(void)
+{
+	m_attribsHash = lehash64_bin(&attribs, sizeof(attribs));
+	return m_attribsHash;
+}
+
 void LeMaterial::SetBaseTexture(LeTexture* pTexture)
 {
 	m_baseTexture = pTexture;

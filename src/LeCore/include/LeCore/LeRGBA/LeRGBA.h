@@ -23,7 +23,16 @@ struct LeRGBAReal
 
 struct LeRGBA
 {
-    uint8 red, green, blue, alpha;
+    union
+    {
+        struct
+        {
+            uint8 r, g, b, a;
+        };
+
+        uint32 rgba;
+    };
+
 
     bool operator == (const LeRGBA& v) const;
     bool operator != (const LeRGBA& v) const;

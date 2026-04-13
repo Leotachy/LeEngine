@@ -52,7 +52,7 @@ LeVkTextureAttributes::LeVkTextureAttributes(const LeTextureAttributes& BaseAttr
 }
 
 
-LeVkTexture::LeVkTexture(const LeChar* pName) : LeTexture(pName)
+LeVkTexture::LeVkTexture()
 {
     device = LeVkCore::Singleton().GetDevice();
     physicalDevice = LeVkCore::Singleton().GetPhysicalDevice();
@@ -65,39 +65,35 @@ LeVkTexture::LeVkTexture(const LeChar* pName) : LeTexture(pName)
 
 LeVkTexture::~LeVkTexture()
 {
-    ClearPixels();
+    DestroyVulkanResources();
 }
+
 
 // Creates a staging buffer with host visible memory and
 // image with device local memory
 // Does not update the image, that must be done during command buffer recording!
-void LeVkTexture::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
+void LeVkTexture::Compile(void)
 {
-    ClearPixels();
-
-    m_width = width;
-    m_height = height;
-
     // Make a staging buffer: this one will be used as source when transfering to image
 
-    VkDeviceSize imageSize = width * height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
+    VkDeviceSize imageSize = m_width * m_height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
 
     LeVkUtils::CreateBuffer(device, &physicalDevice->m_memProps, imageSize,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &stagingBuffer);
-    LeVkUtils::UpdateBuffer(&stagingBuffer, pPixels, imageSize);
-    
+    LeVkUtils::UpdateBuffer(&stagingBuffer, m_pixels, imageSize);
+
     // Make the image itself
     LeVkUtils::CreateImage(device, &physicalDevice->m_memProps,
         m_width, m_height, m_format,
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &textureImage);
-   
+
     // And the image view :3
     view = LeVkUtils::CreateImageView(device, textureImage.image, m_format,
         VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
     LE_DEBUG_ASSERT(view != VK_NULL_HANDLE);
 
     // And the sampler
-    LeVkTextureAttributes VkTextureAttribs(m_attribs);
+    LeVkTextureAttributes VkTextureAttribs(attribs);
     sampler = LeVkUtils::CreateSampler(device, VkTextureAttribs, true, physicalDevice->m_devProps.limits.maxSamplerAnisotropy);
     LE_DEBUG_ASSERT(sampler != VK_NULL_HANDLE);
 
@@ -107,7 +103,7 @@ void LeVkTexture::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
     LeVkCore::Singleton().QueueTextureForImageUpdate(this);
 }
 
-void LeVkTexture::ClearPixels(void)
+void LeVkTexture::DestroyVulkanResources(void)
 {
     if (sampler != VK_NULL_HANDLE)
     {
@@ -127,10 +123,3 @@ void LeVkTexture::ClearPixels(void)
     if (stagingBuffer.IsAlloced())
         LeVkUtils::DestroyBuffer(&stagingBuffer);
 }
-
-LeBool LeVkTexture::ArePixelsSet(void)
-{
-    return textureImage.image != VK_NULL_HANDLE;
-}
-
-

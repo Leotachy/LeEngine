@@ -11,5 +11,5 @@ public:
 
 private:
 
-	LeMesh* m_worldMesh;
+	LeMesh m_worldMesh;
 };

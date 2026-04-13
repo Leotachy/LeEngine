@@ -1,28 +1,25 @@
 
 #pragma once
 
-// Abstract class for texture dictionary
-
 #include "LeCore/LeTexture/LeTexture.h"
 
-class LeTextureDictionary
+#include "LeCore/LeBinary/LeBinaryChunk.h"
+
+class LeTextureDictionary : public LeBinaryChunk
 {
-
 public:
-	static LeTextureDictionary& Singleton();
-
-	LeTexture* FindTexture(uint64 nameHash);
-	LeTexture* LoadTexture(const char* pTextureDir, const char* pTextureName);
-	void AddTexture(uint64 nameHash, LeTexture* pTexture);
-	void PurgeAllTextures(void);
-
-protected:
 	LeTextureDictionary() = default;
 	virtual ~LeTextureDictionary();
 
-	
+	LeTexture* FindTexture(uint64 nameHash);
+	LeTexture* LoadTexture(const char* pTextureDir, const char* pTextureName);
+	LeBool AddTexture(uint64 nameHash, LeTexture* pTexture);
+	void PurgeAllTextures(void);
 
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
+private:
 	std::unordered_map<uint64, LeTexture*> m_textures;
 
 };

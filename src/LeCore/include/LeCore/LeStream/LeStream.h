@@ -39,17 +39,19 @@ public:
 
 	LeStream* WriteString(const LeChar* str);
 
-	LeStream* WriteNumber(LeBool* p, int32 num = 1);
-	LeStream* WriteNumber(uint8* p, int32 num = 1);
-	LeStream* WriteNumber(int8* p, int32 num = 1);
-	LeStream* WriteNumber(uint16* p, int32 num = 1);
-	LeStream* WriteNumber(int16* p, int32 num = 1);
-	LeStream* WriteNumber(uint32* p, int32 num = 1);
-	LeStream* WriteNumber(int32* p, int32 num = 1);
-	LeStream* WriteNumber(uint64* p, int32 num = 1);
-	LeStream* WriteNumber(int64* p, int32 num = 1);
-	LeStream* WriteNumber(float32* p, int32 num = 1);
-	LeStream* WriteNumber(float64* p, int32 num = 1);
+	// FIXME TODO THIS MESS IN TEMPLATES..........
+
+	LeStream* WriteNumber(const LeBool* p, int32 num = 1);
+	LeStream* WriteNumber(const uint8* p, int32 num = 1);
+	LeStream* WriteNumber(const int8* p, int32 num = 1);
+	LeStream* WriteNumber(const uint16* p, int32 num = 1);
+	LeStream* WriteNumber(const int16* p, int32 num = 1);
+	LeStream* WriteNumber(const uint32* p, int32 num = 1);
+	LeStream* WriteNumber(const int32* p, int32 num = 1);
+	LeStream* WriteNumber(const uint64* p, int32 num = 1);
+	LeStream* WriteNumber(const int64* p, int32 num = 1);
+	LeStream* WriteNumber(const float32* p, int32 num = 1);
+	LeStream* WriteNumber(const float64* p, int32 num = 1);
 
 
 	uint32 ReadString(LeChar* str, int32 buffer_len);

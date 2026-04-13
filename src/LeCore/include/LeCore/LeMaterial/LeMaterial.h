@@ -8,7 +8,9 @@
 
 struct LeMaterialAttributes
 {
+	uint64 ShaderHash;
 
+	uint64 BaseTextureHash;
 };
 
 #define MATERIAL_BASE_TEXTURE_DIRTY (1<<0)
@@ -21,6 +23,7 @@ public:
 	virtual ~LeMaterial();
 	static LeMaterial* Create(void);
 
+	uint64 CalculateAttributeHash(void);
 
 	void SetShader(LeShader* pShader) { m_shader = pShader; }
 	LeShader* GetShader(void) const { return m_shader; }
@@ -28,8 +31,11 @@ public:
 	void SetBaseTexture(LeTexture* pTexture);
 	LeTexture* GetBaseTexture(void) { return m_baseTexture; }
 
+
 private:
 
+	LeMaterialAttributes attribs;
+	uint64 m_attribsHash;
 
 	LeShader* m_shader;
 

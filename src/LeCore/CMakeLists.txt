@@ -40,6 +40,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeCamera/LeCamera.h"
 	"include/LeCore/LeMaterial/LeMaterial.h"
 	"include/LeCore/LeMaterial/LeVkMaterial/LeVkMaterial.h"
+	"include/LeCore/LeMaterial/LeMaterialDictionary.h"
 	"include/LeCore/LeTexture/LeTexture.h"
 	"include/LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 	"include/LeCore/LeTexture/LeTextureDictionary.h"
@@ -50,6 +51,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeTexture/stb_image.h"
 	"include/LeCore/LeUtils/LeHash.h"
 	"include/LeCore/LeRGBA/LeRGBA.h"
+	"include/LeCore/LeBinary/LeBinaryChunk.h"
 
 	"src/LeEngine/LeEngine.cpp"
 	"src/LeRender/LeRender.cpp"
@@ -79,6 +81,7 @@ LeEngine_target_sources_grouped(
 	"src/LeCamera/LeCamera.cpp"
 	"src/LeMaterial/LeMaterial.cpp"
 	"src/LeMaterial/LeVkMaterial/LeVkMaterial.cpp"
+	"src/LeMaterial/LeMaterialDictionary.cpp"
 	"src/LeTexture/LeTexture.cpp"
 	"src/LeTexture/LeVkTexture/LeVkTexture.cpp"
 	"src/LeTexture/LeTextureDictionary.cpp"
@@ -90,6 +93,7 @@ LeEngine_target_sources_grouped(
 	"src/LeUtils/fnv64.hpp"
 	"src/LeUtils/LeHash.cpp"
 	"src/LeRGBA/LeRGBA.cpp"
+	"src/LeBinary/LeBinaryChunk.cpp"
 
 
 
