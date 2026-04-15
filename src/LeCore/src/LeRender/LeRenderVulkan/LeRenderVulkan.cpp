@@ -990,7 +990,7 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 
 	const LeVkGraphicsPipeline* pGraphicsPipeline = pMaterial->GetGraphicsPipeline();
 
-	LeShader* pShader = pMaterial->GetShader();
+	LeShader* pShader = pMaterial->FindShader();
 	LE_DEBUG_ASSERT(pShader && "Shader is missing material!");
 
 	// Test if pipeline is still valid

@@ -5,6 +5,8 @@
 
 #include "LeCore/LeMaterial/LeMaterial.h"
 
+#include "LeCore/LeBinary/LeBinaryChunk.h"
+
 struct LeVertex
 {
 	glm::vec3 pos;
@@ -38,11 +40,16 @@ public:
 
 protected:
 
+	uint64 m_materialHash;
 	LeMaterial* m_material;
+
+private:
+
+	friend class LeMesh;
 
 };
 
-class LeMesh
+class LeMesh : public LeBinaryChunk
 {
 protected:
 	LeMesh();
@@ -57,6 +64,9 @@ public:
 	void PurgeAllMatblocks(void);
 
 protected:
+
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 	std::vector<LeMatBlock*> m_Matblocks;
 

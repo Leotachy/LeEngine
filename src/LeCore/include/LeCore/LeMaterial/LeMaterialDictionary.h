@@ -3,7 +3,9 @@
 
 #include "LeCore/LeMaterial/LeMaterial.h"
 
-class LeMaterialDictionary
+#include "LeCore/LeBinary/LeBinaryChunk.h"
+
+class LeMaterialDictionary : public LeBinaryChunk
 {
 public:
 
@@ -15,6 +17,9 @@ public:
 	void PurgeAllMaterials(void);
 
 protected:
+
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 	std::unordered_map<uint64, LeMaterial*> m_materials;
 };

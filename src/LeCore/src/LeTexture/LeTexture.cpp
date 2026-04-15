@@ -9,6 +9,8 @@ LeTexture::LeTexture()
 	m_name[0] = 0;
 
 	m_width = m_height = 0;
+
+	m_pixels = NULL;
 }
 
 LeTexture::~LeTexture()
@@ -39,11 +41,16 @@ void LeTexture::SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height)
 
 	ClearPixels();
 
+	m_width = width;
+	m_height = height;
+
 	int32 numPixels = width * height;
 	LE_DEBUG_ASSERT(numPixels);
 
 	m_pixels = new LeRGBA[numPixels];
 	LeMemcpy(m_pixels, pPixels, numPixels * sizeof(LeRGBA));
+
+
 
 }
 

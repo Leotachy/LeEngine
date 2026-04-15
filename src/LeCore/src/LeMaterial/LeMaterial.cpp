@@ -8,6 +8,9 @@
 
 LeMaterial::LeMaterial()
 {
+
+	m_name[0] = 0;
+
 	m_shader = NULL;
 	m_baseTexture = NULL;
 }

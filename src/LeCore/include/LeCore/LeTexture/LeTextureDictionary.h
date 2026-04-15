@@ -16,6 +16,7 @@ public:
 	LeBool AddTexture(uint64 nameHash, LeTexture* pTexture);
 	void PurgeAllTextures(void);
 
+protected:
 	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 

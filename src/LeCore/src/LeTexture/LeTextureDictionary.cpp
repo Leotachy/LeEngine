@@ -80,7 +80,7 @@ void LeTextureDictionary::PurgeAllTextures(void)
 
 void LeTextureDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	uint32 numTextures = m_textures.size();
+	uint32 numTextures = (uint32)m_textures.size();
 	pFileStream->WriteNumber(&numTextures);
 
 	for (auto pair : m_textures)

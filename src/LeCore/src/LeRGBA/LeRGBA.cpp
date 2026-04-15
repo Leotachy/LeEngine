@@ -77,10 +77,10 @@ bool LeRGBAReal::operator != (const LeRGBAReal& v) const
 
 bool LeRGBA::operator == (const LeRGBA& v) const
 {
-    return red == v.red &&
-        green == v.green &&
-        blue == v.blue &&
-        alpha == v.alpha;
+    return r == v.r &&
+        g == v.g &&
+        b == v.b &&
+        a == v.a;
 }
 
 bool LeRGBA::operator != (const LeRGBA& v) const

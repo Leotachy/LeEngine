@@ -8,6 +8,7 @@
 #include "LeCore/LeCamera/LeCamera.h"
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeTexture/LeTextureDictionary.h"
+#include "LeCore/LeScene/LeScene.h"
 
 #define DEFAULT_SCREEN_WIDTH 800
 #define DEFAULT_SCREEN_HEIGHT 600
@@ -141,10 +142,14 @@ int main(void)
 	Mb->Faces = indices;
 	Mb->AddFlags(MATBLOCK_FACES_DIRTY);
 
-	LeMesh* pMesh = LeMesh::Create();
+	LeScene* pScene = new LeScene;
+	LeWorld* pWorld = pScene->GetWorld();
+
+	LeMesh* pMesh = pWorld->GetMesh();
+
 	pMesh->AddMatblock(Mb);
 
-	LeTexture* pBaseTexture = LeTextureDictionary::Singleton().LoadTexture(TESTAPP_RESOURCES_PATH "textures/", "awesomeface.png");
+	LeTexture* pBaseTexture = pScene->GetTextureDictionary()->LoadTexture(TESTAPP_RESOURCES_PATH "textures/", "awesomeface.png");
 	LE_ASSERT(pBaseTexture);
 	Mat->SetBaseTexture(pBaseTexture);
 
@@ -183,11 +188,8 @@ int main(void)
 
 	LeEngineShutDown();
 
-	LeTextureDictionary::Singleton().PurgeAllTextures();
-	delete Mat;
-	delete BasicShader;
 	delete pCam;
-	delete pMesh;
+	delete pScene;
 
 	LeEngineDeInit();
 
