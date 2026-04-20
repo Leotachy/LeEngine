@@ -186,10 +186,15 @@ int main(void)
 		s_bFramebufferResized = false;
 	}
 
+	LeStreamFile StreamFile;
+	StreamFile.Open(LeStreamAccessType::STREAM_ACCESS_WRITE, TESTAPP_SCENES_PATH "test_level.ble");
+	pScene->SerializeBinaryChunk(&StreamFile);
+
 	LeEngineShutDown();
 
 	delete pCam;
 	delete pScene;
+	delete BasicShader;
 
 	LeEngineDeInit();
 

@@ -35,7 +35,7 @@ void LeVkDescriptorPool::Init(void)
 	VkDescriptorPoolCreateInfo PoolInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.flags = 0,
+		.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
 		.maxSets = GetMaxSets(),
 		.poolSizeCount = NumPoolSizes,
 		.pPoolSizes = PoolSizes

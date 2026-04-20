@@ -16,16 +16,14 @@ void LeRenderInterface::InitRenderer(InitRendererParams& params)
 	switch (params.api)
 	{
 	case LeRenderApi::LE_RENDER_API_NONE:
-		LE_ASSERT(0);
+		LE_ERROR("Bad render api: %u", RenderApi);
 		break;
-
 	case LeRenderApi::LE_RENDER_API_VULKAN:
-		LeVkCore::Singleton().Init(params.pAppName, params.pWindow);
-
-		BeginRenderFunc = VkBeginRender;
+		LeVkCore::Singleton().Init(&params.windowParams, &params.viewportParams);
 		RenderFunc = VkRender;
-		EndRenderFunc = VkEndRender;
-
+		break;
+	default:
+		LE_ERROR("Unknown render api: %u", RenderApi);
 		break;
 	}
 }
@@ -35,10 +33,13 @@ void LeRenderInterface::ShutdownRenderer()
 	switch (RenderApi)
 	{
 	case LeRenderApi::LE_RENDER_API_NONE:
+		LE_ERROR("Uninitialized renderer");
 		break;
-
 	case LeRenderApi::LE_RENDER_API_VULKAN:
 		LeVkCore::Singleton().ShutDown();
+		break;
+	default:
+		LE_ERROR("Unknown render api: %u", RenderApi);
 		break;
 	}
 }
@@ -48,53 +49,69 @@ void LeRenderInterface::DeInitRenderer(void)
 	switch (RenderApi)
 	{
 	case LeRenderApi::LE_RENDER_API_NONE:
+		LE_ERROR("Uninitialized renderer");
 		break;
-
 	case LeRenderApi::LE_RENDER_API_VULKAN:
 		LeVkCore::Singleton().DeInit();
-
-		BeginRenderFunc = NULL;
 		RenderFunc = NULL;
-		EndRenderFunc = NULL;
-
+		break;
+	default:
+		LE_ERROR("Unknown render api: %u", RenderApi);
 		break;
 	}
 
 	RenderApi = LeRenderApi::LE_RENDER_API_NONE;
 }
 
-LeBool LeRenderInterface::BeginRender(LeCamera* pCam, LeBool bFramebufferResized)
+void LeRenderInterface::SetViewportDimensions(uint32 width, uint32 height)
 {
-	return BeginRenderFunc(pCam, bFramebufferResized);
+	switch (RenderApi)
+	{
+	case LeRenderApi::LE_RENDER_API_NONE:
+		LE_ERROR("Uninitialized renderer");
+		break;
+	case LeRenderApi::LE_RENDER_API_VULKAN:
+		LeVkCore::Singleton().SetViewportDimensions(width, height);
+		break;
+	default:
+		LE_ERROR("Unknown render api: %u", RenderApi);
+		break;
+	}
+
 }
 
-LeBool LeRenderInterface::Render(LeMesh* pMesh)
+#ifdef SUPPORT_IMGUI
+
+ImTextureID LeRenderInterface::GetViewportImGuiTexture(void)
 {
-	return RenderFunc(pMesh);
+	switch (RenderApi)
+	{
+	case LeRenderApi::LE_RENDER_API_NONE:
+		LE_ERROR("Uninitialized renderer");
+		return 0;
+		break;
+	case LeRenderApi::LE_RENDER_API_VULKAN:
+		return LeVkCore::Singleton().GetViewportImGuiTexture();
+		break;
+	default:
+		LE_ERROR("Unknown render api: %u", RenderApi);
+		return 0;
+		break;
+	}
 }
 
-LeBool LeRenderInterface::EndRender(void)
+#endif
+
+LeBool LeRenderInterface::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
 {
-	return EndRenderFunc();
+	return RenderFunc(pScene, pCam, bFramebufferResized);
 }
 
-LeBool LeRenderInterface::VkBeginRender(LeCamera* pCam, LeBool bFramebufferResized)
+LeBool LeRenderInterface::VkRender(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
 {
-	return LeVkCore::Singleton().LeVkBeginRender(pCam, bFramebufferResized);
-}
-
-LeBool LeRenderInterface::VkRender(LeMesh* pMesh)
-{
-	return LeVkCore::Singleton().LeVkRender((LeVkMesh*)pMesh);
-}
-
-LeBool LeRenderInterface::VkEndRender(void)
-{
-	return LeVkCore::Singleton().LeVkEndRender();
+	return LeVkCore::Singleton().Render(pScene, pCam, bFramebufferResized);
 }
 
 LeRenderApi LeRenderInterface::RenderApi = LeRenderApi::LE_RENDER_API_NONE;
 
-LeBeginRenderFunc LeRenderInterface::BeginRenderFunc = NULL;
 LeRenderFunc LeRenderInterface::RenderFunc = NULL;
-LeEndRenderFunc LeRenderInterface::EndRenderFunc = NULL;

@@ -13,7 +13,7 @@ VkSamplerAddressMode GetVkSamplerAddressModeForLeAddressMode(LeTextureAddressMod
 
 struct LeVkTextureAttributes
 {
-
+    LeVkTextureAttributes();
     LeVkTextureAttributes(const LeTextureAttributes& BaseAttribs);
 
     VkFilter MinFilter, MagFilter;

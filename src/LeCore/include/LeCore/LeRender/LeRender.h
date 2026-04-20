@@ -6,6 +6,7 @@
 #include "LeCore/LeCore.h"
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeCamera/LeCamera.h"
+#include "LeCore/LeScene/LeScene.h"
 
 // Lukas Andrijauskas
 // 11th March, 2026
@@ -16,16 +17,27 @@ enum LeRenderApi
 	LE_RENDER_API_VULKAN,
 };
 
-struct InitRendererParams
+struct WindowParams
 {
-	LeRenderApi api;
 	GLFWwindow* pWindow;
 	const char* pAppName;
 };
 
-typedef LeBool(*LeBeginRenderFunc)(LeCamera*, LeBool);
-typedef LeBool(*LeRenderFunc)(LeMesh*);
-typedef LeBool(*LeEndRenderFunc)(void);
+struct ViewportParams
+{
+	uint32 uViewportWidth, uViewportHeight;
+	LeBool bRenderViewportToImGuiTexture;
+};
+
+struct InitRendererParams
+{
+	LeRenderApi api;
+
+	WindowParams windowParams;
+	ViewportParams viewportParams;
+};
+
+typedef LeBool(*LeRenderFunc)(LeScene*, LeCamera*, LeBool);
 
 class LeRenderInterface
 {
@@ -36,19 +48,19 @@ public:
 	static void ShutdownRenderer();
 	static void DeInitRenderer(void);
 
-	static LeBool BeginRender(LeCamera* pCam, LeBool bFramebufferResized);
-	static LeBool Render(LeMesh* pMesh);
-	static LeBool EndRender(void);
+	static void SetViewportDimensions(uint32 width, uint32 height);
+
+#ifdef SUPPORT_IMGUI
+	static ImTextureID GetViewportImGuiTexture(void);
+#endif
+
+	static LeBool Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized);
 
 private:
 
-	static LeBool VkBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
-	static LeBool VkRender(LeMesh* pMesh);
-	static LeBool VkEndRender(void);
+	static LeBool VkRender(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized);
 
 	static LeRenderApi RenderApi;
 
-	static LeBeginRenderFunc BeginRenderFunc;
 	static LeRenderFunc RenderFunc;
-	static LeEndRenderFunc EndRenderFunc;
 };

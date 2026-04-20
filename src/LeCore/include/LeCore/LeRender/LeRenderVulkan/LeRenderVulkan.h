@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeCamera/LeCamera.h"
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
@@ -13,18 +14,17 @@
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
+#include "LeCore/LeScene/LeScene.h"
 
-#ifdef SUPPORT_IMGUI
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
-#endif
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 // Lukas Andrijauskas
 // 10th March, 2026
 // Vulkan renderer API implementation loosely based on OGLDEV Vulkan tutorial
+
+static const int LE_MAX_FRAMES_IN_FLIGHT = 2;
 
 struct LeVkFrameUniformData
 {
@@ -41,6 +41,26 @@ struct LeVkCurrentRenderFrame
 	LeVkDescriptorSetGlobal DescriptorSet;
 };
 
+struct LeVkViewportData
+{
+	uint32 Width, Height;
+	LeBool bRenderToImGuiTexture;
+	VkSampler Sampler;
+
+	struct LeVkViewportFrameData
+	{
+		LeVkMemoryImage OutputImage;
+		VkImageView OutputImageView;
+#ifdef SUPPORT_IMGUI
+		VkDescriptorSet ImGuiTexture;
+#endif
+	};
+
+	LeVkViewportFrameData FrameData[LE_MAX_FRAMES_IN_FLIGHT];
+
+	LeVkMemoryImage DepthImage;
+	VkImageView DepthImageView;
+};
 
 class LeVkCore
 {
@@ -48,14 +68,18 @@ public:
 
 	static LeVkCore& Singleton();
 
-	void Init(const char* pAppName, GLFWwindow* pWindow);
+	void Init(WindowParams* pWindowParams, ViewportParams* pViewportParams);
 	void ShutDown(void);
 	void DeInit(void);
 
+	LeBool Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized);
 
-	LeBool LeVkBeginRender(LeCamera* pCam, LeBool bFramebufferResized);
-	LeBool LeVkRender(LeVkMesh* pMesh);
-	LeBool LeVkEndRender(void);
+	void SetViewportDimensions(uint32 width, uint32 height);
+#ifdef SUPPORT_IMGUI
+	ImTextureID GetViewportImGuiTexture(void);
+#endif
+
+
 
 	VkDevice GetDevice(void);
 	const LeVkPhysicalDevice* GetPhysicalDevice(void);
@@ -96,8 +120,9 @@ private:
 
 	void OnSurfaceSizeChanged(void);
 	
-	void CreateDepthResources(void);
-	void DestroyDepthResources(void);
+	void CreateViewportResources(uint32 width, uint32 height, LeBool bRenderToImGuiTexture);
+	void UpdateViewportResources(uint32 width, uint32 height);
+	void DestroyViewportResources(void);
 
 	LeBool RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial);
 	LeBool RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial);
@@ -107,11 +132,8 @@ private:
 
 	void UpdateVkImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex);
 
-
-
-
-
-	static const int LE_MAX_FRAMES_IN_FLIGHT = 2;
+	// Records a command buffer of rendering the scene into a viewport image
+	LeBool DrawScene(LeScene* pScene, LeCamera* pCam);
 
 
 	GLFWwindow* m_gltfWindow;
@@ -131,11 +153,17 @@ private:
 
 
 	LeVkCurrentRenderFrame m_CurrentRenderFrame[LE_MAX_FRAMES_IN_FLIGHT];
+
+	LeVkViewportData m_ViewportData;
+	uint32 m_NewViewportWidth, m_NewViewportHeight;
+	LeBool m_bRebuildViewport;
+
 	int32 m_FrameIndex;
 
-	LeVkMemoryImage m_depthImage;
-	VkImageView m_depthImageView;
-
 	std::queue<LeVkTexture*> m_updateImageTextureQueue;
+
+#ifdef SUPPORT_IMGUI
+#endif
+
 };
 

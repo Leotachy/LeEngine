@@ -19,6 +19,7 @@ target_compile_definitions(${_target}
 	PUBLIC
 		TESTAPP_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/res/"
 		TESTAPP_SHADER_BIN_PATH="${CMAKE_CURRENT_SOURCE_DIR}/res/shaders/bin/"
+		TESTAPP_SCENES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/res/scenes/"
 )
 
 		

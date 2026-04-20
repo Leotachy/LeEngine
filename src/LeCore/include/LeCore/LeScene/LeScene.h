@@ -4,7 +4,6 @@
 
 #include "LeCore/LeTexture/LeTextureDictionary.h"
 #include "LeCore/LeMaterial/LeMaterialDictionary.h"
-#include "LeCore/LeShader/LeShaderDictionary.h"
 #include "LeCore/LeWorld/LeWorld.h"
 
 #include "LeCore/LeBinary/LeBinaryChunk.h"
@@ -28,6 +27,5 @@ private:
 
 	LeTextureDictionary m_textureDictionary;
 	LeMaterialDictionary m_materialDictionary;
-	LeShaderDictionary m_shaderDictionary;
 	LeWorld m_world;
 };

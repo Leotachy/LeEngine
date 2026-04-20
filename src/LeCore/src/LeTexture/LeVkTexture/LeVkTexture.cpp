@@ -42,6 +42,13 @@ VkSamplerAddressMode GetVkSamplerAddressModeForLeAddressMode(LeTextureAddressMod
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
+LeVkTextureAttributes::LeVkTextureAttributes()
+{
+    MagFilter = MinFilter = VK_FILTER_LINEAR;
+    MipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    AddressModeV = AddressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
 LeVkTextureAttributes::LeVkTextureAttributes(const LeTextureAttributes& BaseAttribs)
 {
     MinFilter = GetVkFilterForLeFilterMode(BaseAttribs.MinFilter);

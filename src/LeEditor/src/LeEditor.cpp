@@ -27,8 +27,18 @@ LeEditorInstance::LeEditorInstance(void)
 		.RendererParams =
 		{
 			.api = LeRenderApi::LE_RENDER_API_VULKAN,
-			.pWindow = m_gltfWindow,
-			.pAppName = EDITOR_APP_NAME
+
+			.windowParams =
+			{
+				.pWindow = m_gltfWindow,
+				.pAppName = EDITOR_APP_NAME
+			},
+			.viewportParams = 
+			{
+				.uViewportWidth = DEFAULT_SCREEN_WIDTH,
+				.uViewportHeight = DEFAULT_SCREEN_HEIGHT,
+				.bRenderViewportToImGuiTexture = true
+			}
 		}
 	};
 	LeEngineInit(Params);
@@ -61,9 +71,7 @@ void LeEditorInstance::Run(void)
 		ImGui::Render();
 
 
-		if (LeRenderInterface::BeginRender(&Camera, false))
-			//if (LeRenderInterface::Render(pMesh))
-				LeRenderInterface::EndRender();
+		LeRenderInterface::Render(NULL, &Camera, false);
 	}
 
 }
