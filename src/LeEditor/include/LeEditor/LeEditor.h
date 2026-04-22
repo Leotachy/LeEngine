@@ -8,6 +8,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "LeEditor/LeViewport.h"
+
 class LeEditorInstance
 {
 public:
@@ -18,6 +20,16 @@ public:
 
 private:
 
+	void Update(void);
+
+	void MakeDockWindows(void);
+	ImGuiID MakeDockSpaceOverViewport(void);
+
+
 	GLFWwindow* m_gltfWindow;
+
+	LeBool m_bDocksBuilt;
+
+	LeViewport m_Viewport;
 
 };

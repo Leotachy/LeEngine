@@ -115,7 +115,7 @@ target_compile_definitions(${_target}
 
 target_link_libraries(${_target} glfw)
 target_link_libraries(${_target} glm)
-target_link_libraries(${_target} imgui)
+target_link_libraries(${_target} imgui-docking)
 
 # Vulkan SDK needs to be installed on the local machine
 find_package(Vulkan REQUIRED)
