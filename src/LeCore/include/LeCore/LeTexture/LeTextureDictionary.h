@@ -5,16 +5,23 @@
 
 #include "LeCore/LeBinary/LeBinaryChunk.h"
 
+#define TEXTURE_DICTIONARY_TEXTURES_DIRTY (1<<0)
+
 class LeTextureDictionary : public LeBinaryChunk
 {
 public:
-	LeTextureDictionary() = default;
+	LeTextureDictionary();
 	virtual ~LeTextureDictionary();
 
 	LeTexture* FindTexture(uint64 nameHash);
 	LeTexture* LoadTexture(const char* pTextureDir, const char* pTextureName);
 	LeBool AddTexture(uint64 nameHash, LeTexture* pTexture);
 	void PurgeAllTextures(void);
+
+	template<typename Func>
+	void ForEachTexture(Func&& func);
+
+	uint32 flags;
 
 protected:
 	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;

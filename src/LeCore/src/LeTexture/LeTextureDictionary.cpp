@@ -6,6 +6,11 @@
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 #include "LeCore/LeTexture/LeTextureDictionary.h"
 
+LeTextureDictionary::LeTextureDictionary()
+{
+	flags = 0;
+}
+
 LeTextureDictionary::~LeTextureDictionary()
 {
 	PurgeAllTextures();
@@ -42,10 +47,9 @@ LeTexture* LeTextureDictionary::LoadTexture(const char* pTextureDir, const char*
 
 	LE_DEBUG_ASSERT(ch == 4);
 
-	LeTexture* pTexture = LeTexture::Create();
+	LeTexture* pTexture = LeTexture::Create(w, h);
 	pTexture->SetName(pTextureName);
-	pTexture->SetPixels((LeRGBA*)pPixelData, w, h);
-	pTexture->Compile();
+	pTexture->SetPixels((LeRGBA*)pPixelData);
 	stbi_image_free(pPixelData);
 
 	AddTexture(uNameHash, pTexture);
@@ -78,6 +82,16 @@ void LeTextureDictionary::PurgeAllTextures(void)
 	m_textures.clear();
 }
 
+template<typename Func>
+void LeTextureDictionary::ForEachTexture(Func&& func)
+{
+	for (auto pair : m_textures)
+	{
+		LeTexture* pTexture = pair.second;
+		func(pTexture);
+	}
+}
+
 void LeTextureDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
 	uint32 numTextures = (uint32)m_textures.size();
@@ -87,10 +101,10 @@ void LeTextureDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 	{
 		LeTexture* pTexture = pair.second;
 
-		pFileStream->WriteString(pTexture->m_name);
-
 		pFileStream->WriteNumber(&pTexture->m_width);
 		pFileStream->WriteNumber(&pTexture->m_height);
+
+		pFileStream->WriteString(pTexture->m_name);
 
 		uint32 numPixels = pTexture->m_width * pTexture->m_height;
 
@@ -107,12 +121,14 @@ void LeTextureDictionary::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 
 	for (uint32 i = 0; i < numTextures; i++)
 	{
-		LeTexture* pTexture = LeTexture::Create();
+		uint32 width, height;
+
+		pFileStream->ReadNumber(&width);
+		pFileStream->ReadNumber(&height);
+
+		LeTexture* pTexture = LeTexture::Create(width, height);
 
 		pFileStream->ReadString(pTexture->m_name, LE_TEXTURE_MAX_NAME);
-
-		pFileStream->ReadNumber(&pTexture->m_width);
-		pFileStream->ReadNumber(&pTexture->m_height);
 
 		uint32 numPixels = pTexture->m_width * pTexture->m_height;
 
@@ -120,7 +136,7 @@ void LeTextureDictionary::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 		pFileStream->Read(pTexture->m_pixels, numPixels);
 
 		pFileStream->Read(&pTexture->attribs, sizeof(pTexture->attribs));
-
-		pTexture->Compile();
 	}
+
+	flags |= TEXTURE_DICTIONARY_TEXTURES_DIRTY;
 }

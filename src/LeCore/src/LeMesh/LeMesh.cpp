@@ -7,7 +7,7 @@
 
 LeMatBlock::LeMatBlock()
 {
-	m_Flags = 0;
+	flags = 0;
 
 	m_material = NULL;
 }

@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include "LeCore/LeRender/LeRenderResource.h"
-
 #include "LeCore/LeMaterial/LeMaterial.h"
 
 #include "LeCore/LeBinary/LeBinaryChunk.h"
@@ -22,7 +20,7 @@ struct LeFace
 #define MATBLOCK_VERTS_DIRTY (1<<0) // The verts need to be reuploaded to the vertex buffer
 #define MATBLOCK_FACES_DIRTY (1<<1) // The faces need to be reuploaded to the index buffer
 
-class LeMatBlock : public LeRenderResource
+class LeMatBlock
 {
 protected:
 	LeMatBlock();
@@ -37,6 +35,8 @@ public:
 
 	std::vector<LeVertex> Vertices;
 	std::vector<LeFace> Faces;
+
+	uint32 flags;
 
 protected:
 

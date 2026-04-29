@@ -29,6 +29,7 @@ public:
 		uint32 width, uint32 height, VkFormat format,
 		VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage* OutMemoryImage);
 	static void DestroyImage(LeVkMemoryImage* OutMemoryImage);
+	static void CopyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkBuffer Src, uint32 width, uint32 height);
 
 	static void TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
@@ -38,7 +39,7 @@ public:
 		VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels);
 	static void DestroyImageView(VkDevice Device, VkImageView ImageView);
 
-	static VkSampler CreateSampler(VkDevice Device, const LeVkTextureAttributes& Attribs, LeBool bEnableAnisotropy = true, float32 fMaxAnisotropy = 1.0f);
+	static VkSampler CreateSampler(VkDevice Device, const LeVkTextureAttributes* Attribs, LeBool bEnableAnisotropy = true, float32 fMaxAnisotropy = 1.0f);
 	static void DestroySampler(VkDevice Device, VkSampler Sampler);
 
 	static uint32 GetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMemProps,

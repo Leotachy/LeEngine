@@ -101,6 +101,8 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 
 	m_queue.Init(m_logicalDevice, &m_swapchain, m_queueFamily, 0);
 
+	m_stagingBufferManager.Init(m_logicalDevice, m_physicalDevices.Selected());
+
 #ifdef SUPPORT_IMGUI
 	InitImGui();
 #endif
@@ -111,7 +113,7 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 	CreateViewportResources(pViewportParams->uViewportWidth, pViewportParams->uViewportHeight,
 		pViewportParams->bRenderViewportToImGuiTexture);
 
-	
+	m_samplerDictionary.Init(m_logicalDevice, m_physicalDevices.Selected());
 
 }
 
@@ -126,11 +128,15 @@ void LeVkCore::DeInit(void)
 	// DeInit graphics pipelines
 	LeVkGraphicsPipelineDictionary::Singleton()->Purge();
 
+	m_samplerDictionary.DeInit();
+
 	DestroyViewportResources();
 
 #ifdef SUPPORT_IMGUI
 	DeInitImGui();
 #endif
+
+	m_stagingBufferManager.DeInit();
 
 	// DeInit the render queue
 	m_queue.Destroy();
@@ -195,6 +201,8 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 {
 	m_queue.WaitForFences(m_FrameIndex);
 
+	m_stagingBufferManager.FreeBuffers(m_FrameIndex);
+
 	LeVkCurrentRenderFrame* pRenderFrame = &m_CurrentRenderFrame[m_FrameIndex];
 
 	pRenderFrame->ImageIndex = m_queue.AcquireNextImage(m_FrameIndex);
@@ -212,8 +220,7 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 
 
 	// Record the command buffer to draw the scene onto a viewport image
-	if (pScene && pCam)
-		DrawScene(pScene, pCam);
+	DrawScene(pScene, pCam);
 
 	// setup image barrier for clearing the color
 	LeVkUtils::TransitionImageLayout(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
@@ -277,6 +284,13 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
 	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
 
+	if (!m_ViewportData.bRenderToImGuiTexture)
+	{
+		// Apply the viewport image to swapchain image
+
+
+	}
+
 #ifdef SUPPORT_IMGUI
 	RenderImGui(CommandBuffer);
 #endif
@@ -303,197 +317,6 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 
 	m_FrameIndex++;
 	m_FrameIndex = m_FrameIndex % LE_MAX_FRAMES_IN_FLIGHT;
-
-	return true;
-}
-
-LeBool LeVkCore::DrawScene(LeScene* pScene, LeCamera* pCam)
-{
-
-	LE_DEBUG_ASSERT(pScene);
-	LE_DEBUG_ASSERT(pCam);
-
-	if (m_bRebuildViewport)
-	{
-		UpdateViewportResources(m_NewViewportWidth, m_NewViewportHeight);
-		m_bRebuildViewport = false;
-	}
-
-	// Update frame UBOs
-
-	LeVkCurrentRenderFrame* pRenderFrame = &m_CurrentRenderFrame[m_FrameIndex];
-	LeVkViewportData* pViewportData = &m_ViewportData;
-	LeVkViewportData::LeVkViewportFrameData* pViewportFrameData = &m_ViewportData.FrameData[m_FrameIndex];
-	VkCommandBuffer CommandBuffer = pRenderFrame->CommandBuffer;
-
-	pRenderFrame->FrameUBO.MVP = *pCam->GetViewProjMatrix();
-
-	LeVkUtils::UpdateBuffer(&m_CurrentRenderFrame[m_FrameIndex].FrameUBOMemoryBuffer,
-		&m_CurrentRenderFrame[m_FrameIndex].FrameUBO,
-		sizeof(m_CurrentRenderFrame[m_FrameIndex].FrameUBO));
-
-
-
-	// Update texture image buffers
-	if (m_updateImageTextureQueue.empty() == false)
-	{
-		VkCommandBuffer UpdateImageCommandBuffer;
-		CreateOneShotCommandBuffers(1, &UpdateImageCommandBuffer);
-
-		BeginOneShotCommandBuffer(UpdateImageCommandBuffer);
-
-		while (m_updateImageTextureQueue.empty() == false)
-		{
-			LeVkTexture* pTexture = m_updateImageTextureQueue.front();
-			UpdateVkImage(UpdateImageCommandBuffer, pTexture);
-			m_updateImageTextureQueue.pop();
-
-		}
-
-		EndOneShotCommandBuffer(UpdateImageCommandBuffer);
-
-		m_queue.SubmitSync(UpdateImageCommandBuffer);
-		m_queue.WaitIdle();
-
-		FreeOneShotCommandBuffers(1, &UpdateImageCommandBuffer);
-	}
-
-	BeginCommandBuffer(CommandBuffer);
-
-	// setup image barrier for clearing the color
-	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportFrameData->OutputImage.image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		VK_ACCESS_2_NONE,
-		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-
-	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportData->DepthImage.image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-		VK_IMAGE_ASPECT_DEPTH_BIT);
-
-
-	VkClearValue ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
-
-	VkRenderingAttachmentInfo colorAttachment{};
-	colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	colorAttachment.imageView = pViewportFrameData->OutputImageView;
-	colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.clearValue = ClearColor;
-
-	VkClearValue ClearDepthStencil = { 1.0f, 0 };
-
-	VkRenderingAttachmentInfo depthAttachment{};
-	depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	depthAttachment.imageView = pViewportData->DepthImageView;
-	depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.clearValue = ClearDepthStencil;
-
-	VkRenderingInfo renderingInfo{};
-	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-	renderingInfo.renderArea.offset = { 0, 0 };
-	renderingInfo.renderArea.extent = { pViewportData->Width, pViewportData->Height };
-	renderingInfo.layerCount = 1;
-	renderingInfo.colorAttachmentCount = 1;
-	renderingInfo.pColorAttachments = &colorAttachment;
-	renderingInfo.pDepthAttachment = &depthAttachment;
-
-	vkCmdBeginRendering(CommandBuffer, &renderingInfo);
-
-	VkViewport Viewport =
-	{
-		.x = 0.0f,
-		.y = 0.0f,
-		.width = (float32)pViewportData->Width,
-		.height = (float32)pViewportData->Height,
-		.minDepth = 0.0f,
-		.maxDepth = 1.0f
-	};
-
-	VkRect2D Scissor =
-	{
-		.offset =
-		{
-			.x = 0,
-			.y = 0,
-		},
-		.extent =
-		{
-			.width = pViewportData->Width,
-			.height = pViewportData->Height
-		}
-	};
-
-
-	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
-	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
-
-	LeVkMesh* pWorldMesh = static_cast<LeVkMesh*>(pScene->GetWorld()->GetMesh());
-	LE_DEBUG_ASSERT(pWorldMesh);
-
-	for (uint32 i = 0; i < pWorldMesh->GetNumMatblocks(); i++)
-	{
-		LeMatBlock* pMb = pWorldMesh->GetMatblock(i);
-		LE_DEBUG_ASSERT(pMb);
-
-		LeVkMatBlock* pMbVk = static_cast<LeVkMatBlock*>(pMb);
-		LE_DEBUG_ASSERT(pMbVk);
-
-		LeVkMaterial* pMaterialVk = static_cast<LeVkMaterial*>(pMbVk->GetMaterial());
-
-		RefreshGraphicsPipelineForMaterial(pMaterialVk);
-		RefreshDescriptorSetForMaterial(pMaterialVk);
-
-		vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipeline());
-
-		SetupVertexBufferForMatBlock(pMbVk);
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(CommandBuffer, 0, 1, &pMbVk->GetVertexBuffer()->buffer, offsets);
-
-		SetupIndexBufferForMatBlock(pMbVk);
-		vkCmdBindIndexBuffer(CommandBuffer, pMbVk->GetIndexBuffer()->buffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
-
-		VkDescriptorSet DescriptorSets[] =
-		{
-			pRenderFrame->DescriptorSet.GetDescriptorSet(),			// First set - global data
-			pWorldMesh->GetLeDescriptor()->GetDescriptorSet(),			// Second set - matblock data
-			pMaterialVk->GetLeDescriptorSet()->GetDescriptorSet()	// Third set - material data
-		};
-
-		uint32 NumDescriptorSets = ARRAY_SIZE(DescriptorSets);
-
-		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
-			0,						// firstSet
-			NumDescriptorSets,		// descriptorSetCount
-			DescriptorSets,			// descriptor sets
-			0,						// dynamicOffsetCount
-			NULL);					// pDynamicOffsets
-
-
-		vkCmdDrawIndexed(CommandBuffer, uint32(pMbVk->Faces.size()) * 3, 1, 0, 0, 0);
-	}
-
-	vkCmdEndRendering(CommandBuffer);
-
-	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportFrameData->OutputImage.image,
-		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-		VK_ACCESS_2_SHADER_READ_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	return true;
 }
@@ -537,13 +360,6 @@ const LeVkPhysicalDevice* LeVkCore::GetPhysicalDevice(void)
 const LeSwapchain* LeVkCore::GetLeSwapchain(void) const
 {
 	return &m_swapchain;
-}
-
-void LeVkCore::QueueTextureForImageUpdate(LeVkTexture* pTexture)
-{
-	LE_DEBUG_ASSERT(pTexture);
-
-	m_updateImageTextureQueue.push(pTexture);
 }
 
 void LeVkCore::CreateCommandBuffers(uint32 Count, VkCommandBuffer* CommandBuffers)
@@ -925,26 +741,6 @@ void LeVkCore::CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size)
 
 }
 
-static void copyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkBuffer Src, uint32 width, uint32 height)
-{
-	VkBufferImageCopy Region =
-	{
-		.bufferOffset = 0,
-		.bufferRowLength = 0,
-		.bufferImageHeight = 0,
-		.imageSubresource = 
-		{
-			VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1
-		},
-		.imageOffset = {0, 0, 0},
-		.imageExtent = {width, height, 1}
-	};
-
-	vkCmdCopyBufferToImage(CommandBuffer, Src, Dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &Region);
-}
-
-
-
 void LeVkCore::SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
 {
 	LE_DEBUG_ASSERT(pVertices);
@@ -1065,7 +861,7 @@ void LeVkCore::CreateViewportResources(uint32 width, uint32 height, LeBool bRend
 	m_ViewportData.bRenderToImGuiTexture = bRenderToImGuiTexture;
 
 	LeVkTextureAttributes SamplerAttribs;
-	m_ViewportData.Sampler = LeVkUtils::CreateSampler(m_logicalDevice, SamplerAttribs);
+	m_ViewportData.Sampler = LeVkUtils::CreateSampler(m_logicalDevice, &SamplerAttribs);
 
 	for (int32 i = 0; i < GetMaxFramesInFlight(); i++)
 	{
@@ -1267,7 +1063,7 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 			LeVkShader* pShaderVk = static_cast<LeVkShader*>(pShader);
 			LE_DEBUG_ASSERT(pShaderVk);
 
-			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, m_swapchain.GetNumImages(), pShaderVk, m_swapchain.GetImageFormat(),
+			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, pShaderVk, m_swapchain.GetImageFormat(),
 				VK_FORMAT_D32_SFLOAT);
 			LeVkGraphicsPipelineDictionary::Singleton()->Add(NewGraphicsPipeline);
 
@@ -1282,14 +1078,14 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 	return false;
 }
 
-LeBool LeVkCore::RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial)
+LeBool LeVkCore::RefreshTexture(LeVkTexture* pTexture)
 {
-	LE_DEBUG_ASSERT(pMaterial);
+	LE_DEBUG_ASSERT(pTexture);
 
-	if (pMaterial->HasFlags(MATERIAL_BASE_TEXTURE_DIRTY))
+	if (pTexture->flags & TEXTURE_ATTRIBUTES_DIRTY)
 	{
-		pMaterial->UpdateDescriptorSet();
-		pMaterial->DeleteFlags(MATERIAL_BASE_TEXTURE_DIRTY);
+		pTexture->sampler = m_samplerDictionary.GetOrCreateSampler(pTexture->GetAttributes());
+		pTexture->flags &= ~TEXTURE_ATTRIBUTES_DIRTY;
 
 		return true;
 	}
@@ -1297,18 +1093,34 @@ LeBool LeVkCore::RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial)
 	return false;
 }
 
-LeBool LeVkCore::UpdateMaterialTextureImages(VkCommandBuffer CommandBuffer, LeVkMaterial* pMaterial)
+LeBool LeVkCore::RefreshTexturesForMaterial(LeVkMaterial* pMaterial)
 {
-	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);
 	LE_DEBUG_ASSERT(pMaterial);
+	LeBool bSomeTextureRefreshed = false;
 
 	LeVkTexture* pBaseTexture = static_cast<LeVkTexture*>(pMaterial->GetBaseTexture());
 
-	if (pBaseTexture && pBaseTexture->HasFlags(TEXTURE_PIXELS_DIRTY))
-	{
-		UpdateVkImage(CommandBuffer, pBaseTexture);
+	bSomeTextureRefreshed |= pBaseTexture ? RefreshTexture(pBaseTexture) : false;
 
-		pBaseTexture->DeleteFlags(TEXTURE_PIXELS_DIRTY);
+	if (bSomeTextureRefreshed)
+	{
+		pMaterial->flags |= MATERIAL_BASE_TEXTURE_DIRTY;
+	}
+
+	return bSomeTextureRefreshed;
+
+}
+
+LeBool LeVkCore::RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial)
+{
+	LE_DEBUG_ASSERT(pMaterial);
+
+	if (pMaterial->flags & (MATERIAL_BASE_TEXTURE_DIRTY))
+	{
+		pMaterial->UpdateDescriptorSet();
+		pMaterial->flags &= ~(MATERIAL_BASE_TEXTURE_DIRTY);
+
+		return true;
 	}
 
 	return false;
@@ -1319,11 +1131,11 @@ LeBool LeVkCore::SetupVertexBufferForMatBlock(LeVkMatBlock* pMbVk)
 {
 	LE_DEBUG_ASSERT(pMbVk);
 
-	if (pMbVk->HasFlags(MATBLOCK_VERTS_DIRTY))
+	if (pMbVk->flags & (MATBLOCK_VERTS_DIRTY))
 	{
 		uint64 uLocalSizeOfVerts = pMbVk->Vertices.size() * sizeof(LeVertex);
 		SetupVertexBuffer(pMbVk->Vertices.data(), uLocalSizeOfVerts, pMbVk->GetVertexBuffer()); // this will either create or update the buffer
-		pMbVk->DeleteFlags(MATBLOCK_VERTS_DIRTY);
+		pMbVk->flags &= ~(MATBLOCK_VERTS_DIRTY);
 
 		return true;
 	}
@@ -1336,11 +1148,11 @@ LeBool LeVkCore::SetupIndexBufferForMatBlock(LeVkMatBlock* pMbVk)
 {
 	LE_DEBUG_ASSERT(pMbVk);
 
-	if (pMbVk->HasFlags(MATBLOCK_FACES_DIRTY))
+	if (pMbVk->flags & (MATBLOCK_FACES_DIRTY))
 	{
 		uint64 uLocalSizeOfVerts = pMbVk->Faces.size() * sizeof(LeVertex);
 		SetupIndexBuffer(pMbVk->Faces.data(), uLocalSizeOfVerts, pMbVk->GetIndexBuffer()); // this will either create or update the buffer
-		pMbVk->DeleteFlags(MATBLOCK_FACES_DIRTY);
+		pMbVk->flags &= ~(MATBLOCK_FACES_DIRTY);
 
 		return true;
 	}
@@ -1350,9 +1162,7 @@ LeBool LeVkCore::SetupIndexBufferForMatBlock(LeVkMatBlock* pMbVk)
 
 }
 
-
-
-void LeVkCore::UpdateVkImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex)
+void LeVkCore::UpdateTexture(VkCommandBuffer CommandBuffer, LeVkTexture* pTex)
 {
 
 	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);
@@ -1364,13 +1174,18 @@ void LeVkCore::UpdateVkImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex)
 	int LayerCount = 1;
 	VkDeviceSize ImageSize = LayerCount * LayerSize;
 
+	// Make a staging buffer and fill it with pixel data
+	LeVkMemoryBuffer* pStagingBuffer = m_stagingBufferManager.MakeBuffer(m_FrameIndex, ImageSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	LeVkUtils::UpdateBuffer(pStagingBuffer, pTex->GetPixels(), ImageSize);
+
 	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->textureImage.image,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		0, VK_ACCESS_2_TRANSFER_WRITE_BIT,
 		VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT);
 
-	copyBufferToImage(CommandBuffer, pTex->textureImage.image, pTex->stagingBuffer.buffer, pTex->GetWidth(), pTex->GetHeight());
+	LeVkUtils::CopyBufferToImage(CommandBuffer, pTex->textureImage.image, pStagingBuffer->buffer, pTex->GetWidth(), pTex->GetHeight());
 
 	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->textureImage.image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -1379,5 +1194,199 @@ void LeVkCore::UpdateVkImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex)
 		VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
+void LeVkCore::UpdateDirtyTextures(VkCommandBuffer CommandBuffer, LeTextureDictionary* pTexDictionary)
+{
+	pTexDictionary->ForEachTexture([this, CommandBuffer](LeTexture* pTexture)
+		{
+			LeVkTexture* pVkTexture = static_cast<LeVkTexture*>(pTexture);
+			if (pVkTexture->flags & (TEXTURE_PIXELS_DIRTY))
+			{
+				UpdateTexture(CommandBuffer, pVkTexture);
+				pVkTexture->flags &= ~(TEXTURE_PIXELS_DIRTY);
+			}
+
+		});
+}
 
 
+LeBool LeVkCore::DrawScene(LeScene* pScene, LeCamera* pCam)
+{
+	if (m_bRebuildViewport)
+	{
+		UpdateViewportResources(m_NewViewportWidth, m_NewViewportHeight);
+		m_bRebuildViewport = false;
+	}
+
+	LeVkCurrentRenderFrame* pRenderFrame = &m_CurrentRenderFrame[m_FrameIndex];
+	LeVkViewportData* pViewportData = &m_ViewportData;
+	LeVkViewportData::LeVkViewportFrameData* pViewportFrameData = &m_ViewportData.FrameData[m_FrameIndex];
+	VkCommandBuffer CommandBuffer = pRenderFrame->CommandBuffer;
+
+	if (pScene)
+	{
+		LeTextureDictionary* pTexDictionary = pScene->GetTextureDictionary();
+		LE_DEBUG_ASSERT(pTexDictionary);
+
+		if (pTexDictionary->flags & TEXTURE_DICTIONARY_TEXTURES_DIRTY)
+		{
+			UpdateDirtyTextures(CommandBuffer, pTexDictionary);
+			pTexDictionary->flags &= ~TEXTURE_DICTIONARY_TEXTURES_DIRTY;
+		}
+	}
+
+	// Update frame UBOs
+
+
+	if (pCam)
+	{
+		pRenderFrame->FrameUBO.MVP = *pCam->GetViewProjMatrix();
+
+		LeVkUtils::UpdateBuffer(&m_CurrentRenderFrame[m_FrameIndex].FrameUBOMemoryBuffer,
+			&m_CurrentRenderFrame[m_FrameIndex].FrameUBO,
+			sizeof(m_CurrentRenderFrame[m_FrameIndex].FrameUBO));
+	}
+
+	BeginCommandBuffer(CommandBuffer);
+
+	// setup image barrier for clearing the color
+	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportFrameData->OutputImage.image,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		VK_ACCESS_2_NONE,
+		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportData->DepthImage.image,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+		VK_IMAGE_ASPECT_DEPTH_BIT);
+
+
+	VkClearValue ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
+
+	VkRenderingAttachmentInfo colorAttachment{};
+	colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	colorAttachment.imageView = pViewportFrameData->OutputImageView;
+	colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachment.clearValue = ClearColor;
+
+	VkClearValue ClearDepthStencil = { 1.0f, 0 };
+
+	VkRenderingAttachmentInfo depthAttachment{};
+	depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	depthAttachment.imageView = pViewportData->DepthImageView;
+	depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.clearValue = ClearDepthStencil;
+
+	VkRenderingInfo renderingInfo{};
+	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+	renderingInfo.renderArea.offset = { 0, 0 };
+	renderingInfo.renderArea.extent = { pViewportData->Width, pViewportData->Height };
+	renderingInfo.layerCount = 1;
+	renderingInfo.colorAttachmentCount = 1;
+	renderingInfo.pColorAttachments = &colorAttachment;
+	renderingInfo.pDepthAttachment = &depthAttachment;
+
+	vkCmdBeginRendering(CommandBuffer, &renderingInfo);
+
+	VkViewport Viewport =
+	{
+		.x = 0.0f,
+		.y = 0.0f,
+		.width = (float32)pViewportData->Width,
+		.height = (float32)pViewportData->Height,
+		.minDepth = 0.0f,
+		.maxDepth = 1.0f
+	};
+
+	VkRect2D Scissor =
+	{
+		.offset =
+		{
+			.x = 0,
+			.y = 0,
+		},
+		.extent =
+		{
+			.width = pViewportData->Width,
+			.height = pViewportData->Height
+		}
+	};
+
+
+	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
+	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
+
+	if (pScene)
+	{
+		LeVkMesh* pWorldMesh = static_cast<LeVkMesh*>(pScene->GetWorld()->GetMesh());
+		LE_DEBUG_ASSERT(pWorldMesh);
+
+		for (uint32 i = 0; i < pWorldMesh->GetNumMatblocks(); i++)
+		{
+			LeMatBlock* pMb = pWorldMesh->GetMatblock(i);
+			LE_DEBUG_ASSERT(pMb);
+
+			LeVkMatBlock* pMbVk = static_cast<LeVkMatBlock*>(pMb);
+			LE_DEBUG_ASSERT(pMbVk);
+
+			LeVkMaterial* pMaterialVk = static_cast<LeVkMaterial*>(pMbVk->GetMaterial());
+
+			RefreshGraphicsPipelineForMaterial(pMaterialVk);
+			RefreshTexturesForMaterial(pMaterialVk);
+			RefreshDescriptorSetForMaterial(pMaterialVk);
+
+			vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipeline());
+
+			SetupVertexBufferForMatBlock(pMbVk);
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(CommandBuffer, 0, 1, &pMbVk->GetVertexBuffer()->buffer, offsets);
+
+			SetupIndexBufferForMatBlock(pMbVk);
+			vkCmdBindIndexBuffer(CommandBuffer, pMbVk->GetIndexBuffer()->buffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
+
+			VkDescriptorSet DescriptorSets[] =
+			{
+				pRenderFrame->DescriptorSet.GetDescriptorSet(),			// First set - global data
+				pWorldMesh->GetLeDescriptor()->GetDescriptorSet(),			// Second set - matblock data
+				pMaterialVk->GetLeDescriptorSet()->GetDescriptorSet()	// Third set - material data
+			};
+
+			uint32 NumDescriptorSets = ARRAY_SIZE(DescriptorSets);
+
+			vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
+				0,						// firstSet
+				NumDescriptorSets,		// descriptorSetCount
+				DescriptorSets,			// descriptor sets
+				0,						// dynamicOffsetCount
+				NULL);					// pDynamicOffsets
+
+
+			vkCmdDrawIndexed(CommandBuffer, uint32(pMbVk->Faces.size()) * 3, 1, 0, 0, 0);
+		}
+	}
+
+
+	vkCmdEndRendering(CommandBuffer);
+
+	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportFrameData->OutputImage.image,
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+		VK_ACCESS_2_SHADER_READ_BIT,
+		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	return true;
+}

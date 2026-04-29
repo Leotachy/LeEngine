@@ -2,7 +2,6 @@
 #pragma once
 
 #include "stb_image.h"
-#include "LeCore/LeRender/LeRenderResource.h"
 
 #include "LeCore/LeBinary/LeBinaryChunk.h"
 
@@ -47,34 +46,37 @@ struct LeTextureAttributes
 #define LE_TEXTURE_MAX_NAME 128
 
 // Supports only 32bit RGBA textures - super primitive
-class LeTexture : public LeRenderResource
+class LeTexture
 {
 
 protected:
-	LeTexture();
+	LeTexture(uint32 width, uint32 height);
 public:
 	virtual ~LeTexture();
-	static LeTexture* Create();
+	static LeTexture* Create(uint32 width, uint32 height);
 
 	const LeChar* GetName(void) { return m_name; }
 	void SetName(const LeChar* pName);
 
-	void SetPixels(const LeRGBA* pPixels, uint32 width, uint32 height);
+	void SetPixels(const LeRGBA* pPixels);
 	void ClearPixels(void);
 	LeBool ArePixelsSet(void) const;
 	const LeRGBA* GetPixels(void);
 
-	virtual void Compile(void) = 0;
-
 	uint32 GetWidth(void) { return m_width; }
 	uint32 GetHeight(void) { return m_height; }
 
-	LeTextureAttributes attribs;
+	void SetAttributes(LeTextureAttributes* pAttribs);
+	const LeTextureAttributes* GetAttributes(void) { return &m_attribs; }
+
+	uint32 flags;
 
 protected:
 
 	uint32 m_width, m_height;
 	LeRGBA* m_pixels;
+
+	LeTextureAttributes m_attribs;
 
 private:
 

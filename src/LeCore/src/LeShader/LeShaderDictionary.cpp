@@ -12,7 +12,7 @@ LeShaderDictionary::LeShaderDictionary(void)
 
 LeShaderDictionary::~LeShaderDictionary(void)
 {
-	PurgeAllShaders();
+	PurgeAllSamplers();
 }
 
 LeBool LeShaderDictionary::AddShader(LeShader* pShader)
@@ -44,7 +44,7 @@ LeBool LeShaderDictionary::ShaderExists(uint64 uNameHash)
 	return m_ShaderSet.find(uNameHash) != m_ShaderSet.end();
 }
 
-void LeShaderDictionary::PurgeAllShaders(void)
+void LeShaderDictionary::PurgeAllSamplers(void)
 {
 	for (auto pair : m_ShaderSet)
 	{

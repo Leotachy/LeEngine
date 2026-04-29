@@ -16,7 +16,7 @@ public:
 
 
 
-	void PurgeAllShaders(void);
+	void PurgeAllSamplers(void);
 
 
 private:

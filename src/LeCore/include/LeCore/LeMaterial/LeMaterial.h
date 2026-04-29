@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include "LeCore/LeRender/LeRenderResource.h"
-
 #include "LeCore/LeShader/LeShader.h"
 #include "LeCore/LeTexture/LeTexture.h"
 
@@ -17,7 +15,7 @@ struct LeMaterialAttributes
 
 #define LE_MATERIAL_MAX_NAME 128
 
-class LeMaterial : public LeRenderResource
+class LeMaterial
 {
 protected:
 	LeMaterial();
@@ -33,6 +31,7 @@ public:
 	void SetBaseTexture(LeTexture* pTexture);
 	LeTexture* GetBaseTexture(void) { return m_baseTexture; }
 
+	uint32 flags;
 
 private:
 

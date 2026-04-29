@@ -14,7 +14,7 @@ VkSamplerAddressMode GetVkSamplerAddressModeForLeAddressMode(LeTextureAddressMod
 struct LeVkTextureAttributes
 {
     LeVkTextureAttributes();
-    LeVkTextureAttributes(const LeTextureAttributes& BaseAttribs);
+    LeVkTextureAttributes(const LeTextureAttributes* BaseAttribs);
 
     VkFilter MinFilter, MagFilter;
     VkSamplerMipmapMode MipmapMode;
@@ -27,26 +27,19 @@ struct LeVkTextureAttributes
 class LeVkTexture : public LeTexture
 {
 public:
-    LeVkTexture();
+    LeVkTexture(uint32 width, uint32 height);
     ~LeVkTexture();
-
-
-    void Compile(void) override;
 
     VkFormat GetVkFormat(void) const { return m_format; }
 
     VkDevice device;
     const LeVkPhysicalDevice* physicalDevice;
 
-    LeVkMemoryBuffer stagingBuffer;
     LeVkMemoryImage textureImage;
     VkImageView view;
     VkSampler sampler;
 
-
 private:
-
-    void DestroyVulkanResources(void);
 
     VkFormat m_format;
 

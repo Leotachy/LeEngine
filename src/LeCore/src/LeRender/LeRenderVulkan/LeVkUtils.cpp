@@ -254,7 +254,7 @@ void LeVkUtils::DestroyImageView(VkDevice Device, VkImageView ImageView)
 	vkDestroyImageView(Device, ImageView, NULL);
 }
 
-VkSampler LeVkUtils::CreateSampler(VkDevice Device, const LeVkTextureAttributes& Attribs, LeBool bEnableAnisotropy, float32 fMaxAnisotropy)
+VkSampler LeVkUtils::CreateSampler(VkDevice Device, const LeVkTextureAttributes* Attribs, LeBool bEnableAnisotropy, float32 fMaxAnisotropy)
 {
 
 	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
@@ -262,11 +262,11 @@ VkSampler LeVkUtils::CreateSampler(VkDevice Device, const LeVkTextureAttributes&
 	VkSamplerCreateInfo SamplerCreateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		.magFilter = Attribs.MagFilter,
-		.minFilter = Attribs.MinFilter,
-		.mipmapMode = Attribs.MipmapMode,
-		.addressModeU = Attribs.AddressModeU,
-		.addressModeV = Attribs.AddressModeV,
+		.magFilter = Attribs->MagFilter,
+		.minFilter = Attribs->MinFilter,
+		.mipmapMode = Attribs->MipmapMode,
+		.addressModeU = Attribs->AddressModeU,
+		.addressModeV = Attribs->AddressModeV,
 		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
 		.anisotropyEnable = VK_TRUE,
 		.maxAnisotropy = fMaxAnisotropy,
@@ -291,6 +291,24 @@ void LeVkUtils::DestroySampler(VkDevice Device, VkSampler Sampler)
 	LE_DEBUG_ASSERT(Sampler != VK_NULL_HANDLE);
 
 	vkDestroySampler(Device, Sampler, NULL);
+}
+
+void LeVkUtils::CopyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkBuffer Src, uint32 width, uint32 height)
+{
+	VkBufferImageCopy Region =
+	{
+		.bufferOffset = 0,
+		.bufferRowLength = 0,
+		.bufferImageHeight = 0,
+		.imageSubresource =
+		{
+			VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1
+		},
+		.imageOffset = {0, 0, 0},
+		.imageExtent = {width, height, 1}
+	};
+
+	vkCmdCopyBufferToImage(CommandBuffer, Src, Dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &Region);
 }
 
 uint32 LeVkUtils::GetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMemProps,

@@ -4,11 +4,10 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 
-LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, int32 NumImages, LeVkShader* pShader, VkFormat RenderColFormat,
+LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader, VkFormat RenderColFormat,
 	VkFormat DepthAttachmentFormat)
 {
 	LE_DEBUG_ASSERT(key);
-	LE_DEBUG_ASSERT(NumImages > 0);
 	LE_DEBUG_ASSERT(pShader);
 
 	m_key = key;

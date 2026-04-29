@@ -2,6 +2,14 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+// Lukas Andrijauskas
+// 10th March, 2026
+// Vulkan renderer API implementation loosely based on OGLDEV Vulkan tutorial
+
+static const uint32 LE_MAX_FRAMES_IN_FLIGHT = 2;
 
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeCamera/LeCamera.h"
@@ -10,21 +18,14 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkQueue.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkStagingBufferManager.h"
 #include "LeCore/LeMaterial/LeVkMaterial/LeVkMaterial.h"
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
+#include "LeCore/LeTexture/LeVkTexture/LeVkSamplerDictionary.h"
 #include "LeCore/LeScene/LeScene.h"
 
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-// Lukas Andrijauskas
-// 10th March, 2026
-// Vulkan renderer API implementation loosely based on OGLDEV Vulkan tutorial
-
-static const int LE_MAX_FRAMES_IN_FLIGHT = 2;
 
 struct LeVkFrameUniformData
 {
@@ -86,8 +87,6 @@ public:
 	const LeSwapchain* GetLeSwapchain(void) const;
 	int32 GetMaxFramesInFlight(void) const { return LE_MAX_FRAMES_IN_FLIGHT; }
 
-	void QueueTextureForImageUpdate(LeVkTexture* pTexture);
-
 private:
 
 	void CreateInstance(const char* pAppName);
@@ -125,15 +124,21 @@ private:
 	void DestroyViewportResources(void);
 
 	LeBool RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial);
+	LeBool RefreshTexture(LeVkTexture* pTexture);
+	LeBool RefreshTexturesForMaterial(LeVkMaterial* pMaterial);
 	LeBool RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial);
-	LeBool UpdateMaterialTextureImages(VkCommandBuffer CommandBuffer, LeVkMaterial* pMaterial);
+
 	LeBool SetupVertexBufferForMatBlock(LeVkMatBlock* pMbVk);
 	LeBool SetupIndexBufferForMatBlock(LeVkMatBlock* pMbVk);
 
-	void UpdateVkImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex);
+
+	void UpdateTexture(VkCommandBuffer CommandBuffer, LeVkTexture* pTex);
+	void UpdateDirtyTextures(VkCommandBuffer CommandBuffer, LeTextureDictionary* pTexDictionary);
 
 	// Records a command buffer of rendering the scene into a viewport image
 	LeBool DrawScene(LeScene* pScene, LeCamera* pCam);
+
+
 
 
 	GLFWwindow* m_gltfWindow;
@@ -151,6 +156,7 @@ private:
 	VkCommandPool m_transientCommandBufferPool; // Command pool for one shot commands
 	LeVkQueue m_queue;
 
+	LeVkStagingBufferManager m_stagingBufferManager;
 
 	LeVkCurrentRenderFrame m_CurrentRenderFrame[LE_MAX_FRAMES_IN_FLIGHT];
 
@@ -160,10 +166,6 @@ private:
 
 	int32 m_FrameIndex;
 
-	std::queue<LeVkTexture*> m_updateImageTextureQueue;
-
-#ifdef SUPPORT_IMGUI
-#endif
-
+	LeVkSamplerDictionary m_samplerDictionary;
 };
 

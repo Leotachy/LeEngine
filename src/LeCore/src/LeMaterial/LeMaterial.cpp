@@ -8,11 +8,12 @@
 
 LeMaterial::LeMaterial()
 {
-
 	m_name[0] = 0;
 
 	m_shader = NULL;
 	m_baseTexture = NULL;
+
+	flags = 0;
 }
 
 LeMaterial::~LeMaterial()
@@ -42,5 +43,5 @@ uint64 LeMaterial::CalculateAttributeHash(void)
 void LeMaterial::SetBaseTexture(LeTexture* pTexture)
 {
 	m_baseTexture = pTexture;
-	AddFlags(MATERIAL_BASE_TEXTURE_DIRTY);
+	flags |= (MATERIAL_BASE_TEXTURE_DIRTY);
 }
