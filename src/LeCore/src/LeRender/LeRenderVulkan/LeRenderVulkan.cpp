@@ -92,7 +92,6 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 		CurrentRenderFrame.FrameUBO.MVP = glm::mat4(1.0f);
 		LeVkUtils::CreateUniformBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, 
 			sizeof(LeVkFrameUniformData), &CurrentRenderFrame.FrameUBOMemoryBuffer);
-		CurrentRenderFrame.bFramebufferResized = false;
 		CurrentRenderFrame.DescriptorSet.Init();
 		CurrentRenderFrame.DescriptorSet.UpdateSet(&CurrentRenderFrame.FrameUBOMemoryBuffer);
 	}
@@ -213,7 +212,6 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 	}
 
 	m_queue.ResetFences(m_FrameIndex);
-	pRenderFrame->bFramebufferResized = bFramebufferResized;
 
 	VkCommandBuffer CommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
 	BeginCommandBuffer(CommandBuffer);
@@ -312,7 +310,7 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 	m_queue.SubmitAsync(CommandBuffer, pRenderFrame->ImageIndex, m_FrameIndex);
 
 
-	if (!m_queue.Present(pRenderFrame->ImageIndex, m_FrameIndex) || pRenderFrame->bFramebufferResized)
+	if (!m_queue.Present(pRenderFrame->ImageIndex, m_FrameIndex) || bFramebufferResized)
 		OnSurfaceSizeChanged();
 
 	m_FrameIndex++;

@@ -38,7 +38,6 @@ struct LeVkCurrentRenderFrame
 	int32 ImageIndex;
 	LeVkFrameUniformData FrameUBO;
 	LeVkMemoryBuffer FrameUBOMemoryBuffer;
-	LeBool bFramebufferResized;
 	LeVkDescriptorSetGlobal DescriptorSet;
 };
 
