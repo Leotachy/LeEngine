@@ -9,7 +9,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeCore.h"
 
 	"src/LeDebug/LeDebug.cpp"
-	"src/LeDebug/LeDebugwin/DefDbg.h"
+	"src/LeDebug/LeDebugWin/DefDbg.h"
 
 	"include/LeCore/LeEngine/LeEngine.h"
 	"include/LeCore/LeRender/LeRender.h"

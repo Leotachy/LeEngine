@@ -6,14 +6,13 @@ set(CMAKE_CXX_STANDARD          20)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS        NO)
 
-project(llengine LANGUAGES CXX)
-
+project(LeEngine LANGUAGES CXX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Configure optional libraries
 
-# Helper function to declare cache variables to control llengine options
+# Helper function to declare cache variables to control LeEngine options
 macro (set_option variable_name help_text default_value possible_values)
     set("${variable_name}" "${default_value}" CACHE STRING "${help_text}")
     set_property(CACHE ${variable_name} PROPERTY STRINGS "${possible_values}")
@@ -34,13 +33,10 @@ add_compile_definitions(
 
 
 # These are in cmake/directory
+message("Compiler = ${CMAKE_CXX_COMPILER_ID}")
+include(cmake/${CMAKE_CXX_COMPILER_ID}.cmake)
 include(cmake/common_options.cmake)
 include(cmake/functions.cmake)
-
-if(MSVC)
-	include(cmake/msvc.cmake)
-endif()
-
 
 
 
