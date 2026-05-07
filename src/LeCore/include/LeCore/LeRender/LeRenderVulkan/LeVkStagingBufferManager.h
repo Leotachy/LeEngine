@@ -19,6 +19,6 @@ private:
 	VkDevice m_device;
 	const LeVkPhysicalDevice* m_physicalDevice;
 
-	std::vector<LeVkMemoryBuffer> m_stagingMemoryBuffers[LE_MAX_FRAMES_IN_FLIGHT];
+	std::vector<LeVkMemoryBuffer> m_stagingMemoryBuffers[LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT];
 
 };

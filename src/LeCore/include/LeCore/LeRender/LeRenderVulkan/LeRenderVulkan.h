@@ -9,8 +9,6 @@
 // 10th March, 2026
 // Vulkan renderer API implementation loosely based on OGLDEV Vulkan tutorial
 
-static const uint32 LE_MAX_FRAMES_IN_FLIGHT = 2;
-
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeCamera/LeCamera.h"
 #include "LeCore/LeMesh/LeMesh.h"
@@ -24,6 +22,7 @@ static const uint32 LE_MAX_FRAMES_IN_FLIGHT = 2;
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkSamplerDictionary.h"
+#include "LeCore/LeShader/LeShaderDictionary.h"
 #include "LeCore/LeScene/LeScene.h"
 
 
@@ -56,7 +55,7 @@ struct LeVkViewportData
 #endif
 	};
 
-	LeVkViewportFrameData FrameData[LE_MAX_FRAMES_IN_FLIGHT];
+	LeVkViewportFrameData FrameData[LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT];
 
 	LeVkMemoryImage DepthImage;
 	VkImageView DepthImageView;
@@ -84,7 +83,7 @@ public:
 	VkDevice GetDevice(void);
 	const LeVkPhysicalDevice* GetPhysicalDevice(void);
 	const LeSwapchain* GetLeSwapchain(void) const;
-	int32 GetMaxFramesInFlight(void) const { return LE_MAX_FRAMES_IN_FLIGHT; }
+	int32 GetMaxFramesInFlight(void) const { return LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT; }
 
 private:
 
@@ -157,7 +156,7 @@ private:
 
 	LeVkStagingBufferManager m_stagingBufferManager;
 
-	LeVkCurrentRenderFrame m_CurrentRenderFrame[LE_MAX_FRAMES_IN_FLIGHT];
+	LeVkCurrentRenderFrame m_CurrentRenderFrame[LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT];
 
 	LeVkViewportData m_ViewportData;
 	uint32 m_NewViewportWidth, m_NewViewportHeight;
@@ -166,5 +165,6 @@ private:
 	int32 m_FrameIndex;
 
 	LeVkSamplerDictionary m_samplerDictionary;
+	LeShaderDictionary m_shaderDictionary;
 };
 

@@ -12,9 +12,10 @@ LeShaderDictionary::LeShaderDictionary(void)
 
 LeShaderDictionary::~LeShaderDictionary(void)
 {
-	PurgeAllSamplers();
+	PurgeAllShaders();
 }
 
+#if 0
 LeBool LeShaderDictionary::AddShader(LeShader* pShader)
 {
 	LE_DEBUG_ASSERT(pShader);
@@ -25,6 +26,7 @@ LeBool LeShaderDictionary::AddShader(LeShader* pShader)
 	m_ShaderSet[pShader->GetNameHash()] = pShader;
 	return true;
 }
+#endif
 
 LeShader* LeShaderDictionary::FindShader(uint64 uNameHash)
 {
@@ -44,7 +46,14 @@ LeBool LeShaderDictionary::ShaderExists(uint64 uNameHash)
 	return m_ShaderSet.find(uNameHash) != m_ShaderSet.end();
 }
 
-void LeShaderDictionary::PurgeAllSamplers(void)
+void LeShaderDictionary::LoadAllShaders(const LeChar* pDirectoryPath)
+{
+	LE_DEBUG_ASSERT(pDirectoryPath);
+
+	std::filesystem::directory_iterator
+}
+
+void LeShaderDictionary::PurgeAllShaders(void)
 {
 	for (auto pair : m_ShaderSet)
 	{

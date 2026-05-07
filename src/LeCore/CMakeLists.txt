@@ -115,6 +115,7 @@ file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/logs")
 target_compile_definitions(${_target} 
 	PRIVATE
 		LECORE_LOG_PATH="${CMAKE_BINARY_DIR}/logs/"
+		LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT=2
 )
 
 

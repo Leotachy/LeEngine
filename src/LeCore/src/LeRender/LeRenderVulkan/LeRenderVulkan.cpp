@@ -114,6 +114,8 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 
 	m_samplerDictionary.Init(m_logicalDevice, m_physicalDevices.Selected());
 
+	m_shaderDictionary.
+
 }
 
 void LeVkCore::ShutDown(void)
@@ -124,6 +126,10 @@ void LeVkCore::ShutDown(void)
 
 void LeVkCore::DeInit(void)
 {
+
+	// DeInit shaders
+	m_shaderDictionary.PurgeAllShaders();
+
 	// DeInit graphics pipelines
 	LeVkGraphicsPipelineDictionary::Singleton()->Purge();
 
@@ -314,7 +320,7 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 		OnSurfaceSizeChanged();
 
 	m_FrameIndex++;
-	m_FrameIndex = m_FrameIndex % LE_MAX_FRAMES_IN_FLIGHT;
+	m_FrameIndex = m_FrameIndex % LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT;
 
 	return true;
 }

@@ -16,7 +16,7 @@ void LeVkStagingBufferManager::Init(VkDevice Device, const LeVkPhysicalDevice* p
 
 void LeVkStagingBufferManager::DeInit(void)
 {
-	for (uint32 i = 0; i < LE_MAX_FRAMES_IN_FLIGHT; i++)
+	for (uint32 i = 0; i < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT; i++)
 		FreeBuffers(i);
 
 	m_device = VK_NULL_HANDLE;
@@ -26,7 +26,7 @@ void LeVkStagingBufferManager::DeInit(void)
 LeVkMemoryBuffer* LeVkStagingBufferManager::MakeBuffer(uint32 FrameIndex,
 	VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties)
 {
-	LE_DEBUG_ASSERT(FrameIndex < LE_MAX_FRAMES_IN_FLIGHT);
+	LE_DEBUG_ASSERT(FrameIndex < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT);
 
 	m_stagingMemoryBuffers[FrameIndex].push_back(LeVkMemoryBuffer());
 	LeVkMemoryBuffer* pMemoryBuffer = &m_stagingMemoryBuffers[FrameIndex].back();
@@ -38,7 +38,7 @@ LeVkMemoryBuffer* LeVkStagingBufferManager::MakeBuffer(uint32 FrameIndex,
 
 void LeVkStagingBufferManager::FreeBuffers(uint32 FrameIndex)
 {
-	LE_DEBUG_ASSERT(FrameIndex < LE_MAX_FRAMES_IN_FLIGHT);
+	LE_DEBUG_ASSERT(FrameIndex < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT);
 
 	for (uint32 i = 0; i < m_stagingMemoryBuffers[FrameIndex].size(); i++)
 	{

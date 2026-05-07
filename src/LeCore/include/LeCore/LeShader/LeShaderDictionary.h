@@ -10,13 +10,15 @@ public:
 	LeShaderDictionary(void);
 	~LeShaderDictionary(void);
 
+#if 0
 	LeBool AddShader(LeShader* pShader);
+#endif
 	LeShader* FindShader(uint64 uNameHash);
 	LeBool ShaderExists(uint64 uNameHash);
+	void LoadAllShaders(const LeChar* pDirectoryPath);
 
 
-
-	void PurgeAllSamplers(void);
+	void PurgeAllShaders(void);
 
 
 private:
