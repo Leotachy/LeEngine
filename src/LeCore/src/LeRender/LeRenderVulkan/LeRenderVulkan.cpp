@@ -57,7 +57,7 @@ LeVkCore& LeVkCore::Singleton()
 	return LeVulkanCore;
 }
 
-void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams)
+void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams, PathParams* pPathParams)
 {
 	LE_DEBUG_ASSERT(pWindowParams);
 	LE_DEBUG_ASSERT(pWindowParams->pWindow);
@@ -66,6 +66,9 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 	LE_DEBUG_ASSERT(pViewportParams);
 	LE_DEBUG_ASSERT(pViewportParams->uViewportWidth > 0);
 	LE_DEBUG_ASSERT(pViewportParams->uViewportHeight > 0);
+
+	LE_DEBUG_ASSERT(pPathParams);
+	LE_DEBUG_ASSERT(pPathParams->pShaderBinaryPath);
 
 
 	m_gltfWindow = pWindowParams->pWindow;
@@ -84,9 +87,9 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 	m_commandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_queueFamily);
 	m_transientCommandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queueFamily);
 
-	for (int32 i = 0; i < GetMaxFramesInFlight(); i++)
+	for (int32 i = 0; i < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		LeVkCurrentRenderFrame& CurrentRenderFrame = m_CurrentRenderFrame[i];
+		LeVkFrameContext& CurrentRenderFrame = m_FrameContexts[i];
 		CreateCommandBuffers(1, &CurrentRenderFrame.CommandBuffer);
 		CurrentRenderFrame.ImageIndex = -1;
 		CurrentRenderFrame.FrameUBO.MVP = glm::mat4(1.0f);
@@ -100,21 +103,17 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 
 	m_queue.Init(m_logicalDevice, &m_swapchain, m_queueFamily, 0);
 
-	m_stagingBufferManager.Init(m_logicalDevice, m_physicalDevices.Selected());
+	m_shaderDictionary.LoadAllShaders(pPathParams->pShaderBinaryPath);
 
 #ifdef SUPPORT_IMGUI
 	InitImGui();
 #endif
 
-	m_NewViewportWidth = 0;
-	m_NewViewportHeight = 0;
-	m_bRebuildViewport = false;
-	CreateViewportResources(pViewportParams->uViewportWidth, pViewportParams->uViewportHeight,
-		pViewportParams->bRenderViewportToImGuiTexture);
+	m_newViewportExtent = { 0, 0 };
+	m_bRebuildViewportPending = false;
+	m_viewport.Init({ pViewportParams->uViewportWidth, pViewportParams->uViewportHeight });
 
 	m_samplerDictionary.Init(m_logicalDevice, m_physicalDevices.Selected());
-
-	m_shaderDictionary.
 
 }
 
@@ -135,21 +134,21 @@ void LeVkCore::DeInit(void)
 
 	m_samplerDictionary.DeInit();
 
-	DestroyViewportResources();
+	m_viewport.DeInit();
 
 #ifdef SUPPORT_IMGUI
 	DeInitImGui();
 #endif
 
-	m_stagingBufferManager.DeInit();
+	m_shaderDictionary.PurgeAllShaders();
 
 	// DeInit the render queue
 	m_queue.Destroy();
 
 
-	for (int32 i = 0; i < GetMaxFramesInFlight(); i++)
+	for (int32 i = 0; i < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		LeVkCurrentRenderFrame& CurrentRenderFrame = m_CurrentRenderFrame[i];
+		LeVkFrameContext& CurrentRenderFrame = m_FrameContexts[i];
 		FreeCommandBuffers(1, &CurrentRenderFrame.CommandBuffer);
 		LeVkUtils::DestroyBuffer(&CurrentRenderFrame.FrameUBOMemoryBuffer);
 	}
@@ -202,13 +201,11 @@ void LeVkCore::DeInit(void)
 	LE_DEBUG_MESSAGE("Vulkan instance destroyed");
 }
 
-LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
+LeBool LeVkCore::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
 {
 	m_queue.WaitForFences(m_FrameIndex);
 
-	m_stagingBufferManager.FreeBuffers(m_FrameIndex);
-
-	LeVkCurrentRenderFrame* pRenderFrame = &m_CurrentRenderFrame[m_FrameIndex];
+	LeVkFrameContext* pRenderFrame = GetFrameContext(m_FrameIndex);
 
 	pRenderFrame->ImageIndex = m_queue.AcquireNextImage(m_FrameIndex);
 	if (pRenderFrame->ImageIndex == -1)
@@ -219,15 +216,29 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 
 	m_queue.ResetFences(m_FrameIndex);
 
-	VkCommandBuffer CommandBuffer = m_CurrentRenderFrame[m_FrameIndex].CommandBuffer;
+	if (m_bRebuildViewportPending)
+	{
+		m_queue.WaitIdle();
+		m_viewport.ReInit(m_newViewportExtent);
+		m_bRebuildViewportPending = false;
+	}
+
+	PreRender(pScene);
+
+	if (pCam)
+		pRenderFrame->FrameUBO.MVP = *pCam->GetViewProjMatrix();
+	else
+		pRenderFrame->FrameUBO.MVP = glm::mat4(1.0f);
+
+	LeVkUtils::UpdateBuffer(&m_FrameContexts[m_FrameIndex].FrameUBOMemoryBuffer,
+		&m_FrameContexts[m_FrameIndex].FrameUBO,
+		sizeof(m_FrameContexts[m_FrameIndex].FrameUBO));
+
+	VkCommandBuffer CommandBuffer = pRenderFrame->CommandBuffer;
 	BeginCommandBuffer(CommandBuffer);
 
-
-	// Record the command buffer to draw the scene onto a viewport image
-	DrawScene(pScene, pCam);
-
 	// setup image barrier for clearing the color
-	LeVkUtils::TransitionImageLayout(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetTexture()->memoryImage.image,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_NONE,
@@ -236,27 +247,44 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT);
 
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetDepthTexture()->memoryImage.image,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+		VK_IMAGE_ASPECT_DEPTH_BIT);
 
-	VkExtent2D swapchainExtent = m_swapchain.GetExtent();
 
-	VkClearValue ClearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	VkClearValue ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 	VkRenderingAttachmentInfo colorAttachment{};
 	colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	colorAttachment.imageView = m_swapchain.GetImageView(pRenderFrame->ImageIndex);
+	colorAttachment.imageView = m_viewport.GetTexture()->view;
 	colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.clearValue = ClearColor;
 
+	VkClearValue ClearDepthStencil = { 1.0f, 0 };
+
+	VkRenderingAttachmentInfo depthAttachment{};
+	depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	depthAttachment.imageView = m_viewport.GetDepthTexture()->view;
+	depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.clearValue = ClearDepthStencil;
+
 	VkRenderingInfo renderingInfo{};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 	renderingInfo.renderArea.offset = { 0, 0 };
-	renderingInfo.renderArea.extent = swapchainExtent;
+	renderingInfo.renderArea.extent = m_viewport.GetExtent();
 	renderingInfo.layerCount = 1;
 	renderingInfo.colorAttachmentCount = 1;
 	renderingInfo.pColorAttachments = &colorAttachment;
-	renderingInfo.pDepthAttachment = NULL;
+	renderingInfo.pDepthAttachment = &depthAttachment;
 
 	vkCmdBeginRendering(CommandBuffer, &renderingInfo);
 
@@ -264,8 +292,8 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 	{
 		.x = 0.0f,
 		.y = 0.0f,
-		.width = (float)swapchainExtent.width,
-		.height = (float)swapchainExtent.height,
+		.width = (float32)m_viewport.GetExtent().width,
+		.height = (float32)m_viewport.GetExtent().height,
 		.minDepth = 0.0f,
 		.maxDepth = 1.0f
 	};
@@ -279,8 +307,8 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 		},
 		.extent =
 		{
-			.width = (uint32)swapchainExtent.width,
-			.height = (uint32)swapchainExtent.height
+			.width = m_viewport.GetExtent().width,
+			.height = m_viewport.GetExtent().height
 		}
 	};
 
@@ -288,11 +316,47 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
 	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
 
-	if (!m_ViewportData.bRenderToImGuiTexture)
+	if (pScene)
 	{
-		// Apply the viewport image to swapchain image
+		LeVkMesh* pWorldMesh = static_cast<LeVkMesh*>(pScene->GetWorld()->GetMesh());
+		LE_DEBUG_ASSERT(pWorldMesh);
+
+		for (uint32 i = 0; i < pWorldMesh->GetNumMatblocks(); i++)
+		{
+			LeMatBlock* pMb = pWorldMesh->GetMatblock(i);
+			LE_DEBUG_ASSERT(pMb);
+
+			LeVkMatBlock* pMbVk = static_cast<LeVkMatBlock*>(pMb);
+			LE_DEBUG_ASSERT(pMbVk);
+
+			LeVkMaterial* pMaterialVk = static_cast<LeVkMaterial*>(pMbVk->GetMaterial());
+
+			vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipeline());
+
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(CommandBuffer, 0, 1, &pMbVk->GetVertexBuffer()->buffer, offsets);
+
+			vkCmdBindIndexBuffer(CommandBuffer, pMbVk->GetIndexBuffer()->buffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
+
+			VkDescriptorSet DescriptorSets[] =
+			{
+				pRenderFrame->DescriptorSet.GetDescriptorSet(),			// First set - global data
+				pWorldMesh->GetLeDescriptor()->GetDescriptorSet(),			// Second set - matblock data
+				pMaterialVk->GetLeDescriptorSet()->GetDescriptorSet()	// Third set - material data
+			};
+
+			uint32 NumDescriptorSets = ARRAY_SIZE(DescriptorSets);
+
+			vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
+				0,						// firstSet
+				NumDescriptorSets,		// descriptorSetCount
+				DescriptorSets,			// descriptor sets
+				0,						// dynamicOffsetCount
+				NULL);					// pDynamicOffsets
 
 
+			vkCmdDrawIndexed(CommandBuffer, uint32(pMbVk->Faces.size()) * 3, 1, 0, 0, 0);
+		}
 	}
 
 #ifdef SUPPORT_IMGUI
@@ -301,14 +365,29 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 
 	vkCmdEndRendering(CommandBuffer);
 
-	LeVkUtils::TransitionImageLayout(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+	// Transition the viewport texture for copying from
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetTexture()->memoryImage.image,
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
 		0,
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	// Transition the swapchain texture for copying into
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+		0,
+		0,
+		0,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	// Copy
+	LeVkUtils::CopyImageToImage(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+		m_viewport.GetTexture()->memoryImage.image, m_swapchain.GetExtent(), m_viewport.GetExtent());
 
 
 	EndCommandBuffer(CommandBuffer);
@@ -325,15 +404,55 @@ LeBool LeVkCore::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResi
 	return true;
 }
 
+
+LeBool LeVkCore::PreRender(LeScene* pScene)
+{
+	if (pScene == NULL)
+	{
+		return false;
+	}
+
+	// Update textures by uploading the pixels to GPU memory
+	// Slow but should happen very rarely..
+	LeTextureDictionary* pTexDictionary = pScene->GetTextureDictionary();
+	LE_DEBUG_ASSERT(pTexDictionary);
+
+	//if (pTexDictionary->flags & TEXTURE_DICTIONARY_TEXTURES_DIRTY)
+	{
+		UpdateTextureDictionary(pTexDictionary);
+		pTexDictionary->flags &= ~TEXTURE_DICTIONARY_TEXTURES_DIRTY;
+	}
+	
+	LeVkMesh* pWorldMesh = static_cast<LeVkMesh*>(pScene->GetWorld()->GetMesh());
+	LE_DEBUG_ASSERT(pWorldMesh);
+
+	for (uint32 i = 0; i < pWorldMesh->GetNumMatblocks(); i++)
+	{
+		LeMatBlock* pMb = pWorldMesh->GetMatblock(i);
+		LE_DEBUG_ASSERT(pMb);
+
+		LeVkMatBlock* pMbVk = static_cast<LeVkMatBlock*>(pMb);
+		LE_DEBUG_ASSERT(pMbVk);
+
+		UpdateMatBlock(pMbVk);
+
+		LeVkMaterial* pMaterialVk = static_cast<LeVkMaterial*>(pMbVk->GetMaterial());
+		LE_DEBUG_ASSERT(pMaterialVk);
+
+		UpdateMaterial(pMaterialVk);
+	}
+
+	return true;
+}
+
 void LeVkCore::SetViewportDimensions(uint32 width, uint32 height)
 {
-	m_NewViewportWidth = width;
-	m_NewViewportHeight = height;
+	m_newViewportExtent = { width, height };
 
-	if (m_NewViewportWidth != m_ViewportData.Width ||
-		m_NewViewportHeight != m_ViewportData.Height)
+	if (m_newViewportExtent.width != m_viewport.GetExtent().width ||
+		m_newViewportExtent.height != m_viewport.GetExtent().height)
 	{
-		m_bRebuildViewport = true;
+		m_bRebuildViewportPending = true;
 	}
 }
 
@@ -341,8 +460,10 @@ void LeVkCore::SetViewportDimensions(uint32 width, uint32 height)
 
 ImTextureID LeVkCore::GetViewportImGuiTexture(void)
 {
-	LE_DEBUG_ASSERT(m_ViewportData.bRenderToImGuiTexture);
-	return (ImTextureID)m_ViewportData.FrameData[m_FrameIndex].ImGuiTexture;
+	//LE_DEBUG_ASSERT(m_ViewportData.bRenderToImGuiTexture);
+	//return (ImTextureID)m_ViewportData.FrameData[m_FrameIndex].ImGuiTexture;
+
+	return 0;
 }
 
 #endif
@@ -858,178 +979,89 @@ void LeVkCore::OnSurfaceSizeChanged(void)
 	m_swapchain.Init(m_logicalDevice, m_physicalDevices.Selected(), m_surface, m_queueFamily);
 }
 
-void LeVkCore::CreateViewportResources(uint32 width, uint32 height, LeBool bRenderToImGuiTexture)
+void LeVkCore::UpdateTextureImage(LeVkTexture* pTex)
 {
-	m_ViewportData.Width = width;
-	m_ViewportData.Height = height;
-	m_ViewportData.bRenderToImGuiTexture = bRenderToImGuiTexture;
 
-	LeVkTextureAttributes SamplerAttribs;
-	m_ViewportData.Sampler = LeVkUtils::CreateSampler(m_logicalDevice, &SamplerAttribs);
+	VkCommandBuffer CommandBuffer;
+	CreateOneShotCommandBuffers(1, &CommandBuffer);
+	BeginOneShotCommandBuffer(CommandBuffer);
 
-	for (int32 i = 0; i < GetMaxFramesInFlight(); i++)
-	{
-		LeVkUtils::CreateImage(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps,
-			m_ViewportData.Width, m_ViewportData.Height, m_swapchain.GetImageFormat(), VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			&m_ViewportData.FrameData[i].OutputImage);
+	int32 BytesPerPixel = LeVkUtils::GetVkBytesPerTexFormat(pTex->GetVkFormat());
 
-		m_ViewportData.FrameData[i].OutputImageView = LeVkUtils::CreateImageView(m_logicalDevice,
-			m_ViewportData.FrameData[i].OutputImage.image,
-			m_swapchain.GetImageFormat(), VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
+	VkDeviceSize LayerSize = pTex->GetWidth() * pTex->GetHeight() * BytesPerPixel;
+	int32 LayerCount = 1;
+	VkDeviceSize ImageSize = LayerCount * LayerSize;
 
-#ifdef SUPPORT_IMGUI
-		if (bRenderToImGuiTexture)
-		{
-			m_ViewportData.FrameData[i].ImGuiTexture = ImGui_ImplVulkan_AddTexture(m_ViewportData.Sampler,
-				m_ViewportData.FrameData[i].OutputImageView,
-				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		}
-		else
-		{
-			m_ViewportData.FrameData[i].ImGuiTexture = VK_NULL_HANDLE;
-		}
-#endif
-	}
+	// Make a staging buffer and fill it with pixel data
+	LeVkMemoryBuffer StagingBuffer;
+	LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, ImageSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		&StagingBuffer);
+	LeVkUtils::UpdateBuffer(&StagingBuffer, pTex->GetPixels(), ImageSize);
 
-	LeVkUtils::CreateImage(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps,
-		m_ViewportData.Width, m_ViewportData.Height, VK_FORMAT_D32_SFLOAT,
-		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		&m_ViewportData.DepthImage);
+	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->memoryImage.image,
+		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		0, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
-	m_ViewportData.DepthImageView = LeVkUtils::CreateImageView(m_logicalDevice, m_ViewportData.DepthImage.image,
-		VK_FORMAT_D32_SFLOAT, VK_IMAGE_ASPECT_DEPTH_BIT,
-		VK_IMAGE_VIEW_TYPE_2D, 1, 1);
+	LeVkUtils::CopyBufferToImage(CommandBuffer, pTex->memoryImage.image, StagingBuffer.buffer, pTex->GetWidth(), pTex->GetHeight());
 
+	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->memoryImage.image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT,
+		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
+	EndOneShotCommandBuffer(CommandBuffer);
 
-}
-
-void LeVkCore::UpdateViewportResources(uint32 width, uint32 height)
-{
-	// Make sure images are not being used
+	m_queue.SubmitSync(CommandBuffer);
 	m_queue.WaitIdle();
 
-	// Destroy images
+	LeVkUtils::DestroyBuffer(&StagingBuffer);
 
-	for (int32 i = 0; i < GetMaxFramesInFlight(); i++)
-	{
-
-		if (m_ViewportData.FrameData[i].OutputImageView != VK_NULL_HANDLE)
-		{
-			LeVkUtils::DestroyImageView(m_logicalDevice, m_ViewportData.FrameData[i].OutputImageView);
-			m_ViewportData.FrameData[i].OutputImageView = VK_NULL_HANDLE;
-		}
-
-		if (m_ViewportData.FrameData[i].OutputImage.IsAlloced())
-			LeVkUtils::DestroyImage(&m_ViewportData.FrameData[i].OutputImage);
-
-#ifdef SUPPORT_IMGUI
-		if (m_ViewportData.bRenderToImGuiTexture)
-		{
-			ImGui_ImplVulkan_RemoveTexture(m_ViewportData.FrameData[i].ImGuiTexture);
-			m_ViewportData.FrameData[i].ImGuiTexture = VK_NULL_HANDLE;
-		}
-#endif
-	}
-
-	if (m_ViewportData.DepthImageView != VK_NULL_HANDLE)
-	{
-		LeVkUtils::DestroyImageView(m_logicalDevice, m_ViewportData.DepthImageView);
-		m_ViewportData.DepthImageView = VK_NULL_HANDLE;
-	}
-
-	if (m_ViewportData.DepthImage.IsAlloced())
-		LeVkUtils::DestroyImage(&m_ViewportData.DepthImage);
-
-	// Create images
-
-	m_ViewportData.Width = width;
-	m_ViewportData.Height = height;
-
-	for (int32 i = 0; i < GetMaxFramesInFlight(); i++)
-	{
-		LeVkUtils::CreateImage(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps,
-			m_ViewportData.Width, m_ViewportData.Height, m_swapchain.GetImageFormat(), VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			&m_ViewportData.FrameData[i].OutputImage);
-
-		m_ViewportData.FrameData[i].OutputImageView = LeVkUtils::CreateImageView(m_logicalDevice,
-			m_ViewportData.FrameData[i].OutputImage.image,
-			m_swapchain.GetImageFormat(), VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
-
-#ifdef SUPPORT_IMGUI
-		if (m_ViewportData.bRenderToImGuiTexture)
-		{
-			m_ViewportData.FrameData[i].ImGuiTexture = ImGui_ImplVulkan_AddTexture(m_ViewportData.Sampler,
-				m_ViewportData.FrameData[i].OutputImageView,
-				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		}
-		else
-		{
-			m_ViewportData.FrameData[i].ImGuiTexture = VK_NULL_HANDLE;
-		}
-#endif
-	}
-
-	LeVkUtils::CreateImage(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps,
-		m_ViewportData.Width, m_ViewportData.Height, VK_FORMAT_D32_SFLOAT,
-		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		&m_ViewportData.DepthImage);
-
-	m_ViewportData.DepthImageView = LeVkUtils::CreateImageView(m_logicalDevice, m_ViewportData.DepthImage.image,
-		VK_FORMAT_D32_SFLOAT, VK_IMAGE_ASPECT_DEPTH_BIT,
-		VK_IMAGE_VIEW_TYPE_2D, 1, 1);
-
+	FreeOneShotCommandBuffers(1, &CommandBuffer);
 }
 
-void LeVkCore::DestroyViewportResources(void)
+void LeVkCore::UpdateTexture(LeVkTexture* pTex)
 {
-	if (m_ViewportData.Sampler != VK_NULL_HANDLE)
+	LE_DEBUG_ASSERT(pTex);
+
+	if (pTex->flags & (TEXTURE_PIXELS_DIRTY))
 	{
-		LeVkUtils::DestroySampler(m_logicalDevice, m_ViewportData.Sampler);
-		m_ViewportData.Sampler = VK_NULL_HANDLE;
+		UpdateTextureImage(pTex);
+		pTex->flags &= ~(TEXTURE_PIXELS_DIRTY);
 	}
 
-	for (int32 i = 0; i < GetMaxFramesInFlight(); i++)
+	if (pTex->flags & TEXTURE_ATTRIBUTES_DIRTY)
 	{
+		pTex->sampler = m_samplerDictionary.GetOrCreateSampler(pTex->GetAttributes());
+		pTex->flags &= ~TEXTURE_ATTRIBUTES_DIRTY;
+	}
 
-		if (m_ViewportData.FrameData[i].OutputImageView != VK_NULL_HANDLE)
+	/*if (pMaterial->flags & (MATERIAL_BASE_TEXTURE_DIRTY))
+	{
+		pMaterial->UpdateDescriptorSet();
+		pMaterial->flags &= ~(MATERIAL_BASE_TEXTURE_DIRTY);
+
+		return true;
+	}*/
+}
+
+void LeVkCore::UpdateTextureDictionary(LeTextureDictionary* pTexDictionary)
+{
+
+	LE_DEBUG_ASSERT(pTexDictionary);
+
+	pTexDictionary->ForEachTexture([this](LeTexture* pTexture)
 		{
-			LeVkUtils::DestroyImageView(m_logicalDevice, m_ViewportData.FrameData[i].OutputImageView);
-			m_ViewportData.FrameData[i].OutputImageView = VK_NULL_HANDLE;
-		}
-
-		if (m_ViewportData.FrameData[i].OutputImage.IsAlloced())
-			LeVkUtils::DestroyImage(&m_ViewportData.FrameData[i].OutputImage);
-
-#ifdef SUPPORT_IMGUI
-		if (m_ViewportData.bRenderToImGuiTexture)
-		{
-			ImGui_ImplVulkan_RemoveTexture(m_ViewportData.FrameData[i].ImGuiTexture);
-			m_ViewportData.FrameData[i].ImGuiTexture = VK_NULL_HANDLE;
-		}
-#endif
-
-	}
-
-	if (m_ViewportData.DepthImageView != VK_NULL_HANDLE)
-	{
-		LeVkUtils::DestroyImageView(m_logicalDevice, m_ViewportData.DepthImageView);
-		m_ViewportData.DepthImageView = VK_NULL_HANDLE;
-	}
-		
-
-	if (m_ViewportData.DepthImage.IsAlloced())
-		LeVkUtils::DestroyImage(&m_ViewportData.DepthImage);
+			LeVkTexture* pVkTexture = static_cast<LeVkTexture*>(pTexture);
+			UpdateTexture(pVkTexture);
+		});
 }
 
 
-// returns true if graphics pipeline changed
-// TODO: optimize this
-LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
+LeBool LeVkCore::UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 {
 
 	LE_DEBUG_ASSERT(pMaterial);
@@ -1038,14 +1070,12 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 
 	const LeVkGraphicsPipeline* pGraphicsPipeline = pMaterial->GetGraphicsPipeline();
 
-	LeShader* pShader = pMaterial->FindShader();
-	LE_DEBUG_ASSERT(pShader && "Shader is missing material!");
+	LeShader* pShader = pMaterial->GetShader();
+	LE_DEBUG_ASSERT(pShader && "Material is missing a shader!");
 
 	// Test if pipeline is still valid
 	LeGraphicsPipelineVkKey PipelineKey =
 	{
-		.NumImages = (int32)m_swapchain.GetNumImages(),
-		.RenderColFormat = m_swapchain.GetImageFormat(),
 		.ShaderHash = pShader->GetNameHash(),
 	};
 
@@ -1082,315 +1112,42 @@ LeBool LeVkCore::RefreshGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 	return false;
 }
 
-LeBool LeVkCore::RefreshTexture(LeVkTexture* pTexture)
-{
-	LE_DEBUG_ASSERT(pTexture);
-
-	if (pTexture->flags & TEXTURE_ATTRIBUTES_DIRTY)
-	{
-		pTexture->sampler = m_samplerDictionary.GetOrCreateSampler(pTexture->GetAttributes());
-		pTexture->flags &= ~TEXTURE_ATTRIBUTES_DIRTY;
-
-		return true;
-	}
-
-	return false;
-}
-
-LeBool LeVkCore::RefreshTexturesForMaterial(LeVkMaterial* pMaterial)
-{
-	LE_DEBUG_ASSERT(pMaterial);
-	LeBool bSomeTextureRefreshed = false;
-
-	LeVkTexture* pBaseTexture = static_cast<LeVkTexture*>(pMaterial->GetBaseTexture());
-
-	bSomeTextureRefreshed |= pBaseTexture ? RefreshTexture(pBaseTexture) : false;
-
-	if (bSomeTextureRefreshed)
-	{
-		pMaterial->flags |= MATERIAL_BASE_TEXTURE_DIRTY;
-	}
-
-	return bSomeTextureRefreshed;
-
-}
-
-LeBool LeVkCore::RefreshDescriptorSetForMaterial(LeVkMaterial* pMaterial)
+void LeVkCore::UpdateMaterial(LeVkMaterial* pMaterial)
 {
 	LE_DEBUG_ASSERT(pMaterial);
 
-	if (pMaterial->flags & (MATERIAL_BASE_TEXTURE_DIRTY))
+	if (pMaterial->flags & MATERIAL_SHADER_DIRTY)
 	{
-		pMaterial->UpdateDescriptorSet();
-		pMaterial->flags &= ~(MATERIAL_BASE_TEXTURE_DIRTY);
-
-		return true;
+		UpdateGraphicsPipelineForMaterial(pMaterial);
+		pMaterial->flags &= ~MATERIAL_SHADER_DIRTY;
 	}
 
-	return false;
+	// Run this every frame until I figure it out
+	pMaterial->UpdateDescriptorSet();
 }
 
-// returns true if buffer was created or updated
-LeBool LeVkCore::SetupVertexBufferForMatBlock(LeVkMatBlock* pMbVk)
+void LeVkCore::UpdateMatBlock(LeVkMatBlock* pMatblock)
 {
-	LE_DEBUG_ASSERT(pMbVk);
+	LE_DEBUG_ASSERT(pMatblock);
 
-	if (pMbVk->flags & (MATBLOCK_VERTS_DIRTY))
+	if (pMatblock->flags & (MATBLOCK_VERTS_DIRTY))
 	{
-		uint64 uLocalSizeOfVerts = pMbVk->Vertices.size() * sizeof(LeVertex);
-		SetupVertexBuffer(pMbVk->Vertices.data(), uLocalSizeOfVerts, pMbVk->GetVertexBuffer()); // this will either create or update the buffer
-		pMbVk->flags &= ~(MATBLOCK_VERTS_DIRTY);
-
-		return true;
+		uint64 uLocalSizeOfVerts = pMatblock->Vertices.size() * sizeof(LeVertex);
+		SetupVertexBuffer(pMatblock->Vertices.data(), uLocalSizeOfVerts, pMatblock->GetVertexBuffer()); // this will either create or update the buffer
+		pMatblock->flags &= ~(MATBLOCK_VERTS_DIRTY);
 	}
 
-	return false;
+	if (pMatblock->flags & (MATBLOCK_FACES_DIRTY))
+	{
+		uint64 uLocalSizeOfFaces = pMatblock->Faces.size() * sizeof(LeFace);
+		SetupIndexBuffer(pMatblock->Faces.data(), uLocalSizeOfFaces, pMatblock->GetIndexBuffer()); // this will either create or update the buffer
+		pMatblock->flags &= ~(MATBLOCK_FACES_DIRTY);
+	}
 }
 
-// returns true if buffer was created or updated
-LeBool LeVkCore::SetupIndexBufferForMatBlock(LeVkMatBlock* pMbVk)
+LeVkFrameContext* LeVkCore::GetFrameContext(uint32 FrameIndex)
 {
-	LE_DEBUG_ASSERT(pMbVk);
+	LE_DEBUG_ASSERT(FrameIndex < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT);
 
-	if (pMbVk->flags & (MATBLOCK_FACES_DIRTY))
-	{
-		uint64 uLocalSizeOfVerts = pMbVk->Faces.size() * sizeof(LeVertex);
-		SetupIndexBuffer(pMbVk->Faces.data(), uLocalSizeOfVerts, pMbVk->GetIndexBuffer()); // this will either create or update the buffer
-		pMbVk->flags &= ~(MATBLOCK_FACES_DIRTY);
-
-		return true;
-	}
-
-
-	return false;
-
-}
-
-void LeVkCore::UpdateTexture(VkCommandBuffer CommandBuffer, LeVkTexture* pTex)
-{
-
-	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);
-	LE_DEBUG_ASSERT(pTex);
-
-	int BytesPerPixel = LeVkUtils::GetVkBytesPerTexFormat(pTex->GetVkFormat());
-
-	VkDeviceSize LayerSize = pTex->GetWidth() * pTex->GetHeight() * BytesPerPixel;
-	int LayerCount = 1;
-	VkDeviceSize ImageSize = LayerCount * LayerSize;
-
-	// Make a staging buffer and fill it with pixel data
-	LeVkMemoryBuffer* pStagingBuffer = m_stagingBufferManager.MakeBuffer(m_FrameIndex, ImageSize,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	LeVkUtils::UpdateBuffer(pStagingBuffer, pTex->GetPixels(), ImageSize);
-
-	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->textureImage.image,
-		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		0, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-
-	LeVkUtils::CopyBufferToImage(CommandBuffer, pTex->textureImage.image, pStagingBuffer->buffer, pTex->GetWidth(), pTex->GetHeight());
-
-	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->textureImage.image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT,
-		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-}
-
-void LeVkCore::UpdateDirtyTextures(VkCommandBuffer CommandBuffer, LeTextureDictionary* pTexDictionary)
-{
-	pTexDictionary->ForEachTexture([this, CommandBuffer](LeTexture* pTexture)
-		{
-			LeVkTexture* pVkTexture = static_cast<LeVkTexture*>(pTexture);
-			if (pVkTexture->flags & (TEXTURE_PIXELS_DIRTY))
-			{
-				UpdateTexture(CommandBuffer, pVkTexture);
-				pVkTexture->flags &= ~(TEXTURE_PIXELS_DIRTY);
-			}
-
-		});
-}
-
-
-LeBool LeVkCore::DrawScene(LeScene* pScene, LeCamera* pCam)
-{
-	if (m_bRebuildViewport)
-	{
-		UpdateViewportResources(m_NewViewportWidth, m_NewViewportHeight);
-		m_bRebuildViewport = false;
-	}
-
-	LeVkCurrentRenderFrame* pRenderFrame = &m_CurrentRenderFrame[m_FrameIndex];
-	LeVkViewportData* pViewportData = &m_ViewportData;
-	LeVkViewportData::LeVkViewportFrameData* pViewportFrameData = &m_ViewportData.FrameData[m_FrameIndex];
-	VkCommandBuffer CommandBuffer = pRenderFrame->CommandBuffer;
-
-	if (pScene)
-	{
-		LeTextureDictionary* pTexDictionary = pScene->GetTextureDictionary();
-		LE_DEBUG_ASSERT(pTexDictionary);
-
-		if (pTexDictionary->flags & TEXTURE_DICTIONARY_TEXTURES_DIRTY)
-		{
-			UpdateDirtyTextures(CommandBuffer, pTexDictionary);
-			pTexDictionary->flags &= ~TEXTURE_DICTIONARY_TEXTURES_DIRTY;
-		}
-	}
-
-	// Update frame UBOs
-
-
-	if (pCam)
-	{
-		pRenderFrame->FrameUBO.MVP = *pCam->GetViewProjMatrix();
-
-		LeVkUtils::UpdateBuffer(&m_CurrentRenderFrame[m_FrameIndex].FrameUBOMemoryBuffer,
-			&m_CurrentRenderFrame[m_FrameIndex].FrameUBO,
-			sizeof(m_CurrentRenderFrame[m_FrameIndex].FrameUBO));
-	}
-
-	BeginCommandBuffer(CommandBuffer);
-
-	// setup image barrier for clearing the color
-	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportFrameData->OutputImage.image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		VK_ACCESS_2_NONE,
-		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-
-	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportData->DepthImage.image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-		VK_IMAGE_ASPECT_DEPTH_BIT);
-
-
-	VkClearValue ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
-
-	VkRenderingAttachmentInfo colorAttachment{};
-	colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	colorAttachment.imageView = pViewportFrameData->OutputImageView;
-	colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.clearValue = ClearColor;
-
-	VkClearValue ClearDepthStencil = { 1.0f, 0 };
-
-	VkRenderingAttachmentInfo depthAttachment{};
-	depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	depthAttachment.imageView = pViewportData->DepthImageView;
-	depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.clearValue = ClearDepthStencil;
-
-	VkRenderingInfo renderingInfo{};
-	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-	renderingInfo.renderArea.offset = { 0, 0 };
-	renderingInfo.renderArea.extent = { pViewportData->Width, pViewportData->Height };
-	renderingInfo.layerCount = 1;
-	renderingInfo.colorAttachmentCount = 1;
-	renderingInfo.pColorAttachments = &colorAttachment;
-	renderingInfo.pDepthAttachment = &depthAttachment;
-
-	vkCmdBeginRendering(CommandBuffer, &renderingInfo);
-
-	VkViewport Viewport =
-	{
-		.x = 0.0f,
-		.y = 0.0f,
-		.width = (float32)pViewportData->Width,
-		.height = (float32)pViewportData->Height,
-		.minDepth = 0.0f,
-		.maxDepth = 1.0f
-	};
-
-	VkRect2D Scissor =
-	{
-		.offset =
-		{
-			.x = 0,
-			.y = 0,
-		},
-		.extent =
-		{
-			.width = pViewportData->Width,
-			.height = pViewportData->Height
-		}
-	};
-
-
-	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
-	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
-
-	if (pScene)
-	{
-		LeVkMesh* pWorldMesh = static_cast<LeVkMesh*>(pScene->GetWorld()->GetMesh());
-		LE_DEBUG_ASSERT(pWorldMesh);
-
-		for (uint32 i = 0; i < pWorldMesh->GetNumMatblocks(); i++)
-		{
-			LeMatBlock* pMb = pWorldMesh->GetMatblock(i);
-			LE_DEBUG_ASSERT(pMb);
-
-			LeVkMatBlock* pMbVk = static_cast<LeVkMatBlock*>(pMb);
-			LE_DEBUG_ASSERT(pMbVk);
-
-			LeVkMaterial* pMaterialVk = static_cast<LeVkMaterial*>(pMbVk->GetMaterial());
-
-			RefreshGraphicsPipelineForMaterial(pMaterialVk);
-			RefreshTexturesForMaterial(pMaterialVk);
-			RefreshDescriptorSetForMaterial(pMaterialVk);
-
-			vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipeline());
-
-			SetupVertexBufferForMatBlock(pMbVk);
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(CommandBuffer, 0, 1, &pMbVk->GetVertexBuffer()->buffer, offsets);
-
-			SetupIndexBufferForMatBlock(pMbVk);
-			vkCmdBindIndexBuffer(CommandBuffer, pMbVk->GetIndexBuffer()->buffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
-
-			VkDescriptorSet DescriptorSets[] =
-			{
-				pRenderFrame->DescriptorSet.GetDescriptorSet(),			// First set - global data
-				pWorldMesh->GetLeDescriptor()->GetDescriptorSet(),			// Second set - matblock data
-				pMaterialVk->GetLeDescriptorSet()->GetDescriptorSet()	// Third set - material data
-			};
-
-			uint32 NumDescriptorSets = ARRAY_SIZE(DescriptorSets);
-
-			vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
-				0,						// firstSet
-				NumDescriptorSets,		// descriptorSetCount
-				DescriptorSets,			// descriptor sets
-				0,						// dynamicOffsetCount
-				NULL);					// pDynamicOffsets
-
-
-			vkCmdDrawIndexed(CommandBuffer, uint32(pMbVk->Faces.size()) * 3, 1, 0, 0, 0);
-		}
-	}
-
-
-	vkCmdEndRendering(CommandBuffer);
-
-	LeVkUtils::TransitionImageLayout(CommandBuffer, pViewportFrameData->OutputImage.image,
-		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-		VK_ACCESS_2_SHADER_READ_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-
-	return true;
+	return &m_FrameContexts[FrameIndex];
 }

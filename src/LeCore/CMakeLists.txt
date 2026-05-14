@@ -25,7 +25,6 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetImGui.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMesh.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMaterial.h"
-	"include/LeCore/LeRender/LeRenderVulkan/LeVkStagingBufferManager.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkMemoryImage.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
@@ -33,7 +32,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkQueue.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
-	"include/LeCore/LeRender/LeRenderVulkan/LeVkViewportRenderer.h"
+	"include/LeCore/LeRender/LeRenderVulkan/LeVkViewport.h"
 	"include/LeCore/LeShader/LeShader.h"
 	"include/LeCore/LeShader/LeShaderDictionary.h"
 	"include/LeCore/LeShader/LeVkShader/LeVkShader.h"
@@ -51,8 +50,10 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeWorld/LeWorld.h"
 	"include/LeCore/LeStream/LeStream.h"
 	"include/LeCore/LeStream/LeStreamFile.h"
+	"include/LeCore/LeStore/LeStore.h"
 	"include/LeCore/LeTexture/stb_image.h"
 	"include/LeCore/LeUtils/LeHash.h"
+	"include/LeCore/LeUtils/LeDeletionQueue.h"
 	"include/LeCore/LeRGBA/LeRGBA.h"
 	"include/LeCore/LeBinary/LeBinaryChunk.h"
 
@@ -70,7 +71,6 @@ LeEngine_target_sources_grouped(
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetImGui.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMesh.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMaterial.cpp"
-	"src/LeRender/LeRenderVulkan/LeVkStagingBufferManager.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkMemoryBuffer.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkMemoryImage.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkPhysicalDevice.cpp"
@@ -78,7 +78,7 @@ LeEngine_target_sources_grouped(
 	"src/LeRender/LeRenderVulkan/LeVkQueue.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.cpp"
 	"src/LeRender/LeRenderVulkan/LeVkUtils.cpp"
-	"src/LeRender/LeRenderVulkan/LeVkViewportRenderer.cpp"
+	"src/LeRender/LeRenderVulkan/LeVkViewport.cpp"
 	"src/LeShader/LeShader.cpp"
 	"src/LeShader/LeShaderDictionary.cpp"
 	"src/LeShader/LeVkShader/LeVkShader.cpp"
@@ -96,9 +96,12 @@ LeEngine_target_sources_grouped(
 	"src/LeWorld/LeWorld.cpp"
 	"src/LeStream/LeStream.cpp"
 	"src/LeStream/LeStreamFile.cpp"
+	"src/LeStore/LeStore.cpp"
+	"src/LeStore/LeStoreWin/LeStoreWin.cpp"
 	"src/LeTexture/stb_image.cpp"
 	"src/LeUtils/fnv64.hpp"
 	"src/LeUtils/LeHash.cpp"
+	"src/LeUtils/LeDeletionQueue.cpp"
 	"src/LeRGBA/LeRGBA.cpp"
 	"src/LeBinary/LeBinaryChunk.cpp"
 
@@ -115,7 +118,6 @@ file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/logs")
 target_compile_definitions(${_target} 
 	PRIVATE
 		LECORE_LOG_PATH="${CMAKE_BINARY_DIR}/logs/"
-		LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT=2
 )
 
 

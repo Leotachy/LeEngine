@@ -14,6 +14,8 @@
 #include <vector>
 #include <set>
 #include <queue>
+#include <deque>
+#include <functional>
 
 // third party headers
 

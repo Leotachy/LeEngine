@@ -19,7 +19,14 @@ public:
 	void PurgeAllTextures(void);
 
 	template<typename Func>
-	void ForEachTexture(Func&& func);
+	void ForEachTexture(Func&& func)
+	{
+		for (auto pair : m_textures)
+		{
+			LeTexture* pTexture = pair.second;
+			func(pTexture);
+		}
+	}
 
 	uint32 flags;
 

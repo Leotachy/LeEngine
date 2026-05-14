@@ -72,7 +72,7 @@ void LeEditorInstance::Run(void)
 		ImGui::Render();
 
 
-		LeRenderInterface::Render(NULL, &Camera, false);
+		LeRenderInterface::RenderScene(NULL, &Camera, false);
 	}
 
 }

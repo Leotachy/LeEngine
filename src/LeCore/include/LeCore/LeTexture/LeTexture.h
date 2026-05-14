@@ -55,16 +55,16 @@ public:
 	virtual ~LeTexture();
 	static LeTexture* Create(uint32 width, uint32 height);
 
-	const LeChar* GetName(void) { return m_name; }
+	const LeChar* GetName(void) const { return m_name; }
 	void SetName(const LeChar* pName);
 
-	void SetPixels(const LeRGBA* pPixels);
-	void ClearPixels(void);
-	LeBool ArePixelsSet(void) const;
-	const LeRGBA* GetPixels(void);
+	uint64 GetNameHash(void) const { return m_nameHash; }
 
-	uint32 GetWidth(void) { return m_width; }
-	uint32 GetHeight(void) { return m_height; }
+	void SetPixels(const LeRGBA* pPixels);
+	const LeRGBA* GetPixels(void) const;
+
+	uint32 GetWidth(void) const { return m_width; }
+	uint32 GetHeight(void) const { return m_height; }
 
 	void SetAttributes(LeTextureAttributes* pAttribs);
 	const LeTextureAttributes* GetAttributes(void) { return &m_attribs; }
@@ -83,6 +83,7 @@ private:
 	friend class LeTextureDictionary;
 
 	LeChar m_name[LE_TEXTURE_MAX_NAME];
+	uint64 m_nameHash;
 
 
 

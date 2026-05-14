@@ -29,12 +29,18 @@ struct ViewportParams
 	LeBool bRenderViewportToImGuiTexture;
 };
 
+struct PathParams
+{
+	const LeChar* pShaderBinaryPath;
+};
+
 struct InitRendererParams
 {
 	LeRenderApi api;
 
 	WindowParams windowParams;
 	ViewportParams viewportParams;
+	PathParams pathParams;
 };
 
 typedef LeBool(*LeRenderFunc)(LeScene*, LeCamera*, LeBool);
@@ -54,11 +60,11 @@ public:
 	static ImTextureID GetViewportImGuiTexture(void);
 #endif
 
-	static LeBool Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized);
+	static LeBool RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized);
 
 private:
 
-	static LeBool VkRender(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized);
+	static LeBool VkRenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized);
 
 	static LeRenderApi RenderApi;
 

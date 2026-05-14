@@ -25,7 +25,7 @@ LeBool LeMaterialDictionary::AddMaterial(LeMaterial* pMaterial)
 {
 	LE_DEBUG_ASSERT(pMaterial);
 
-	uint64 hash = pMaterial->CalculateAttributeHash();
+	uint64 hash = pMaterial->GetAttributeHash();
 
 	if (FindMaterial(hash))
 	{
@@ -57,7 +57,7 @@ void LeMaterialDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 
 		pFileStream->WriteString(pMaterial->m_name);
 
-		pFileStream->Write(&pMaterial->attribs, sizeof(pMaterial->attribs));
+		pFileStream->Write(&pMaterial->m_attribs, sizeof(pMaterial->m_attribs));
 	}
 }
 
@@ -71,6 +71,6 @@ void LeMaterialDictionary::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 
 		pFileStream->ReadString(pMaterial->m_name, LE_MATERIAL_MAX_NAME);
 
-		pFileStream->Read(&pMaterial->attribs, sizeof(pMaterial->attribs));
+		pFileStream->Read(&pMaterial->m_attribs, sizeof(pMaterial->m_attribs));
 	}
 }

@@ -36,10 +36,6 @@ private:
 // an attribute struct that I hash, works as a key for the graphics pipeline dictionary
 struct LeGraphicsPipelineVkKey
 {
-	// swapchain
-	int32 NumImages;
-	VkFormat RenderColFormat;
-
 	// material
 	uint64 ShaderHash;
 };

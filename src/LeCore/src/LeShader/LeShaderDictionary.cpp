@@ -2,31 +2,17 @@
 #include "LeCore/lecore.h"
 
 #include "LeCore/LeShader/LeShaderDictionary.h"
-
+#include "LeCore/LeStore/LeStore.h"
 
 LeShaderDictionary::LeShaderDictionary(void)
 {
 
 }
 
-
 LeShaderDictionary::~LeShaderDictionary(void)
 {
 	PurgeAllShaders();
 }
-
-#if 0
-LeBool LeShaderDictionary::AddShader(LeShader* pShader)
-{
-	LE_DEBUG_ASSERT(pShader);
-
-	if (LeShader* pShaderDupe = FindShader(pShader->GetNameHash()))
-		return false;
-
-	m_ShaderSet[pShader->GetNameHash()] = pShader;
-	return true;
-}
-#endif
 
 LeShader* LeShaderDictionary::FindShader(uint64 uNameHash)
 {
@@ -50,7 +36,21 @@ void LeShaderDictionary::LoadAllShaders(const LeChar* pDirectoryPath)
 {
 	LE_DEBUG_ASSERT(pDirectoryPath);
 
-	std::filesystem::directory_iterator
+	LeStore::ForEachFileInDirectoryWithExtension(pDirectoryPath, ".spv", [this, pDirectoryPath](const LeChar* pFileName)
+		{
+
+			LeChar FullFilepath[2048];
+			strcpy(FullFilepath, pDirectoryPath);
+			strcat(FullFilepath, pFileName);
+
+			LeChar FilenameNoExtension[512];
+			LeStore::DropExtension(FilenameNoExtension, pFileName, ".spv");
+
+			LeShader* pShader = LeShader::Create(FilenameNoExtension, FullFilepath);
+			LE_DEBUG_ASSERT(pShader);
+
+			AddShader(pShader);
+		});
 }
 
 void LeShaderDictionary::PurgeAllShaders(void)
@@ -62,4 +62,15 @@ void LeShaderDictionary::PurgeAllShaders(void)
 	}
 
 	m_ShaderSet.clear();
+}
+
+LeBool LeShaderDictionary::AddShader(LeShader* pShader)
+{
+	LE_DEBUG_ASSERT(pShader);
+
+	if (LeShader* pShaderDupe = FindShader(pShader->GetNameHash()))
+		delete pShaderDupe;
+
+	m_ShaderSet[pShader->GetNameHash()] = pShader;
+	return true;
 }

@@ -82,16 +82,6 @@ void LeTextureDictionary::PurgeAllTextures(void)
 	m_textures.clear();
 }
 
-template<typename Func>
-void LeTextureDictionary::ForEachTexture(Func&& func)
-{
-	for (auto pair : m_textures)
-	{
-		LeTexture* pTexture = pair.second;
-		func(pTexture);
-	}
-}
-
 void LeTextureDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
 	uint32 numTextures = (uint32)m_textures.size();
@@ -110,7 +100,7 @@ void LeTextureDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 
 		pFileStream->Write(pTexture->m_pixels, numPixels);
 
-		pFileStream->Write(&pTexture->attribs, sizeof(pTexture->attribs));
+		pFileStream->Write(&pTexture->m_attribs, sizeof(pTexture->m_attribs));
 	}
 }
 
@@ -135,7 +125,7 @@ void LeTextureDictionary::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 		pTexture->m_pixels = new LeRGBA[numPixels];
 		pFileStream->Read(pTexture->m_pixels, numPixels);
 
-		pFileStream->Read(&pTexture->attribs, sizeof(pTexture->attribs));
+		pFileStream->Read(&pTexture->m_attribs, sizeof(pTexture->m_attribs));
 	}
 
 	flags |= TEXTURE_DICTIONARY_TEXTURES_DIRTY;

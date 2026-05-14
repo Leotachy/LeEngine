@@ -4,12 +4,7 @@
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryImage.h"
-
-
-VkFilter GetVkFilterForLeFilterMode(LeTextureFilterMode LeFilterMode);
-VkSamplerMipmapMode GetVkSamplerMipmapModeForLeMipmapMode(LeTextureMipmapMode LeMipmapMode);
-VkSamplerAddressMode GetVkSamplerAddressModeForLeAddressMode(LeTextureAddressMode LeMipmapMode);
-
+#include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 
 struct LeVkTextureAttributes
 {
@@ -35,7 +30,7 @@ public:
     VkDevice device;
     const LeVkPhysicalDevice* physicalDevice;
 
-    LeVkMemoryImage textureImage;
+    LeVkMemoryImage memoryImage;
     VkImageView view;
     VkSampler sampler;
 
@@ -45,3 +40,10 @@ private:
 
 
 };
+
+
+
+VkFilter GetVkFilterForLeFilterMode(LeTextureFilterMode LeFilterMode);
+VkSamplerMipmapMode GetVkSamplerMipmapModeForLeMipmapMode(LeTextureMipmapMode LeMipmapMode);
+VkSamplerAddressMode GetVkSamplerAddressModeForLeAddressMode(LeTextureAddressMode LeMipmapMode);
+

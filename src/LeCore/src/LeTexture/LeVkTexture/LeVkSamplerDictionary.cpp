@@ -44,6 +44,10 @@ VkSampler LeVkSamplerDictionary::GetOrCreateSampler(const LeVkTextureAttributes*
 
 	VkSampler NewSampler = LeVkUtils::CreateSampler(LeVkCore::Singleton().GetDevice(),
 		pAttribs, true, m_physicalDevice->m_devProps.limits.maxSamplerAnisotropy);
+
+	m_SamplerSet[hash] = NewSampler;
+
+	return NewSampler;
 }
 
 void LeVkSamplerDictionary::PurgeAllSamplers(void)

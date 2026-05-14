@@ -55,6 +55,7 @@ void LeVkUtils::UpdateBuffer(LeVkMemoryBuffer* OutMemoryBuffer, const void* pDat
 {
 	LE_DEBUG_ASSERT(OutMemoryBuffer);
 	LE_DEBUG_ASSERT(OutMemoryBuffer->device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pData);
 
 
 	void* pMem = NULL;
@@ -85,6 +86,11 @@ void LeVkUtils::CreateUniformBuffer(VkDevice Device, const VkPhysicalDeviceMemor
 	size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
 {
 
+	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pMemProps);
+	LE_DEBUG_ASSERT(Size > 0);
+	LE_DEBUG_ASSERT(OutMemoryBuffer);
+
 	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -99,6 +105,8 @@ void LeVkUtils::CreateImage(VkDevice Device, const VkPhysicalDeviceMemoryPropert
 
 	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
 	LE_DEBUG_ASSERT(pMemProps);
+	LE_DEBUG_ASSERT(width > 0);
+	LE_DEBUG_ASSERT(height > 0);
 	LE_DEBUG_ASSERT(OutMemoryImage);
 
 	// Make the texture image
@@ -175,6 +183,10 @@ void LeVkUtils::TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkI
 	VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
 	VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlagBits2 dstStageMask, VkImageAspectFlags aspectMask)
 {
+
+	LE_DEBUG_ASSERT(cmdBuf != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(image != VK_NULL_HANDLE);
+
 
 	VkImageMemoryBarrier2 barrier
 	{
@@ -258,6 +270,7 @@ VkSampler LeVkUtils::CreateSampler(VkDevice Device, const LeVkTextureAttributes*
 {
 
 	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(Attribs);
 
 	VkSamplerCreateInfo SamplerCreateInfo =
 	{
@@ -295,6 +308,14 @@ void LeVkUtils::DestroySampler(VkDevice Device, VkSampler Sampler)
 
 void LeVkUtils::CopyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkBuffer Src, uint32 width, uint32 height)
 {
+	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(Dst != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(Src != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(width > 0);
+	LE_DEBUG_ASSERT(height > 0);
+
+
+
 	VkBufferImageCopy Region =
 	{
 		.bufferOffset = 0,
@@ -311,10 +332,61 @@ void LeVkUtils::CopyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, Vk
 	vkCmdCopyBufferToImage(CommandBuffer, Src, Dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &Region);
 }
 
+void LeVkUtils::CopyImageToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkImage Src, VkExtent2D DstSize, VkExtent2D SrcSize)
+{
+
+	LE_DEBUG_ASSERT(CommandBuffer != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(Dst != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(Src != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(DstSize.width > 0 && DstSize.height > 0);
+	LE_DEBUG_ASSERT(SrcSize.width > 0 && SrcSize.height > 0);
+
+	VkImageBlit2 blitRegion = 
+	{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+		.pNext = NULL
+	};
+
+	blitRegion.srcOffsets[1].x = SrcSize.width;
+	blitRegion.srcOffsets[1].y = SrcSize.height;
+	blitRegion.srcOffsets[1].z = 1;
+
+	blitRegion.dstOffsets[1].x = DstSize.width;
+	blitRegion.dstOffsets[1].y = DstSize.height;
+	blitRegion.dstOffsets[1].z = 1;
+
+	blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	blitRegion.srcSubresource.baseArrayLayer = 0;
+	blitRegion.srcSubresource.layerCount = 1;
+	blitRegion.srcSubresource.mipLevel = 0;
+
+	blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	blitRegion.dstSubresource.baseArrayLayer = 0;
+	blitRegion.dstSubresource.layerCount = 1;
+	blitRegion.dstSubresource.mipLevel = 0;
+
+	VkBlitImageInfo2 blitInfo = 
+	{
+		.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+		.pNext = nullptr
+	};
+
+	blitInfo.dstImage = Dst;
+	blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	blitInfo.srcImage = Src;
+	blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	blitInfo.filter = VK_FILTER_LINEAR;
+	blitInfo.regionCount = 1;
+	blitInfo.pRegions = &blitRegion;
+
+	vkCmdBlitImage2(CommandBuffer, &blitInfo);
+}
+
 uint32 LeVkUtils::GetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMemProps,
 	uint32 MemTypeBitsMask, VkMemoryPropertyFlags ReqMemPropFlags)
 {
 
+	LE_DEBUG_ASSERT(pMemProps);
 
 	for (uint32 i = 0; i < pMemProps->memoryTypeCount; i++)
 	{

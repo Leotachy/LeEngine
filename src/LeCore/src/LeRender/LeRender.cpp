@@ -19,8 +19,8 @@ void LeRenderInterface::InitRenderer(InitRendererParams& params)
 		LE_ERROR("Bad render api: %u", RenderApi);
 		break;
 	case LeRenderApi::LE_RENDER_API_VULKAN:
-		LeVkCore::Singleton().Init(&params.windowParams, &params.viewportParams);
-		RenderFunc = VkRender;
+		LeVkCore::Singleton().Init(&params.windowParams, &params.viewportParams, &params.pathParams);
+		RenderFunc = VkRenderScene;
 		break;
 	default:
 		LE_ERROR("Unknown render api: %u", RenderApi);
@@ -102,14 +102,14 @@ ImTextureID LeRenderInterface::GetViewportImGuiTexture(void)
 
 #endif
 
-LeBool LeRenderInterface::Render(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
+LeBool LeRenderInterface::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
 {
 	return RenderFunc(pScene, pCam, bFramebufferResized);
 }
 
-LeBool LeRenderInterface::VkRender(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
+LeBool LeRenderInterface::VkRenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
 {
-	return LeVkCore::Singleton().Render(pScene, pCam, bFramebufferResized);
+	return LeVkCore::Singleton().RenderScene(pScene, pCam, bFramebufferResized);
 }
 
 LeRenderApi LeRenderInterface::RenderApi = LeRenderApi::LE_RENDER_API_NONE;

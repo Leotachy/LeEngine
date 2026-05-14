@@ -181,7 +181,7 @@ void LeVkQueue::CreateSyncObjects(void)
 {
 
 	uint32 NumImages = m_swapChain->GetNumImages();
-	uint32 MaxFramesInFlight = LeVkCore::Singleton().GetMaxFramesInFlight();
+	uint32 MaxFramesInFlight = LeVkCore::LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT;
 
 	m_renderCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * NumImages);
 	LE_DEBUG_ASSERT(m_renderCompleteSems);

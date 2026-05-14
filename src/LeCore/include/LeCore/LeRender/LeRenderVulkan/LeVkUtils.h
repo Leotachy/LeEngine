@@ -30,6 +30,7 @@ public:
 		VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage* OutMemoryImage);
 	static void DestroyImage(LeVkMemoryImage* OutMemoryImage);
 	static void CopyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkBuffer Src, uint32 width, uint32 height);
+	static void CopyImageToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkImage Src, VkExtent2D DstSize, VkExtent2D SrcSize);
 
 	static void TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,

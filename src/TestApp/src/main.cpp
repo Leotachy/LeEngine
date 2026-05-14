@@ -74,7 +74,7 @@ static void manipulateMatblockVertex(LeMatBlock* pMb, double dt)
 	pMb->Vertices[0].pos.z = (float)glm::cos(LifeTime);
 	pMb->Vertices[3].pos.z = (float)glm::sin(LifeTime);
 
-	pMb->AddFlags(MATBLOCK_VERTS_DIRTY);
+	pMb->flags |= (MATBLOCK_VERTS_DIRTY);
 
 
 }
@@ -95,8 +95,21 @@ int main(void)
 		.RendererParams = 
 		{
 			.api = LeRenderApi::LE_RENDER_API_VULKAN,
-			.pWindow = pWindow,
-			.pAppName = "TestApp"
+			.windowParams = 
+			{
+				.pWindow = pWindow,
+				.pAppName = "TestApp"
+			},
+			.viewportParams = 
+			{
+				.uViewportWidth = DEFAULT_SCREEN_WIDTH,
+				.uViewportHeight = DEFAULT_SCREEN_HEIGHT,
+				.bRenderViewportToImGuiTexture = false
+			},
+			.pathParams = 
+			{
+				.pShaderBinaryPath = TESTAPP_SHADER_BIN_PATH
+			}
 		}
 	};
 	LeEngineInit(Params);
@@ -137,10 +150,10 @@ int main(void)
 	};
 
 	Mb->Vertices = Vertices;
-	Mb->AddFlags(MATBLOCK_VERTS_DIRTY);
+	Mb->flags |= (MATBLOCK_VERTS_DIRTY);
 
 	Mb->Faces = indices;
-	Mb->AddFlags(MATBLOCK_FACES_DIRTY);
+	Mb->flags |= (MATBLOCK_FACES_DIRTY);
 
 	LeScene* pScene = new LeScene;
 	LeWorld* pWorld = pScene->GetWorld();
@@ -179,9 +192,7 @@ int main(void)
 		processInput(pWindow, deltaTime);
 
 
-		if (LeRenderInterface::BeginRender(pCam, s_bFramebufferResized))
-			if (LeRenderInterface::Render(pMesh))
-				LeRenderInterface::EndRender();
+		LeRenderInterface::RenderScene(pScene, pCam, s_bFramebufferResized);
 
 		s_bFramebufferResized = false;
 	}

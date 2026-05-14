@@ -34,14 +34,27 @@ LeMaterial* LeMaterial::Create(void)
 	return NULL;
 }
 
-uint64 LeMaterial::CalculateAttributeHash(void)
+uint64 LeMaterial::GetAttributeHash(void)
 {
-	m_attribsHash = lehash64_bin(&attribs, sizeof(attribs));
+	if (flags & MATERIAL_ATTRIB_HASH_DIRTY)
+	{
+		m_attribsHash = lehash64_bin(&m_attribs, sizeof(m_attribs));
+		flags &= ~MATERIAL_ATTRIB_HASH_DIRTY;
+	}
+	
 	return m_attribsHash;
+}
+
+void LeMaterial::SetShader(LeShader* pShader)
+{ 
+	m_shader = pShader;
+	m_attribs.ShaderHash = pShader ? pShader->GetNameHash() : 0;
+	flags |= MATERIAL_SHADER_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
 }
 
 void LeMaterial::SetBaseTexture(LeTexture* pTexture)
 {
 	m_baseTexture = pTexture;
-	flags |= (MATERIAL_BASE_TEXTURE_DIRTY);
+	m_attribs.BaseTextureHash = pTexture ? pTexture->GetNameHash() : 0;
+	flags |= MATERIAL_BASE_TEXTURE_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
 }
