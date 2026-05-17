@@ -94,7 +94,7 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 	VkResult res = vkCreateSwapchainKHR(Device, &SwapChainInfo, NULL, &m_swapChain);
 	LE_CHECK_VK_RESULT(res);
 
-	LE_DEBUG_MESSAGE("Swap chain created");
+	LE_DEBUG_MESSAGE("Swapchain created");
 
 	// make the images also
 
@@ -103,7 +103,7 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 	LE_CHECK_VK_RESULT(res);
 	LE_DEBUG_ASSERT(NumImages == NumSwapChainImages);
 
-	LE_DEBUG_MESSAGE("Number of images %d", NumSwapChainImages);
+	LE_DEBUG_MESSAGE("Number of swapchain images %d", NumSwapChainImages);
 
 	m_numImages = NumSwapChainImages;
 
@@ -125,8 +125,6 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 		m_imageViews[i] = LeVkUtils::CreateImageView(m_images[i], SurfaceFormat.format,
 			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, LayerCount, MipLevels);
 	}
-
-	LE_DEBUG_MESSAGE("Created image views");
 }
 
 void LeSwapchain::DeInit()
@@ -144,13 +142,11 @@ void LeSwapchain::DeInit()
 	m_numImages = 0;
 	m_minNumImages = 0;
 
-	LE_DEBUG_MESSAGE("Image views destroyed");
-
 
 	// DeInit the swap chain
 
 	vkDestroySwapchainKHR(Device, m_swapChain, NULL);
 	m_swapChain = NULL;
 
-	LE_DEBUG_MESSAGE("Swap chain destroyed");
+	LE_DEBUG_MESSAGE("Swapchain destroyed");
 }

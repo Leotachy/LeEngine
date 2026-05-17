@@ -4,7 +4,7 @@
 
 // Taken from https://vkguide.dev/docs/new_chapter_2/vulkan_new_rendering/
 
-struct DeletionQueue
+struct LeDeletionQueue
 {
 	std::deque<std::function<void()>> deletors;
 

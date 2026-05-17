@@ -18,6 +18,8 @@ void LeVkViewport::Init(VkExtent2D extent)
 	m_imagesValid = false;
 
 	RebuildImages();
+
+	LE_DEBUG_MESSAGE("LeVkViewport initialized");
 }
 
 void LeVkViewport::ReInit(VkExtent2D extent)
@@ -38,6 +40,8 @@ void LeVkViewport::DeInit(void)
 	LeVkUtils::DestroyImage(&m_depthImage);
 
 	m_imagesValid = false;
+
+	LE_DEBUG_MESSAGE("LeVkViewport deinitialized");
 }
 
 void LeVkViewport::RebuildImages()

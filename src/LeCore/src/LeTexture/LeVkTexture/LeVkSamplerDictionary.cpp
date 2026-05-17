@@ -44,6 +44,9 @@ VkSampler LeVkSamplerDictionary::GetOrCreateSampler(const LeVkTextureAttributes*
 
 void LeVkSamplerDictionary::PurgeAllSamplers(void)
 {
+
+	uint32 NumSamplers = (uint32)m_SamplerSet.size();
+
 	for (auto pair : m_SamplerSet)
 	{
 		VkSampler Sampler = pair.second;
@@ -51,4 +54,6 @@ void LeVkSamplerDictionary::PurgeAllSamplers(void)
 	}
 
 	m_SamplerSet.clear();
+
+	LE_DEBUG_MESSAGE("Purged %u samplers", NumSamplers);
 }

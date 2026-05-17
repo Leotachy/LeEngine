@@ -58,6 +58,11 @@ LeVkCore& LeVkCore::Singleton()
 
 void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams, PathParams* pPathParams)
 {
+
+	LE_DEBUG_MESSAGE("Initializing LeVkCore..");
+
+
+
 	LE_DEBUG_ASSERT(pWindowParams);
 	LE_DEBUG_ASSERT(pWindowParams->pWindow);
 	LE_DEBUG_ASSERT(pWindowParams->pAppName);
@@ -69,133 +74,148 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 	LE_DEBUG_ASSERT(pPathParams);
 	LE_DEBUG_ASSERT(pPathParams->pShaderBinaryPath);
 
-
 	m_gltfWindow = pWindowParams->pWindow;
 
 	CreateInstance(pWindowParams->pAppName);
+	m_deletionQueue.push_function([this]()
+		{
+			DestroyInstance();
+		});
+
 	CreateDebugCallback();
+	m_deletionQueue.push_function([this]()
+		{
+			DestroyDebugCallback();
+		});
+
+
 	CreateSurface(m_gltfWindow);
+	m_deletionQueue.push_function([this]()
+		{
+			DestroySurface();
+		});
+
 	m_physicalDevices.Init(m_instance, m_surface);
+	m_deletionQueue.push_function([this]()
+		{
+			m_physicalDevices.DeInit();
+		});
+
+
 	m_queueFamily = m_physicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
+
 	CreateLogicalDevice();
+	m_deletionQueue.push_function([this]()
+		{
+			DestroyLogicalDevice();
+		});
+
+
 	m_swapchain.Init(m_surface, m_queueFamily);
+	m_deletionQueue.push_function([this]()
+		{
+			m_swapchain.DeInit();
+		});
 
 	LeVkDescriptorPoolManager::Singleton().Init();
+	m_deletionQueue.push_function([this]()
+		{
+			LeVkDescriptorPoolManager::Singleton().DeInit();
+		});
 
 	m_commandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_queueFamily);
 	m_transientCommandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queueFamily);
+	LE_DEBUG_MESSAGE("Command buffer pools created");
+	m_deletionQueue.push_function([this]()
+		{
+			vkDestroyCommandPool(m_logicalDevice, m_transientCommandBufferPool, NULL);
+			vkDestroyCommandPool(m_logicalDevice, m_commandBufferPool, NULL);
+
+			LE_DEBUG_MESSAGE("Command buffer pools destroyed");
+		});
 
 	for (int32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		LeVkFrameContext& CurrentRenderFrame = m_FrameContexts[i];
-		CreateCommandBuffers(1, &CurrentRenderFrame.CommandBuffer);
-		CurrentRenderFrame.ImageIndex = -1;
-		CurrentRenderFrame.FrameUBO.MVP = glm::mat4(1.0f);
-		CurrentRenderFrame.FrameUBOMemoryBuffer = LeVkUtils::CreateUniformBuffer(sizeof(LeVkFrameUniformData));
-		CurrentRenderFrame.DescriptorSet.Init();
-		CurrentRenderFrame.DescriptorSet.UpdateSet(&CurrentRenderFrame.FrameUBOMemoryBuffer);
+		LeVkFrameContext& FrameContext = m_FrameContexts[i];
+		CreateCommandBuffers(1, &FrameContext.CommandBuffer);
+		FrameContext.ImageIndex = -1;
+		FrameContext.FrameUBO.MVP = glm::mat4(1.0f);
+		FrameContext.FrameUBOMemoryBuffer = LeVkUtils::CreateUniformBuffer(sizeof(LeVkFrameUniformData));
+		FrameContext.DescriptorSet.Init();
+		FrameContext.DescriptorSet.UpdateSet(&FrameContext.FrameUBOMemoryBuffer);
 	}
-
 	m_FrameIndex = 0;
+	m_deletionQueue.push_function([this]()
+		{
+			for (int32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				LeVkFrameContext& FrameContext = m_FrameContexts[i];
+				FreeCommandBuffers(1, &FrameContext.CommandBuffer);
+				LeVkUtils::DestroyBuffer(&FrameContext.FrameUBOMemoryBuffer);
+			}
+		});
 
 	m_queue.Init(m_queueFamily, 0);
+	m_deletionQueue.push_function([this]()
+		{
+			m_queue.DeInit();
+		});
 
 	m_shaderDictionary.LoadAllShaders(pPathParams->pShaderBinaryPath);
+	m_deletionQueue.push_function([this]()
+		{
+			m_shaderDictionary.PurgeAllShaders();
+		});
 
 #ifdef SUPPORT_IMGUI
 	InitImGui();
+	m_deletionQueue.push_function([this]()
+		{
+			DeInitImGui();
+		});
 #endif
 
 	m_newViewportExtent = { 0, 0 };
 	m_bRebuildViewportPending = false;
 	m_viewport.Init({ pViewportParams->uViewportWidth, pViewportParams->uViewportHeight });
+	m_deletionQueue.push_function([this]()
+		{
+			m_viewport.DeInit();
+		});
 
 	m_samplerDictionary.Init();
+	m_deletionQueue.push_function([this]()
+		{
+			m_samplerDictionary.DeInit();
+		});
 
+	LE_DEBUG_MESSAGE("Finished initializing LeVkCore!");
 }
 
 void LeVkCore::ShutDown(void)
 {
+
+	LE_DEBUG_MESSAGE("Shutting down LeVkCore..");
+
 	// currently just this.. hack until I sort my world objects
 	m_queue.WaitIdle();
+
+	LE_DEBUG_MESSAGE("Finished shutting down LeVkCore");
 }
 
 void LeVkCore::DeInit(void)
 {
 
-	// DeInit shaders
-	m_shaderDictionary.PurgeAllShaders();
+	LE_DEBUG_MESSAGE("Deinitializing LeVkCore..");
 
 	// DeInit graphics pipelines
 	LeVkGraphicsPipelineDictionary::Singleton()->Purge();
 
-	m_samplerDictionary.DeInit();
-
-	m_viewport.DeInit();
-
-#ifdef SUPPORT_IMGUI
-	DeInitImGui();
-#endif
-
-	m_shaderDictionary.PurgeAllShaders();
-
-	// DeInit the render queue
-	m_queue.Destroy();
+	m_deletionQueue.flush();
 
 
-	for (int32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		LeVkFrameContext& CurrentRenderFrame = m_FrameContexts[i];
-		FreeCommandBuffers(1, &CurrentRenderFrame.CommandBuffer);
-		LeVkUtils::DestroyBuffer(&CurrentRenderFrame.FrameUBOMemoryBuffer);
-	}
+	LE_DEBUG_MESSAGE("Finished deinitializing LeVkCore");
 
-
-
-	// DeInit command pool
-	vkDestroyCommandPool(m_logicalDevice, m_transientCommandBufferPool, NULL);
-	vkDestroyCommandPool(m_logicalDevice, m_commandBufferPool, NULL);
-
-	// DeInit descriptor pools
-
-	LeVkDescriptorPoolManager::Singleton().DeInit();
-
-	// DeInit swapchain
-	m_swapchain.DeInit();
-
-	// DeInit logical device
-
-	vkDestroyDevice(m_logicalDevice, NULL);
-	LE_DEBUG_MESSAGE("Logical device destroyed");
-
-	// Clear physical devices
-
-	m_physicalDevices.DeInit();
-
-	// DeInit surface
-
-	PFN_vkDestroySurfaceKHR vkDestroySurface = VK_NULL_HANDLE;
-	vkDestroySurface = (PFN_vkDestroySurfaceKHR)vkGetInstanceProcAddr(m_instance, "vkDestroySurfaceKHR");
-	if (!vkDestroySurface)
-		LE_ERROR("Cannot find address of vkDestroyDebugUtilsMessenger");
-
-	vkDestroySurfaceKHR(m_instance, m_surface, NULL);
-	LE_DEBUG_MESSAGE("Window surface destroyed");
-
-	// DeInit debug utils messenger
-
-	PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessenger = VK_NULL_HANDLE;
-	vkDestroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (!vkDestroyDebugUtilsMessenger)
-		LE_ERROR("Cannot find address of vkDestroyDebugUtilsMessenger");
-
-	vkDestroyDebugUtilsMessenger(m_instance, m_debugMessenger, NULL);
-	LE_DEBUG_MESSAGE("Vulkan debug utils messenger destroyed");
-
-	// DeInit instance
-
-	vkDestroyInstance(m_instance, NULL);
-	LE_DEBUG_MESSAGE("Vulkan instance destroyed");
 }
 
 LeBool LeVkCore::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
@@ -638,6 +658,12 @@ void LeVkCore::CreateInstance(const char* pAppName)
 
 }
 
+void LeVkCore::DestroyInstance(void)
+{
+	vkDestroyInstance(m_instance, NULL);
+	LE_DEBUG_MESSAGE("Vulkan instance destroyed");
+}
+
 
 
 void LeVkCore::CreateDebugCallback()
@@ -668,6 +694,18 @@ void LeVkCore::CreateDebugCallback()
 	LE_DEBUG_MESSAGE("Debug utils messenger created");
 }
 
+void LeVkCore::DestroyDebugCallback(void)
+{
+	PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
+	if (!vkDestroyDebugUtilsMessenger)
+	{
+		LE_ERROR("Cannot find address of vkDestroyDebugUtilsMessenger");
+	}
+
+	vkDestroyDebugUtilsMessenger(m_instance, m_debugMessenger, NULL);
+	LE_DEBUG_MESSAGE("Vulkan debug utils messenger destroyed");
+}
+
 void LeVkCore::CreateSurface(GLFWwindow* pWindow)
 {
 	LE_DEBUG_ASSERT(pWindow);
@@ -677,6 +715,18 @@ void LeVkCore::CreateSurface(GLFWwindow* pWindow)
 
 	LE_DEBUG_MESSAGE("Window surface created");
 
+}
+
+void LeVkCore::DestroySurface(void)
+{
+	PFN_vkDestroySurfaceKHR vkDestroySurface = (PFN_vkDestroySurfaceKHR)vkGetInstanceProcAddr(m_instance, "vkDestroySurfaceKHR");
+	if (!vkDestroySurface)
+	{
+		LE_ERROR("Cannot find address of vkDestroyDebugUtilsMessenger");
+	}
+
+	vkDestroySurfaceKHR(m_instance, m_surface, NULL);
+	LE_DEBUG_MESSAGE("Window surface destroyed");
 }
 
 void LeVkCore::CreateLogicalDevice()
@@ -748,6 +798,12 @@ void LeVkCore::CreateLogicalDevice()
 
 }
 
+void LeVkCore::DestroyLogicalDevice()
+{
+	vkDestroyDevice(m_logicalDevice, NULL);
+	LE_DEBUG_MESSAGE("Logical device destroyed");
+}
+
 #ifdef SUPPORT_IMGUI
 
 void LeVkCore::InitImGui(void)
@@ -800,6 +856,9 @@ void LeVkCore::InitImGui(void)
 	init_info.UseDynamicRendering = true;
 	init_info.CheckVkResultFn = LeVkUtils::CheckVkResult;
 	ImGui_ImplVulkan_Init(&init_info);
+
+
+	LE_DEBUG_MESSAGE("ImGui context created");
 }
 
 void LeVkCore::DeInitImGui(void)
@@ -807,6 +866,8 @@ void LeVkCore::DeInitImGui(void)
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+
+	LE_DEBUG_MESSAGE("ImGui context destroyed");
 }
 
 void LeVkCore::RenderImGui(VkCommandBuffer CommandBuffer)
@@ -836,8 +897,6 @@ VkCommandPool LeVkCore::CreateCommandBufferPool(VkCommandPoolCreateFlags Flags, 
 
 	VkResult res = vkCreateCommandPool(m_logicalDevice, &cmdPoolCreateInfo, NULL, &ret);
 	LE_CHECK_VK_RESULT(res);
-
-	LE_DEBUG_MESSAGE("Command buffer pool created");
 
 	return ret;
 }

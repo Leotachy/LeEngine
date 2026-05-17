@@ -9,8 +9,7 @@ class LeVkQueue
 
 public:
 	void Init(uint32 QueueFamily, uint32 QueueIndex);
-
-	void Destroy();
+	void DeInit();
 
 	uint32 AcquireNextImage(int32 frameIndex);
 

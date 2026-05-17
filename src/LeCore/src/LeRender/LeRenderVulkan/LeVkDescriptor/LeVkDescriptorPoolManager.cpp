@@ -17,6 +17,8 @@ void LeVkDescriptorPoolManager::Init()
 	m_descriptorPoolMesh.Init();
 	m_descriptorPoolMaterial.Init();
 	m_descriptorPoolImGui.Init();
+
+	LE_DEBUG_MESSAGE("Descriptor pools inited");
 }
 
 void LeVkDescriptorPoolManager::DeInit()
@@ -25,6 +27,8 @@ void LeVkDescriptorPoolManager::DeInit()
 	m_descriptorPoolMesh.DeInit();
 	m_descriptorPoolMaterial.DeInit();
 	m_descriptorPoolImGui.DeInit();
+
+	LE_DEBUG_MESSAGE("Descriptor pools deinited");
 }
 
 LeVkDescriptorPool* LeVkDescriptorPoolManager::GetLeDescriptorPool(LeVkDescriptorPoolType Type)

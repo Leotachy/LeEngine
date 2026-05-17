@@ -39,14 +39,16 @@ void LeVkQueue::Init(uint32 QueueFamily, uint32 QueueIndex)
 
 	vkGetDeviceQueue(m_device, QueueFamily, QueueIndex, &m_queue);
 
-	LE_DEBUG_MESSAGE("Queue acquired");
-
 	CreateSyncObjects();
+
+	LE_DEBUG_MESSAGE("LeVkQueue initialized at queue family: %u with index: %u", QueueFamily, QueueIndex);
 }
 
-void LeVkQueue::Destroy()
+void LeVkQueue::DeInit()
 {
 	FreeSyncObjects();
+
+	LE_DEBUG_MESSAGE("LeVkQueue deinitialized");
 }
 
 void LeVkQueue::WaitIdle()

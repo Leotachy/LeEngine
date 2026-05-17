@@ -36,7 +36,9 @@ void LeShaderDictionary::LoadAllShaders(const LeChar* pDirectoryPath)
 {
 	LE_DEBUG_ASSERT(pDirectoryPath);
 
-	LeStore::ForEachFileInDirectoryWithExtension(pDirectoryPath, ".spv", [this, pDirectoryPath](const LeChar* pFileName)
+	int32 NumShadersLoaded = 0;
+
+	LeStore::ForEachFileInDirectoryWithExtension(pDirectoryPath, ".spv", [this, pDirectoryPath, &NumShadersLoaded](const LeChar* pFileName)
 		{
 
 			LeChar FullFilepath[2048];
@@ -50,11 +52,18 @@ void LeShaderDictionary::LoadAllShaders(const LeChar* pDirectoryPath)
 			LE_DEBUG_ASSERT(pShader);
 
 			AddShader(pShader);
+
+			NumShadersLoaded++;
 		});
+
+	LE_DEBUG_MESSAGE("Loaded %d shaders from directory: %s", NumShadersLoaded, pDirectoryPath);
 }
 
 void LeShaderDictionary::PurgeAllShaders(void)
 {
+
+	uint32 NumShaders = (uint32)m_ShaderSet.size();
+
 	for (auto pair : m_ShaderSet)
 	{
 		LeShader* pShader = pair.second;
@@ -62,6 +71,8 @@ void LeShaderDictionary::PurgeAllShaders(void)
 	}
 
 	m_ShaderSet.clear();
+
+	LE_DEBUG_MESSAGE("Purged %u shaders", NumShaders);
 }
 
 LeBool LeShaderDictionary::AddShader(LeShader* pShader)

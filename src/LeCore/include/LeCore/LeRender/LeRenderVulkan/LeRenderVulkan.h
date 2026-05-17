@@ -38,7 +38,7 @@ struct LeVkMemoryImage
 #include "LeCore/LeTexture/LeVkTexture/LeVkSamplerDictionary.h"
 #include "LeCore/LeShader/LeShaderDictionary.h"
 #include "LeCore/LeScene/LeScene.h"
-
+#include "LeCore/LeUtils/LeDeletionQueue.h"
 
 struct LeVkFrameUniformData
 {
@@ -84,9 +84,18 @@ public:
 private:
 
 	void CreateInstance(const char* pAppName);
-	void CreateDebugCallback();
+	void DestroyInstance(void);
+
+	void CreateDebugCallback(void);
+	void DestroyDebugCallback(void);
+
 	void CreateSurface(GLFWwindow* pWindow);
+	void DestroySurface(void);
+
+
 	void CreateLogicalDevice();
+	void DestroyLogicalDevice();
+
 
 #ifdef SUPPORT_IMGUI
 	void InitImGui(void);
@@ -159,5 +168,8 @@ private:
 
 	LeVkSamplerDictionary m_samplerDictionary;
 	LeShaderDictionary m_shaderDictionary;
+
+
+	LeDeletionQueue m_deletionQueue;
 };
 
