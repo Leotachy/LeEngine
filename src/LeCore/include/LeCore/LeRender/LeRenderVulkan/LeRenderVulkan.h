@@ -9,6 +9,20 @@
 // 10th March, 2026
 // Vulkan renderer API implementation loosely based on OGLDEV Vulkan tutorial
 
+struct LeVkMemoryBuffer
+{
+	VkBuffer buffer;
+	VkDeviceMemory mem;
+	VkDeviceSize allocationSize;
+};
+
+struct LeVkMemoryImage
+{
+	VkImage image;
+	VkDeviceMemory mem;
+	VkDeviceSize allocationSize;
+};
+
 #include "LeCore/LeRender/LeRender.h"
 #include "LeCore/LeCamera/LeCamera.h"
 #include "LeCore/LeMesh/LeMesh.h"
@@ -60,10 +74,12 @@ public:
 #endif
 
 	VkDevice GetDevice(void);
-	const LeVkPhysicalDevice* GetPhysicalDevice(void);
-	const LeSwapchain* GetLeSwapchain(void) const;
+	const LeVkPhysicalDevice* GetLePhysicalDevice(void);
+	LeSwapchain* GetLeSwapchain(void);
 
-	static const int32 LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT = 2;
+	static const int32 MAX_FRAMES_IN_FLIGHT = 2;
+	static const VkFormat VIEWPORT_COLOR_IMAGE_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
+	static const VkFormat VIEWPORT_DEPTH_IMAGE_FORMAT = VK_FORMAT_D32_SFLOAT;
 
 private:
 
@@ -92,8 +108,8 @@ private:
 
 	void CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size);
 
-	void SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer);
-	void SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer);
+	void SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* pMemoryBuffer);
+	void SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuffer* pMemoryBuffer);
 
 	void OnSurfaceSizeChanged(void);
 
@@ -132,7 +148,7 @@ private:
 	VkCommandPool m_transientCommandBufferPool; // Command pool for one shot commands
 	LeVkQueue m_queue;
 
-	LeVkFrameContext m_FrameContexts[LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT];
+	LeVkFrameContext m_FrameContexts[MAX_FRAMES_IN_FLIGHT];
 
 
 	VkExtent2D m_newViewportExtent;

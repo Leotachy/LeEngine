@@ -49,30 +49,10 @@ static VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkS
 	return SurfaceFormats[0];
 }
 
-
-LeSwapchain::LeSwapchain()
+void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 {
-	m_swapChain = NULL;
-
-	m_images = NULL;
-	m_imageViews = NULL;
-	m_numImages = 0;
-
-	m_imageFormat = VK_FORMAT_UNDEFINED;
-
-	m_device = NULL;
-}
-LeSwapchain::~LeSwapchain()
-{
-}
-
-void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevice,
-	VkSurfaceKHR Surface, uint32 QueueFamily)
-{
-
-	LE_DEBUG_ASSERT(pPhysicalDevice);
-
-	m_device = Device;
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
+	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetLePhysicalDevice();
 
 	VkSurfaceCapabilitiesKHR SurfaceCaps;
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(pPhysicalDevice->m_physDevice, Surface, &SurfaceCaps);
@@ -142,7 +122,7 @@ void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevic
 	int MipLevels = 1;
 	for (uint32 i = 0; i < NumSwapChainImages; i++)
 	{
-		m_imageViews[i] = LeVkUtils::CreateImageView(Device, m_images[i], SurfaceFormat.format,
+		m_imageViews[i] = LeVkUtils::CreateImageView(m_images[i], SurfaceFormat.format,
 			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, LayerCount, MipLevels);
 	}
 
@@ -151,12 +131,13 @@ void LeSwapchain::Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevic
 
 void LeSwapchain::DeInit()
 {
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
 
 	// DeInit image views
 
 	for (uint32 i = 0; i < m_numImages; i++)
 	{
-		LeVkUtils::DestroyImageView(m_device, m_imageViews[i]);
+		LeVkUtils::DestroyImageView(m_imageViews[i]);
 		m_imageViews[i] = NULL;
 	}
 		
@@ -168,12 +149,8 @@ void LeSwapchain::DeInit()
 
 	// DeInit the swap chain
 
-	vkDestroySwapchainKHR(m_device, m_swapChain, NULL);
+	vkDestroySwapchainKHR(Device, m_swapChain, NULL);
 	m_swapChain = NULL;
 
 	LE_DEBUG_MESSAGE("Swap chain destroyed");
-
-	// Clear the pointer to device
-	m_device = NULL;
-
 }

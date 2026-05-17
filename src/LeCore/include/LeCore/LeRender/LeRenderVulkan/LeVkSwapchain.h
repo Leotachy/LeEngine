@@ -10,14 +10,8 @@
 
 class LeSwapchain
 {
-
 public:
-
-
-	LeSwapchain();
-	~LeSwapchain();
-
-	void Init(VkDevice Device, const LeVkPhysicalDevice* pPhysicalDevice, VkSurfaceKHR Surface, uint32 QueueFamily);
+	void Init(VkSurfaceKHR Surface, uint32 QueueFamily);
 	void DeInit(void);
 
 	VkSwapchainKHR GetSwapchain(void) { return m_swapChain; }
@@ -41,7 +35,4 @@ private:
 
 	VkFormat m_imageFormat;
 	VkExtent2D m_extent;
-
-	VkDevice m_device;
-
 };

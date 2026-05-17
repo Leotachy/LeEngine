@@ -4,8 +4,7 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 
-LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader, VkFormat RenderColFormat,
-	VkFormat DepthAttachmentFormat)
+LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 {
 	LE_DEBUG_ASSERT(key);
 	LE_DEBUG_ASSERT(pShader);
@@ -147,8 +146,8 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader, VkFo
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
 		.colorAttachmentCount = 1,
-		.pColorAttachmentFormats = &RenderColFormat,
-		.depthAttachmentFormat = DepthAttachmentFormat
+		.pColorAttachmentFormats = &LeVkCore::VIEWPORT_COLOR_IMAGE_FORMAT,
+		.depthAttachmentFormat = LeVkCore::VIEWPORT_DEPTH_IMAGE_FORMAT
 	};
 
 	VkGraphicsPipelineCreateInfo PipelineInfo =

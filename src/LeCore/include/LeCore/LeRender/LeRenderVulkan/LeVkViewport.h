@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 #include "LeCore/LeMaterial/LeVkMaterial/LeVkMaterial.h"
 
@@ -13,15 +14,24 @@ public:
 
 	VkExtent2D GetExtent(void) const { return m_extent; }
 
-	LeVkTexture* GetTexture(void) { return m_colorTexture; }
-	LeVkTexture* GetDepthTexture(void) { return m_depthTexture; }
+	VkImage GetColorImage(void) { return m_colorImage.image; }
+	VkImageView GetColorImageView(void) { return m_colorView; }
+
+	VkImage GetDepthImage(void) { return m_depthImage.image; }
+	VkImageView GetDepthImageView(void) { return m_depthView; }
 
 private:
 
-	void RebuildTextures(void);
+	void RebuildImages();
+
 
 	VkExtent2D m_extent;
 
-	LeVkTexture* m_colorTexture;
-	LeVkTexture* m_depthTexture;
+	LeBool m_imagesValid;
+
+	LeVkMemoryImage m_colorImage;
+	VkImageView m_colorView;
+
+	LeVkMemoryImage m_depthImage;
+	VkImageView m_depthView;
 };

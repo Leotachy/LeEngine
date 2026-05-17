@@ -7,7 +7,6 @@
 *   Wrapper class for VkShaderModule
 */
 
-#include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 #include "LeCore/LeShader/LeShader.h"
 
 class LeVkShader : public LeShader

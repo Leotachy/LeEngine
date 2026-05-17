@@ -7,7 +7,6 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkQueue.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 
@@ -79,29 +78,27 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 	m_physicalDevices.Init(m_instance, m_surface);
 	m_queueFamily = m_physicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 	CreateLogicalDevice();
-	m_queueFamily = 0;
-	m_swapchain.Init(m_logicalDevice, m_physicalDevices.Selected(), m_surface, m_queueFamily);
+	m_swapchain.Init(m_surface, m_queueFamily);
 
 	LeVkDescriptorPoolManager::Singleton().Init();
 
 	m_commandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_queueFamily);
 	m_transientCommandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queueFamily);
 
-	for (int32 i = 0; i < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT; i++)
+	for (int32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		LeVkFrameContext& CurrentRenderFrame = m_FrameContexts[i];
 		CreateCommandBuffers(1, &CurrentRenderFrame.CommandBuffer);
 		CurrentRenderFrame.ImageIndex = -1;
 		CurrentRenderFrame.FrameUBO.MVP = glm::mat4(1.0f);
-		LeVkUtils::CreateUniformBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, 
-			sizeof(LeVkFrameUniformData), &CurrentRenderFrame.FrameUBOMemoryBuffer);
+		CurrentRenderFrame.FrameUBOMemoryBuffer = LeVkUtils::CreateUniformBuffer(sizeof(LeVkFrameUniformData));
 		CurrentRenderFrame.DescriptorSet.Init();
 		CurrentRenderFrame.DescriptorSet.UpdateSet(&CurrentRenderFrame.FrameUBOMemoryBuffer);
 	}
 
 	m_FrameIndex = 0;
 
-	m_queue.Init(m_logicalDevice, &m_swapchain, m_queueFamily, 0);
+	m_queue.Init(m_queueFamily, 0);
 
 	m_shaderDictionary.LoadAllShaders(pPathParams->pShaderBinaryPath);
 
@@ -113,7 +110,7 @@ void LeVkCore::Init(WindowParams* pWindowParams, ViewportParams* pViewportParams
 	m_bRebuildViewportPending = false;
 	m_viewport.Init({ pViewportParams->uViewportWidth, pViewportParams->uViewportHeight });
 
-	m_samplerDictionary.Init(m_logicalDevice, m_physicalDevices.Selected());
+	m_samplerDictionary.Init();
 
 }
 
@@ -146,7 +143,7 @@ void LeVkCore::DeInit(void)
 	m_queue.Destroy();
 
 
-	for (int32 i = 0; i < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT; i++)
+	for (int32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		LeVkFrameContext& CurrentRenderFrame = m_FrameContexts[i];
 		FreeCommandBuffers(1, &CurrentRenderFrame.CommandBuffer);
@@ -238,16 +235,16 @@ LeBool LeVkCore::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebuffe
 	BeginCommandBuffer(CommandBuffer);
 
 	// setup image barrier for clearing the color
-	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetTexture()->memoryImage.image,
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetColorImage(),
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		VK_ACCESS_2_NONE,
+		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT);
 
-	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetDepthTexture()->memoryImage.image,
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetDepthImage(),
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
 		VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
@@ -261,7 +258,7 @@ LeBool LeVkCore::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebuffe
 
 	VkRenderingAttachmentInfo colorAttachment{};
 	colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	colorAttachment.imageView = m_viewport.GetTexture()->view;
+	colorAttachment.imageView = m_viewport.GetColorImageView();
 	colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -271,7 +268,7 @@ LeBool LeVkCore::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebuffe
 
 	VkRenderingAttachmentInfo depthAttachment{};
 	depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	depthAttachment.imageView = m_viewport.GetDepthTexture()->view;
+	depthAttachment.imageView = m_viewport.GetDepthImageView();
 	depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -366,29 +363,38 @@ LeBool LeVkCore::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebuffe
 	vkCmdEndRendering(CommandBuffer);
 
 	// Transition the viewport texture for copying from
-	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetTexture()->memoryImage.image,
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_viewport.GetColorImage(),
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
-		0,
+		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+		VK_ACCESS_2_TRANSFER_READ_BIT,
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_2_COPY_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	// Transition the swapchain texture for copying into
 	LeVkUtils::TransitionImageLayout(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		0,
+		VK_ACCESS_2_TRANSFER_WRITE_BIT,
 		0,
-		0,
+		VK_PIPELINE_STAGE_2_COPY_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	// Copy
 	LeVkUtils::CopyImageToImage(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
-		m_viewport.GetTexture()->memoryImage.image, m_swapchain.GetExtent(), m_viewport.GetExtent());
-
+		m_viewport.GetColorImage(), m_swapchain.GetExtent(), m_viewport.GetExtent());
+	
+	// Transition the swapchain texture for presenting
+	LeVkUtils::TransitionImageLayout(CommandBuffer, m_swapchain.GetImage(pRenderFrame->ImageIndex),
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		VK_ACCESS_2_TRANSFER_WRITE_BIT,
+		0,
+		VK_PIPELINE_STAGE_2_COPY_BIT,
+		0,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	EndCommandBuffer(CommandBuffer);
 
@@ -399,7 +405,7 @@ LeBool LeVkCore::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebuffe
 		OnSurfaceSizeChanged();
 
 	m_FrameIndex++;
-	m_FrameIndex = m_FrameIndex % LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT;
+	m_FrameIndex = m_FrameIndex % MAX_FRAMES_IN_FLIGHT;
 
 	return true;
 }
@@ -474,7 +480,7 @@ VkDevice LeVkCore::GetDevice(void)
 	return m_logicalDevice;
 }
 
-const LeVkPhysicalDevice* LeVkCore::GetPhysicalDevice(void)
+const LeVkPhysicalDevice* LeVkCore::GetLePhysicalDevice(void)
 {
 	const LeVkPhysicalDevice* pPhysicalDevice = m_physicalDevices.Selected();
 	LE_DEBUG_ASSERT(pPhysicalDevice);
@@ -482,7 +488,7 @@ const LeVkPhysicalDevice* LeVkCore::GetPhysicalDevice(void)
 	return pPhysicalDevice;
 }
 
-const LeSwapchain* LeVkCore::GetLeSwapchain(void) const
+LeSwapchain* LeVkCore::GetLeSwapchain(void)
 {
 	return &m_swapchain;
 }
@@ -866,17 +872,16 @@ void LeVkCore::CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size)
 
 }
 
-void LeVkCore::SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
+void LeVkCore::SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* pMemoryBuffer)
 {
 	LE_DEBUG_ASSERT(pVertices);
 	LE_DEBUG_ASSERT(Size);
-	LE_DEBUG_ASSERT(OutMemoryBuffer);
+	LE_DEBUG_ASSERT(pMemoryBuffer);
 
 	// Step 1: create the staging buffer
 	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	LeVkMemoryBuffer StagingVB;
-	LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, Size, Usage, MemProps, &StagingVB);
+	LeVkMemoryBuffer StagingVB = LeVkUtils::CreateBuffer(Size, Usage, MemProps);
 
 	// Step 2: map the memory of the stage buffer
 	void* pMem = NULL;
@@ -891,40 +896,39 @@ void LeVkCore::SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryB
 	// Step 4: unmap/release the mapped memory
 	vkUnmapMemory(m_logicalDevice, StagingVB.mem);
 
-	if (OutMemoryBuffer->allocationSize && Size > OutMemoryBuffer->allocationSize)
+	if (pMemoryBuffer->allocationSize && Size > pMemoryBuffer->allocationSize)
 	{
-		LeVkUtils::DestroyBuffer(OutMemoryBuffer);
+		LeVkUtils::DestroyBuffer(pMemoryBuffer);
 	}
 
-	if (!OutMemoryBuffer->allocationSize)
+	if (!pMemoryBuffer->allocationSize)
 	{
 		// Step 5: create the final buffer
 		Usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		MemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-		LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, Size, Usage, MemProps, OutMemoryBuffer);
+		*pMemoryBuffer = LeVkUtils::CreateBuffer(Size, Usage, MemProps);
 	}
 	
 
 	// Step 6: copy the staging buffer to the final buffer
-	CopyBuffer(OutMemoryBuffer->buffer, StagingVB.buffer, Size);
+	CopyBuffer(pMemoryBuffer->buffer, StagingVB.buffer, Size);
 
 	// Step 7: release the resources of the staging buffer
 	LeVkUtils::DestroyBuffer(&StagingVB);
 }
 
 
-void LeVkCore::SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
+void LeVkCore::SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuffer* pMemoryBuffer)
 {
 	LE_DEBUG_ASSERT(pIndices);
 	LE_DEBUG_ASSERT(Size);
-	LE_DEBUG_ASSERT(OutMemoryBuffer);
+	LE_DEBUG_ASSERT(pMemoryBuffer);
 
 	// Step 1: create the staging buffer
 	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	LeVkMemoryBuffer StagingVB;
-	LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, Size, Usage, MemProps, &StagingVB);
+	LeVkMemoryBuffer StagingVB = LeVkUtils::CreateBuffer(Size, Usage, MemProps);
 
 	// Step 2: map the memory of the stage buffer
 	void* pMem = NULL;
@@ -938,23 +942,23 @@ void LeVkCore::SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuf
 
 	// Step 4: unmap/release the mapped memory
 	vkUnmapMemory(m_logicalDevice, StagingVB.mem);
-	if (OutMemoryBuffer->allocationSize && Size > OutMemoryBuffer->allocationSize)
+	if (pMemoryBuffer->allocationSize && Size > pMemoryBuffer->allocationSize)
 	{
-		LeVkUtils::DestroyBuffer(OutMemoryBuffer);
+		LeVkUtils::DestroyBuffer(pMemoryBuffer);
 	}
 
-	if (!OutMemoryBuffer->allocationSize)
+	if (!pMemoryBuffer->allocationSize)
 	{
 		// Step 5: create the final buffer
 		Usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		MemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-		LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, Size, Usage, MemProps, OutMemoryBuffer);
+		*pMemoryBuffer = LeVkUtils::CreateBuffer(Size, Usage, MemProps);
 	}
 
 
 	// Step 6: copy the staging buffer to the final buffer
-	CopyBuffer(OutMemoryBuffer->buffer, StagingVB.buffer, Size);
+	CopyBuffer(pMemoryBuffer->buffer, StagingVB.buffer, Size);
 
 	// Step 7: release the resources of the staging buffer
 	LeVkUtils::DestroyBuffer(&StagingVB);
@@ -976,7 +980,7 @@ void LeVkCore::OnSurfaceSizeChanged(void)
 
 
 	m_swapchain.DeInit();
-	m_swapchain.Init(m_logicalDevice, m_physicalDevices.Selected(), m_surface, m_queueFamily);
+	m_swapchain.Init(m_surface, m_queueFamily);
 }
 
 void LeVkCore::UpdateTextureImage(LeVkTexture* pTex)
@@ -993,10 +997,8 @@ void LeVkCore::UpdateTextureImage(LeVkTexture* pTex)
 	VkDeviceSize ImageSize = LayerCount * LayerSize;
 
 	// Make a staging buffer and fill it with pixel data
-	LeVkMemoryBuffer StagingBuffer;
-	LeVkUtils::CreateBuffer(m_logicalDevice, &m_physicalDevices.Selected()->m_memProps, ImageSize,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		&StagingBuffer);
+	LeVkMemoryBuffer StagingBuffer = LeVkUtils::CreateBuffer(ImageSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	LeVkUtils::UpdateBuffer(&StagingBuffer, pTex->GetPixels(), ImageSize);
 
 	LeVkUtils::TransitionImageLayout(CommandBuffer, pTex->memoryImage.image,
@@ -1097,8 +1099,7 @@ LeBool LeVkCore::UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 			LeVkShader* pShaderVk = static_cast<LeVkShader*>(pShader);
 			LE_DEBUG_ASSERT(pShaderVk);
 
-			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, pShaderVk, m_swapchain.GetImageFormat(),
-				VK_FORMAT_D32_SFLOAT);
+			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, pShaderVk);
 			LeVkGraphicsPipelineDictionary::Singleton()->Add(NewGraphicsPipeline);
 
 			pMaterial->SetGraphicsPipeline(NewGraphicsPipeline);
@@ -1147,7 +1148,7 @@ void LeVkCore::UpdateMatBlock(LeVkMatBlock* pMatblock)
 
 LeVkFrameContext* LeVkCore::GetFrameContext(uint32 FrameIndex)
 {
-	LE_DEBUG_ASSERT(FrameIndex < LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT);
+	LE_DEBUG_ASSERT(FrameIndex < MAX_FRAMES_IN_FLIGHT);
 
 	return &m_FrameContexts[FrameIndex];
 }

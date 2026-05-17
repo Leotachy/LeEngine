@@ -32,40 +32,12 @@ static VkFence createFence(VkDevice Device)
 	return Fence;
 }
 
-LeVkQueue::LeVkQueue()
+void LeVkQueue::Init(uint32 QueueFamily, uint32 QueueIndex)
 {
-	m_queue = NULL;
+	m_device = LeVkCore::Singleton().GetDevice();
+	m_swapChain = LeVkCore::Singleton().GetLeSwapchain();
 
-
-	m_numRenderCompleteSems = 0;
-	m_renderCompleteSems = NULL;
-
-	m_numPresentCompleteSems = 0;
-	m_presentCompleteSems = NULL;
-
-	m_numRenderCompleteFences = 0;
-	m_renderCompleteFences = NULL;
-
-	m_device = NULL;
-	m_swapChain = NULL;
-}
-
-LeVkQueue::~LeVkQueue()
-{
-
-
-}
-
-void LeVkQueue::Init(VkDevice Device, LeSwapchain* pSwapChain, uint32 QueueFamily, uint32 QueueIndex)
-{
-
-	LE_DEBUG_ASSERT(Device);
-	LE_DEBUG_ASSERT(pSwapChain);
-
-	m_device = Device;
-	m_swapChain = pSwapChain;
-
-	vkGetDeviceQueue(Device, QueueFamily, QueueIndex, &m_queue);
+	vkGetDeviceQueue(m_device, QueueFamily, QueueIndex, &m_queue);
 
 	LE_DEBUG_MESSAGE("Queue acquired");
 
@@ -84,6 +56,7 @@ void LeVkQueue::WaitIdle()
 
 void LeVkQueue::WaitForFences(int32 frameIndex)
 {
+
 	vkWaitForFences(m_device, 1, &m_renderCompleteFences[frameIndex], true, UINT64_MAX);
 }
 
@@ -181,7 +154,7 @@ void LeVkQueue::CreateSyncObjects(void)
 {
 
 	uint32 NumImages = m_swapChain->GetNumImages();
-	uint32 MaxFramesInFlight = LeVkCore::LECORE_VULKAN_MAX_FRAMES_IN_FLIGHT;
+	uint32 MaxFramesInFlight = LeVkCore::MAX_FRAMES_IN_FLIGHT;
 
 	m_renderCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * NumImages);
 	LE_DEBUG_ASSERT(m_renderCompleteSems);

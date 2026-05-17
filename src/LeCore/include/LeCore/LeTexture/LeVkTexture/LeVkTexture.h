@@ -2,8 +2,6 @@
 #pragma once
 
 #include "LeCore/LeRender/LeRender.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryBuffer.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkMemoryImage.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 
 struct LeVkTextureAttributes

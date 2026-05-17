@@ -14,7 +14,7 @@ class LeVkSamplerDictionary
 {
 
 public:
-	void Init(VkDevice device, const LeVkPhysicalDevice* pPhysicalDevice);
+	void Init(void);
 	void DeInit(void);
 
 	VkSampler GetOrCreateSampler(const LeTextureAttributes* pAttribs);
@@ -23,9 +23,6 @@ public:
 private:
 
 	void PurgeAllSamplers(void);
-
-	VkDevice m_device;
-	const LeVkPhysicalDevice* m_physicalDevice;
 
 	std::unordered_map<uint64, VkSampler> m_SamplerSet;
 };

@@ -8,10 +8,7 @@ class LeVkQueue
 {
 
 public:
-	LeVkQueue();
-	~LeVkQueue();
-
-	void Init(VkDevice Device, LeSwapchain* pSwapChain, uint32 QueueFamily, uint32 QueueIndex);
+	void Init(uint32 QueueFamily, uint32 QueueIndex);
 
 	void Destroy();
 

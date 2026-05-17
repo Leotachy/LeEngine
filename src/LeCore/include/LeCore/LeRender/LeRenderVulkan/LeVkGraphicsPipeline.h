@@ -10,8 +10,7 @@ class LeVkGraphicsPipeline
 
 public:
 
-	LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader, VkFormat RenderColFormat,
-		VkFormat DepthAttachmentFormat);
+	LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader);
 	~LeVkGraphicsPipeline();
 
 	uint64 GetKey() const { return m_key; }

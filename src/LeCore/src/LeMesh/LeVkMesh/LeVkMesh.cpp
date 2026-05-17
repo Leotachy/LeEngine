@@ -6,16 +6,17 @@
 
 LeVkMatBlock::LeVkMatBlock()
 {
-	
+	m_vb = {};
+	m_ib = {};
 }
 
 
 LeVkMatBlock::~LeVkMatBlock()
 {
-	if (m_vb.IsAlloced())
+	if (m_vb.allocationSize)
 		LeVkUtils::DestroyBuffer(&m_vb);
 
-	if (m_ib.IsAlloced())
+	if (m_ib.allocationSize)
 		LeVkUtils::DestroyBuffer(&m_ib);
 }
 
@@ -24,9 +25,9 @@ LeVkMatBlock::~LeVkMatBlock()
 LeVkMesh::LeVkMesh()
 {
 	VkDevice Device = LeVkCore::Singleton().GetDevice();
-	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetPhysicalDevice();
+	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetLePhysicalDevice();
 
-	LeVkUtils::CreateUniformBuffer(Device, &pPhysicalDevice->m_memProps, sizeof(glm::mat4), &m_modelMatrix);
+	m_modelMatrix = LeVkUtils::CreateUniformBuffer(sizeof(glm::mat4));
 
 	glm::mat4 GlobalMatrix = glm::mat4(1.0f);
 	LeVkUtils::UpdateBuffer(&m_modelMatrix, &GlobalMatrix, sizeof(GlobalMatrix));

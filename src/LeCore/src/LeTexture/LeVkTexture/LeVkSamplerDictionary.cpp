@@ -5,21 +5,13 @@
 #include "LeCore/LeTexture/LeVkTexture/LeVkSamplerDictionary.h"
 
 
-void LeVkSamplerDictionary::Init(VkDevice device, const LeVkPhysicalDevice* pPhysicalDevice)
+void LeVkSamplerDictionary::Init(void)
 {
-	LE_DEBUG_ASSERT(device != VK_NULL_HANDLE);
-	LE_DEBUG_ASSERT(pPhysicalDevice);
-
-	m_device = device;
-	m_physicalDevice = pPhysicalDevice;
 }
 
 void LeVkSamplerDictionary::DeInit(void)
 {
 	PurgeAllSamplers();
-
-	m_device = VK_NULL_HANDLE;
-	m_physicalDevice = NULL;
 }
 
 VkSampler LeVkSamplerDictionary::GetOrCreateSampler(const LeTextureAttributes* pAttribs)
@@ -41,9 +33,9 @@ VkSampler LeVkSamplerDictionary::GetOrCreateSampler(const LeVkTextureAttributes*
 	if (Result != m_SamplerSet.end())
 		return (*Result).second;
 
-
-	VkSampler NewSampler = LeVkUtils::CreateSampler(LeVkCore::Singleton().GetDevice(),
-		pAttribs, true, m_physicalDevice->m_devProps.limits.maxSamplerAnisotropy);
+	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetLePhysicalDevice();
+	LE_DEBUG_ASSERT(pPhysicalDevice);
+	VkSampler NewSampler = LeVkUtils::CreateSampler(pAttribs, true, pPhysicalDevice->m_devProps.limits.maxSamplerAnisotropy);
 
 	m_SamplerSet[hash] = NewSampler;
 

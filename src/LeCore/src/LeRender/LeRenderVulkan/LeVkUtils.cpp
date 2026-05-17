@@ -4,13 +4,13 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 
 
-void LeVkUtils::CreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
-	VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryBuffer* OutMemoryBuffer)
+LeVkMemoryBuffer LeVkUtils::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties)
 {
-	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
-	LE_DEBUG_ASSERT(pMemProps);
 	LE_DEBUG_ASSERT(Size > 0);
-	LE_DEBUG_ASSERT(OutMemoryBuffer);
+
+	LeVkMemoryBuffer MemoryBuffer;
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
+	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetLePhysicalDevice();
 
 	VkBufferCreateInfo BufferCreateInfo =
 	{
@@ -20,20 +20,18 @@ void LeVkUtils::CreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProper
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
 	};
 
-	OutMemoryBuffer->device = Device;
-
 	// Step 1: create a buffer
-	VkResult res = vkCreateBuffer(Device, &BufferCreateInfo, NULL, &OutMemoryBuffer->buffer);
+	VkResult res = vkCreateBuffer(Device, &BufferCreateInfo, NULL, &MemoryBuffer.buffer);
 	LE_CHECK_VK_RESULT(res);
 
 	// Step 2: get the buffer memory requirements
 	VkMemoryRequirements MemReqs = {};
-	vkGetBufferMemoryRequirements(Device, OutMemoryBuffer->buffer, &MemReqs);
+	vkGetBufferMemoryRequirements(Device, MemoryBuffer.buffer, &MemReqs);
 
-	OutMemoryBuffer->allocationSize = MemReqs.size;
+	MemoryBuffer.allocationSize = MemReqs.size;
 
 	// Step 3: get the memory type index
-	uint32 MemoryTypeIndex = GetMemoryTypeIndex(pMemProps, MemReqs.memoryTypeBits, Properties);
+	uint32 MemoryTypeIndex = GetMemoryTypeIndex(&pPhysicalDevice->m_memProps, MemReqs.memoryTypeBits, Properties);
 
 	// Step 4: allocate memory
 	VkMemoryAllocateInfo MemAllocInfo =
@@ -43,71 +41,70 @@ void LeVkUtils::CreateBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProper
 		.memoryTypeIndex = MemoryTypeIndex
 	};
 
-	res = vkAllocateMemory(Device, &MemAllocInfo, NULL, &OutMemoryBuffer->mem);
+	res = vkAllocateMemory(Device, &MemAllocInfo, NULL, &MemoryBuffer.mem);
 	LE_CHECK_VK_RESULT(res);
 
 	// Step 5: bind memory
-	res = vkBindBufferMemory(Device, OutMemoryBuffer->buffer, OutMemoryBuffer->mem, 0);
+	res = vkBindBufferMemory(Device, MemoryBuffer.buffer, MemoryBuffer.mem, 0);
 	LE_CHECK_VK_RESULT(res);
+
+	return MemoryBuffer;
 }
 
-void LeVkUtils::UpdateBuffer(LeVkMemoryBuffer* OutMemoryBuffer, const void* pData, size_t Size)
+void LeVkUtils::UpdateBuffer(LeVkMemoryBuffer* pMemoryBuffer, const void* pData, size_t Size)
 {
-	LE_DEBUG_ASSERT(OutMemoryBuffer);
-	LE_DEBUG_ASSERT(OutMemoryBuffer->device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pMemoryBuffer);
 	LE_DEBUG_ASSERT(pData);
+	LE_DEBUG_ASSERT(Size > 0);
 
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
 
 	void* pMem = NULL;
-	VkResult res = vkMapMemory(OutMemoryBuffer->device, OutMemoryBuffer->mem, 0, Size, 0, &pMem);
+	VkResult res = vkMapMemory(Device, pMemoryBuffer->mem, 0, Size, 0, &pMem);
 	LE_CHECK_VK_RESULT(res);
 	LeMemcpy(pMem, pData, Size);
-	vkUnmapMemory(OutMemoryBuffer->device, OutMemoryBuffer->mem);
+	vkUnmapMemory(Device, pMemoryBuffer->mem);
 }
 
-void LeVkUtils::DestroyBuffer(LeVkMemoryBuffer* OutMemoryBuffer)
+void LeVkUtils::DestroyBuffer(LeVkMemoryBuffer* pMemoryBuffer)
 {
-	LE_DEBUG_ASSERT(OutMemoryBuffer);
-	LE_DEBUG_ASSERT(OutMemoryBuffer->device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pMemoryBuffer);
 
-	vkDestroyBuffer(OutMemoryBuffer->device, OutMemoryBuffer->buffer, NULL);
-	OutMemoryBuffer->buffer = VK_NULL_HANDLE;
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
+
+	vkDestroyBuffer(Device, pMemoryBuffer->buffer, NULL);
+	pMemoryBuffer->buffer = VK_NULL_HANDLE;
 	
-	vkFreeMemory(OutMemoryBuffer->device, OutMemoryBuffer->mem, NULL);
-	OutMemoryBuffer->mem = VK_NULL_HANDLE;
+	vkFreeMemory(Device, pMemoryBuffer->mem, NULL);
+	pMemoryBuffer->mem = VK_NULL_HANDLE;
 	
-
-	OutMemoryBuffer->allocationSize = 0;
-
-	OutMemoryBuffer->device = VK_NULL_HANDLE;
+	pMemoryBuffer->allocationSize = 0;
 }
 
-void LeVkUtils::CreateUniformBuffer(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
-	size_t Size, LeVkMemoryBuffer* OutMemoryBuffer)
+LeVkMemoryBuffer LeVkUtils::CreateUniformBuffer(size_t Size)
 {
-
-	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
-	LE_DEBUG_ASSERT(pMemProps);
 	LE_DEBUG_ASSERT(Size > 0);
-	LE_DEBUG_ASSERT(OutMemoryBuffer);
 
 	VkBufferUsageFlags Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	VkMemoryPropertyFlags MemProps = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-	CreateBuffer(Device, pMemProps, Size, Usage, MemProps, OutMemoryBuffer);
+	return CreateBuffer(Size, Usage, MemProps);
 }
 
-void LeVkUtils::CreateImage(VkDevice Device, const VkPhysicalDeviceMemoryProperties* pMemProps,
-	uint32 width, uint32 height, VkFormat format,
-	VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, LeVkMemoryImage* OutMemoryImage)
+LeVkMemoryImage LeVkUtils::CreateImage(uint32 width, uint32 height, VkFormat format,
+	VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties)
 {
 
-	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
-	LE_DEBUG_ASSERT(pMemProps);
+
 	LE_DEBUG_ASSERT(width > 0);
 	LE_DEBUG_ASSERT(height > 0);
-	LE_DEBUG_ASSERT(OutMemoryImage);
+
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
+	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetLePhysicalDevice();
+
+	LeVkMemoryImage MemoryImage;
+
 
 	// Make the texture image
 
@@ -130,19 +127,17 @@ void LeVkUtils::CreateImage(VkDevice Device, const VkPhysicalDeviceMemoryPropert
 		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 	};
 
-	OutMemoryImage->device = Device;
-
 	// Step 1: create the image
-	VkResult res = vkCreateImage(Device, &ImageInfo, NULL, &OutMemoryImage->image);
+	VkResult res = vkCreateImage(Device, &ImageInfo, NULL, &MemoryImage.image);
 	LE_CHECK_VK_RESULT(res);
 
 
 	// Step 2: get the buffer memory requirements
 	VkMemoryRequirements MemReqs = { 0 };
-	vkGetImageMemoryRequirements(Device, OutMemoryImage->image, &MemReqs);
+	vkGetImageMemoryRequirements(Device, MemoryImage.image, &MemReqs);
 
 	// Step 3: get the memory type index
-	uint32 MemoryTypeIndex = GetMemoryTypeIndex(pMemProps, MemReqs.memoryTypeBits, Properties);
+	uint32 MemoryTypeIndex = GetMemoryTypeIndex(&pPhysicalDevice->m_memProps, MemReqs.memoryTypeBits, Properties);
 
 	// Step 4: allocate memory
 	VkMemoryAllocateInfo MemAllocInfo =
@@ -153,30 +148,31 @@ void LeVkUtils::CreateImage(VkDevice Device, const VkPhysicalDeviceMemoryPropert
 		.memoryTypeIndex = MemoryTypeIndex
 	};
 
-	OutMemoryImage->allocationSize = MemReqs.size;
+	MemoryImage.allocationSize = MemReqs.size;
 
-	res = vkAllocateMemory(Device, &MemAllocInfo, NULL, &OutMemoryImage->mem);
+	res = vkAllocateMemory(Device, &MemAllocInfo, NULL, &MemoryImage.mem);
 	LE_CHECK_VK_RESULT(res);
 
 	// Step 5: bind memory. This bind is permanent
-	res = vkBindImageMemory(Device, OutMemoryImage->image, OutMemoryImage->mem, 0);
+	res = vkBindImageMemory(Device, MemoryImage.image, MemoryImage.mem, 0);
 	LE_CHECK_VK_RESULT(res);
+
+	return MemoryImage;
 }
 
-void LeVkUtils::DestroyImage(LeVkMemoryImage* OutMemoryImage)
+void LeVkUtils::DestroyImage(LeVkMemoryImage* pMemoryImage)
 {
-	LE_DEBUG_ASSERT(OutMemoryImage);
-	LE_DEBUG_ASSERT(OutMemoryImage->device != VK_NULL_HANDLE);
+	LE_DEBUG_ASSERT(pMemoryImage);
 
-	vkDestroyImage(OutMemoryImage->device, OutMemoryImage->image, NULL);
-	OutMemoryImage->image = VK_NULL_HANDLE;
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
 
-	vkFreeMemory(OutMemoryImage->device, OutMemoryImage->mem, NULL);
-	OutMemoryImage->mem = VK_NULL_HANDLE;
+	vkDestroyImage(Device, pMemoryImage->image, NULL);
+	pMemoryImage->image = VK_NULL_HANDLE;
 
-	OutMemoryImage->allocationSize = 0;
+	vkFreeMemory(Device, pMemoryImage->mem, NULL);
+	pMemoryImage->mem = VK_NULL_HANDLE;
 
-	OutMemoryImage->device = VK_NULL_HANDLE;
+	pMemoryImage->allocationSize = 0;
 }
 
 void LeVkUtils::TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
@@ -222,11 +218,12 @@ void LeVkUtils::TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkI
 	vkCmdPipelineBarrier2(cmdBuf, &DependencyInfo);
 }
 
-VkImageView LeVkUtils::CreateImageView(VkDevice Device, VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
+VkImageView LeVkUtils::CreateImageView(VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags,
 	VkImageViewType ViewType, uint32 LayerCount, uint32 mipLevels)
 {
 
-	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
+
 	LE_DEBUG_ASSERT(Image != VK_NULL_HANDLE);
 
 	VkImageViewCreateInfo ViewInfo =
@@ -257,20 +254,22 @@ VkImageView LeVkUtils::CreateImageView(VkDevice Device, VkImage Image, VkFormat 
 }
 
 
-void LeVkUtils::DestroyImageView(VkDevice Device, VkImageView ImageView)
+void LeVkUtils::DestroyImageView(VkImageView ImageView)
 {
-	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
+
 	LE_DEBUG_ASSERT(ImageView != VK_NULL_HANDLE);
 
 
 	vkDestroyImageView(Device, ImageView, NULL);
 }
 
-VkSampler LeVkUtils::CreateSampler(VkDevice Device, const LeVkTextureAttributes* Attribs, LeBool bEnableAnisotropy, float32 fMaxAnisotropy)
+VkSampler LeVkUtils::CreateSampler(const LeVkTextureAttributes* Attribs, LeBool bEnableAnisotropy, float32 fMaxAnisotropy)
 {
 
-	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
 	LE_DEBUG_ASSERT(Attribs);
+
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
 
 	VkSamplerCreateInfo SamplerCreateInfo =
 	{
@@ -297,11 +296,12 @@ VkSampler LeVkUtils::CreateSampler(VkDevice Device, const LeVkTextureAttributes*
 	return Sampler;
 }
 
-void LeVkUtils::DestroySampler(VkDevice Device, VkSampler Sampler)
+void LeVkUtils::DestroySampler(VkSampler Sampler)
 {
 
-	LE_DEBUG_ASSERT(Device != VK_NULL_HANDLE);
 	LE_DEBUG_ASSERT(Sampler != VK_NULL_HANDLE);
+
+	VkDevice Device = LeVkCore::Singleton().GetDevice();
 
 	vkDestroySampler(Device, Sampler, NULL);
 }

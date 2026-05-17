@@ -23,20 +23,16 @@ LeVkTextureAttributes::LeVkTextureAttributes(const LeTextureAttributes* BaseAttr
 
 LeVkTexture::LeVkTexture(uint32 width, uint32 height) : LeTexture(width, height)
 {
-    device = LeVkCore::Singleton().GetDevice();
-    physicalDevice = LeVkCore::Singleton().GetPhysicalDevice();
     m_format = VK_FORMAT_R8G8B8A8_UNORM;
-
 
     VkDeviceSize imageSize = m_width * m_height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
 
     // Make the image itself
-    LeVkUtils::CreateImage(device, &physicalDevice->m_memProps,
-        m_width, m_height, m_format,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memoryImage);
+    memoryImage = LeVkUtils::CreateImage(m_width, m_height, m_format,
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // And the image view :3
-    view = LeVkUtils::CreateImageView(device, memoryImage.image, m_format,
+    view = LeVkUtils::CreateImageView(memoryImage.image, m_format,
         VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
     LE_DEBUG_ASSERT(view != VK_NULL_HANDLE);
 
@@ -47,11 +43,11 @@ LeVkTexture::~LeVkTexture()
 {
     if (view != VK_NULL_HANDLE)
     {
-        LeVkUtils::DestroyImageView(device, view);
+        LeVkUtils::DestroyImageView(view);
         view = VK_NULL_HANDLE;
     }
 
-    if (memoryImage.IsAlloced())
+    if (memoryImage.allocationSize)
         LeVkUtils::DestroyImage(&memoryImage);
 }
 
