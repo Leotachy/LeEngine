@@ -9,13 +9,13 @@
 #ifdef _WIN32
 
 // Platform specific
-void LeStore::GetFilesInDirectory(std::vector<const LeChar*>& out, const LeChar* pDir)
+void LeStore::GetFilesInDirectory(std::vector<const LeChar*>& out, const LeChar* pSearchPattern)
 {
-	LE_DEBUG_ASSERT(pDir);
+	LE_DEBUG_ASSERT(pSearchPattern);
 
 	_finddata_t fd;
 
-	intptr_t handle = _findfirst(pDir, &fd);
+	intptr_t handle = _findfirst(pSearchPattern, &fd);
 
 	if (handle != -1)
 	{
@@ -31,13 +31,13 @@ void LeStore::GetFilesInDirectory(std::vector<const LeChar*>& out, const LeChar*
 	_findclose(handle);
 }
 
-void LeStore::GetDirectoriesInDirectory(std::vector<const LeChar*>& out, const LeChar* pDir)
+void LeStore::GetDirectoriesInDirectory(std::vector<const LeChar*>& out, const LeChar* pSearchPattern)
 {
-	LE_DEBUG_ASSERT(pDir);
+	LE_DEBUG_ASSERT(pSearchPattern);
 
 	_finddata_t fd;
 
-	intptr_t handle = _findfirst(pDir, &fd);
+	intptr_t handle = _findfirst(pSearchPattern, &fd);
 
 	if (handle != -1)
 	{

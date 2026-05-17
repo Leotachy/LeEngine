@@ -38,7 +38,11 @@ void LeShaderDictionary::LoadAllShaders(const LeChar* pDirectoryPath)
 
 	int32 NumShadersLoaded = 0;
 
-	LeStore::ForEachFileInDirectoryWithExtension(pDirectoryPath, ".spv", [this, pDirectoryPath, &NumShadersLoaded](const LeChar* pFileName)
+	LeChar buf[1024];
+	strcpy(buf, pDirectoryPath);
+	strcat(buf, "*.spv");
+
+	LeStore::ForEachFileInDirectory(buf, [this, pDirectoryPath, &NumShadersLoaded](const LeChar* pFileName)
 		{
 
 			LeChar FullFilepath[2048];

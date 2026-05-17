@@ -29,13 +29,9 @@ LeBool LeStore::DropExtension(LeChar* pBuf, const LeChar* pFilename, const LeCha
 	LE_DEBUG_ASSERT(pFilename);
 	LE_DEBUG_ASSERT(pExtension);
 	
-	const LeChar* pNextFind = NULL;
-	const LeChar* pFoundExtension;
-	do
-	{
-		pFoundExtension = pNextFind;
-		pNextFind = strstr(pFilename, pExtension);
-	} while (pNextFind);
+
+	const LeChar* pNextFind = strstr(pFilename, pExtension);
+	const LeChar* pFoundExtension = pNextFind;
 
 	if (!pFoundExtension)
 		return false;
