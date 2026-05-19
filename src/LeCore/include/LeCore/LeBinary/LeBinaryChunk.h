@@ -6,6 +6,6 @@
 class LeBinaryChunk
 {
 public:
-	virtual void SerializeBinaryChunk(LeStreamFile* pFileStream) = 0;
-	virtual void DeserializeBinaryChunk(LeStreamFile* pFileStream) = 0;
+	virtual void SerializeBinaryChunk(LeStreamFile* pFileStream) {};
+	virtual void DeserializeBinaryChunk(LeStreamFile* pFileStream) {};
 };
