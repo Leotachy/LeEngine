@@ -26,7 +26,7 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler)
 
 
 
-void _LeDebugSendMessage(LeDebugType type, const LeChar* file, const int32 line, const LeChar* message, ...)
+void _LeDebugSendMessage(LeDebugMessageType type, const LeChar* file, const int32 line, const LeChar* message, ...)
 {
 
 	const char* MessagePrefix = "";
@@ -35,13 +35,13 @@ void _LeDebugSendMessage(LeDebugType type, const LeChar* file, const int32 line,
 	{
 
 
-	case leDEBUGASSERT:
+	case LeDebugMessageType::Assert:
 		MessagePrefix = "ASSERT FIRED:";
 		break;
-	case leDEBUGERROR:
+	case LeDebugMessageType::Error:
 		MessagePrefix = "ERROR:";
 		break;
-	case leDEBUGWARN:
+	case LeDebugMessageType::Warn:
 		MessagePrefix = "WARNING:";
 		break;
 	default:

@@ -63,10 +63,11 @@ public:
 	void RemoveMatblock(uint32 i);
 	void PurgeAllMatblocks(void);
 
+	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+
 protected:
 
-	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 	std::vector<LeMatBlock*> m_Matblocks;
 

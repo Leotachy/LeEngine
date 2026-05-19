@@ -15,10 +15,10 @@ void LeRenderInterface::InitRenderer(InitRendererParams& params)
 
 	switch (params.api)
 	{
-	case LeRenderApi::LE_RENDER_API_NONE:
+	case LeRenderApi::None:
 		LE_ERROR("Bad render api: %u", RenderApi);
 		break;
-	case LeRenderApi::LE_RENDER_API_VULKAN:
+	case LeRenderApi::VULKAN:
 		LeVkCore::Singleton().Init(&params.windowParams, &params.viewportParams, &params.pathParams);
 		RenderFunc = VkRenderScene;
 		break;
@@ -32,10 +32,10 @@ void LeRenderInterface::ShutdownRenderer()
 {
 	switch (RenderApi)
 	{
-	case LeRenderApi::LE_RENDER_API_NONE:
+	case LeRenderApi::None:
 		LE_ERROR("Uninitialized renderer");
 		break;
-	case LeRenderApi::LE_RENDER_API_VULKAN:
+	case LeRenderApi::VULKAN:
 		LeVkCore::Singleton().ShutDown();
 		break;
 	default:
@@ -48,10 +48,10 @@ void LeRenderInterface::DeInitRenderer(void)
 {
 	switch (RenderApi)
 	{
-	case LeRenderApi::LE_RENDER_API_NONE:
+	case LeRenderApi::None:
 		LE_ERROR("Uninitialized renderer");
 		break;
-	case LeRenderApi::LE_RENDER_API_VULKAN:
+	case LeRenderApi::VULKAN:
 		LeVkCore::Singleton().DeInit();
 		RenderFunc = NULL;
 		break;
@@ -60,17 +60,17 @@ void LeRenderInterface::DeInitRenderer(void)
 		break;
 	}
 
-	RenderApi = LeRenderApi::LE_RENDER_API_NONE;
+	RenderApi = LeRenderApi::None;
 }
 
 void LeRenderInterface::SetViewportDimensions(uint32 width, uint32 height)
 {
 	switch (RenderApi)
 	{
-	case LeRenderApi::LE_RENDER_API_NONE:
+	case LeRenderApi::None:
 		LE_ERROR("Uninitialized renderer");
 		break;
-	case LeRenderApi::LE_RENDER_API_VULKAN:
+	case LeRenderApi::VULKAN:
 		LeVkCore::Singleton().SetViewportDimensions(width, height);
 		break;
 	default:
@@ -86,11 +86,11 @@ ImTextureID LeRenderInterface::GetViewportImGuiTexture(void)
 {
 	switch (RenderApi)
 	{
-	case LeRenderApi::LE_RENDER_API_NONE:
+	case LeRenderApi::None:
 		LE_ERROR("Uninitialized renderer");
 		return 0;
 		break;
-	case LeRenderApi::LE_RENDER_API_VULKAN:
+	case LeRenderApi::VULKAN:
 		return LeVkCore::Singleton().GetViewportImGuiTexture();
 		break;
 	default:
@@ -112,6 +112,6 @@ LeBool LeRenderInterface::VkRenderScene(LeScene* pScene, LeCamera* pCam, LeBool 
 	return LeVkCore::Singleton().RenderScene(pScene, pCam, bFramebufferResized);
 }
 
-LeRenderApi LeRenderInterface::RenderApi = LeRenderApi::LE_RENDER_API_NONE;
+LeRenderApi LeRenderInterface::RenderApi = LeRenderApi::None;
 
 LeRenderFunc LeRenderInterface::RenderFunc = NULL;

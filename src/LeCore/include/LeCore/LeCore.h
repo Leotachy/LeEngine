@@ -64,19 +64,19 @@ typedef bool LeBool;
 
 // ledebug
 
-enum LeDebugType
+enum class LeDebugMessageType
 {
-    leNADEBUGTYPE = 0,
-    leDEBUGASSERT,
-    leDEBUGERROR,
-    leDEBUGWARN,
-    leDEBUGMESSAGE
+    None,
+    Assert,
+    Error,
+    Warn,
+    Message
 };
 
 
-typedef void (*LeDebugHandler)(LeDebugType type, const LeChar* string);
+typedef void (*LeDebugHandler)(LeDebugMessageType type, const LeChar* string);
 
-void _LeDebugSendMessage(LeDebugType type, const LeChar* file, const int32 line, const LeChar* message, ...);
+void _LeDebugSendMessage(LeDebugMessageType type, const LeChar* file, const int32 line, const LeChar* message, ...);
 
 #define LeDebugSendMessage(type, message, ...)          \
         _LeDebugSendMessage(type,                       \
@@ -95,15 +95,15 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 #define LE_DEBUG_ASSERT(x) \
         do { \
             if (!(x)) _LeDebugSendMessage( \
-                leDEBUGASSERT, \
+                LeDebugMessageType::Assert, \
                 __FILE__, \
                 __LINE__, \
                 #x); \
         } while(0)
 
-#define LE_DEBUG_ERROR(x, ...) _LeDebugSendMessage(leDEBUGERROR,__FILE__,__LINE__,x,__VA_ARGS__)
-#define LE_DEBUG_WARN(x, ...) _LeDebugSendMessage(leDEBUGWARN,__FILE__,__LINE__,x,__VA_ARGS__)
-#define LE_DEBUG_MESSAGE(x, ...) _LeDebugSendMessage(leDEBUGMESSAGE,__FILE__,__LINE__,x,__VA_ARGS__)
+#define LE_DEBUG_ERROR(x, ...) _LeDebugSendMessage(LeDebugMessageType::Error,__FILE__,__LINE__,x,__VA_ARGS__)
+#define LE_DEBUG_WARN(x, ...) _LeDebugSendMessage(LeDebugMessageType::Warn,__FILE__,__LINE__,x,__VA_ARGS__)
+#define LE_DEBUG_MESSAGE(x, ...) _LeDebugSendMessage(LeDebugMessageType::Message,__FILE__,__LINE__,x,__VA_ARGS__)
 
 #else
 
@@ -119,14 +119,14 @@ LeDebugHandler LeDebugSetHandler(LeDebugHandler handler);
 #define LE_ASSERT(x) \
         do { \
             if (!(x)) _LeDebugSendMessage( \
-                leDEBUGASSERT, \
+                LeDebugMessageType::Assert, \
                 __FILE__, \
                 __LINE__, \
                 #x); \
         } while(0)
 
-#define LE_ERROR(x, ...) _LeDebugSendMessage(leDEBUGERROR,__FILE__, __LINE__,x,__VA_ARGS__) 
-#define LE_WARN(x, ...) _LeDebugSendMessage(leDEBUGWARN,__FILE__, __LINE__,x,__VA_ARGS__) 
+#define LE_ERROR(x, ...) _LeDebugSendMessage(LeDebugMessageType::Error,__FILE__, __LINE__,x,__VA_ARGS__) 
+#define LE_WARN(x, ...) _LeDebugSendMessage(LeDebugMessageType::Warn,__FILE__, __LINE__,x,__VA_ARGS__) 
 
 
 // Extra header files that are "convenient" to have around

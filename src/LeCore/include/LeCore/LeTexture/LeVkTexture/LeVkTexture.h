@@ -20,13 +20,12 @@ struct LeVkTextureAttributes
 class LeVkTexture : public LeTexture
 {
 public:
-    LeVkTexture(uint32 width, uint32 height);
+    LeVkTexture();
     ~LeVkTexture();
 
     VkFormat GetVkFormat(void) const { return m_format; }
 
-    VkDevice device;
-    const LeVkPhysicalDevice* physicalDevice;
+    void OnPixelsAllocated(void) override;
 
     LeVkMemoryImage memoryImage;
     VkImageView view;

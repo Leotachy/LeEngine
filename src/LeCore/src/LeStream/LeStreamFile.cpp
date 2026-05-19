@@ -5,7 +5,7 @@
 
 LeStreamFile::LeStreamFile(void)
 {
-	type = LeStreamType::STREAM_TYPE_FILE;
+	type = LeStreamType::FILE;
 
 	LeMemset(filename, 0, sizeof(filename));
 	m_file = NULL;
@@ -25,15 +25,15 @@ LeStream* LeStreamFile::Open(LeStreamAccessType a, const void* data)
 
 	switch (accessType)
 	{
-	case LeStreamAccessType::STREAM_ACCESS_READ:
+	case LeStreamAccessType::READ:
 		m_file = fopen(filename, "rb");
 		break;
 
-	case LeStreamAccessType::STREAM_ACCESS_READ_TEXT:
+	case LeStreamAccessType::READ_TEXT:
 		m_file = fopen(filename, "rt");
 		break;
 
-	case LeStreamAccessType::STREAM_ACCESS_WRITE:
+	case LeStreamAccessType::WRITE:
 		m_file = fopen(filename, "wb");
 		break;
 
@@ -55,7 +55,7 @@ LeStream* LeStreamFile::Open(LeStreamAccessType a, const void* data)
 	}
 }
 
-LeBool LeStreamFile::Close(void* data)
+LeBool LeStreamFile::Close()
 {
 	LE_DEBUG_ASSERT(m_file);
 
@@ -74,7 +74,7 @@ LeBool LeStreamFile::Close(void* data)
 
 uint32 LeStreamFile::Read(void* buffer, uint32 length)
 {
-	LE_DEBUG_ASSERT(accessType == LeStreamAccessType::STREAM_ACCESS_READ || accessType == LeStreamAccessType::STREAM_ACCESS_READ_TEXT);
+	LE_DEBUG_ASSERT(accessType == LeStreamAccessType::READ || accessType == LeStreamAccessType::READ_TEXT);
 	LE_DEBUG_ASSERT(buffer);
 	LE_DEBUG_ASSERT(length > 0);
 
@@ -106,7 +106,7 @@ LeStream* LeStreamFile::Write(const void* buffer, uint32 length)
 
 	LeStream* ret;
 
-	if (accessType == LeStreamAccessType::STREAM_ACCESS_WRITE)
+	if (accessType == LeStreamAccessType::WRITE)
 	{
 		LE_DEBUG_ASSERT(m_file);
 
@@ -155,7 +155,7 @@ LeStream* LeStreamFile::Skip(uint32 offset)
 
 LeStream* LeStreamFile::SkipBack(uint32 offset)
 {
-	LE_DEBUG_ASSERT(accessType == LeStreamAccessType::STREAM_ACCESS_WRITE);
+	LE_DEBUG_ASSERT(accessType == LeStreamAccessType::WRITE);
 	LE_DEBUG_ASSERT(m_file);
 
 	LeStream* ret = NULL;

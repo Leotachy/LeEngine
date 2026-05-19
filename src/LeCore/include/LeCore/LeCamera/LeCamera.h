@@ -4,14 +4,14 @@
 
 // Simple camera class from learnopengl.com slightly modified
 
-enum ProjectionType
+enum class ProjectionType
 {
-    PROJECTION_TYPE_ORTHOGONAL,
-    PROJECTION_TYPE_PERSPECTIVE,
+    ORTHOGONAL,
+    PERSPECTIVE,
 };
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
-enum CamMovement
+enum class CamMovement
 {
     FORWARD,
     BACKWARD,

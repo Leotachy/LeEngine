@@ -39,14 +39,14 @@ void LeCamera::ProcessKeyboard(CamMovement direction, float64 deltaTime)
 {
     float32 velocity = m_MovementSpeed * (float32)deltaTime;
 
-    if (direction == FORWARD)
+    if (direction == CamMovement::FORWARD)
         m_Position += m_Front * velocity;
-    if (direction == BACKWARD)
+    if (direction == CamMovement::BACKWARD)
         m_Position -= m_Front * velocity;
 
-    if (direction == LEFT)
+    if (direction == CamMovement::LEFT)
         m_Position -= m_Right * velocity;
-    if (direction == RIGHT)
+    if (direction == CamMovement::RIGHT)
         m_Position += m_Right * velocity;
 
     m_Flags |= CAMERA_VIEW_MATRIX_DIRTY;
@@ -215,11 +215,11 @@ void LeCamera::CalculateViewMatrix()
 
 void LeCamera::CalculateProjMatrix()
 {
-    if (m_ProjectionType == PROJECTION_TYPE_PERSPECTIVE)
+    if (m_ProjectionType == ProjectionType::PERSPECTIVE)
     {
         m_ProjMatrix = glm::perspective(m_Fov, m_ScreenSize.x / m_ScreenSize.y, s_zNEAR, s_zFAR);
     }
-    else if (m_ProjectionType == PROJECTION_TYPE_ORTHOGONAL)
+    else if (m_ProjectionType == ProjectionType::ORTHOGONAL)
     {
         m_ProjMatrix = glm::ortho(0.0f, m_ScreenSize.x, 0.0f, m_ScreenSize.y);
     }

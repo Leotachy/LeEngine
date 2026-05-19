@@ -13,7 +13,7 @@ LeVkShader::LeVkShader(const LeChar* name, const LeChar* pShaderFilepath) : LeSh
 	LeByte ShaderBinary[128000];
 
 	LeStreamFile ShaderFileStream;
-	ShaderFileStream.Open(LeStreamAccessType::STREAM_ACCESS_READ, pShaderFilepath);
+	ShaderFileStream.Open(LeStreamAccessType::READ, pShaderFilepath);
 	uint32 ShaderBinarySize = ShaderFileStream.Read(ShaderBinary, sizeof(ShaderBinary));
 	if (ShaderBinarySize == sizeof(ShaderBinary))
 	{

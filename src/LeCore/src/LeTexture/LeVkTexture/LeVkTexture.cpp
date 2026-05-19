@@ -21,22 +21,13 @@ LeVkTextureAttributes::LeVkTextureAttributes(const LeTextureAttributes* BaseAttr
 }
 
 
-LeVkTexture::LeVkTexture(uint32 width, uint32 height) : LeTexture(width, height)
+LeVkTexture::LeVkTexture()
 {
     m_format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    VkDeviceSize imageSize = m_width * m_height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
-
-    // Make the image itself
-    memoryImage = LeVkUtils::CreateImage(m_width, m_height, m_format,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    // And the image view :3
-    view = LeVkUtils::CreateImageView(memoryImage.image, m_format,
-        VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
-    LE_DEBUG_ASSERT(view != VK_NULL_HANDLE);
-
-    flags |= TEXTURE_PIXELS_DIRTY | TEXTURE_ATTRIBUTES_DIRTY;
+    memoryImage = {};
+    view = VK_NULL_HANDLE;
+    sampler = VK_NULL_HANDLE;
 }
 
 LeVkTexture::~LeVkTexture()
@@ -51,6 +42,17 @@ LeVkTexture::~LeVkTexture()
         LeVkUtils::DestroyImage(&memoryImage);
 }
 
+void LeVkTexture::OnPixelsAllocated(void)
+{
+    VkDeviceSize imageSize = m_width * m_height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
+
+    memoryImage = LeVkUtils::CreateImage(m_width, m_height, m_format,
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    view = LeVkUtils::CreateImageView(memoryImage.image, m_format,
+        VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
+    LE_DEBUG_ASSERT(view != VK_NULL_HANDLE);
+}
 
 
 
@@ -58,8 +60,8 @@ VkFilter GetVkFilterForLeFilterMode(LeTextureFilterMode LeFilterMode)
 {
     switch (LeFilterMode)
     {
-    case LeTextureFilterMode::FILTER_NEAREST:	return VK_FILTER_NEAREST;
-    case LeTextureFilterMode::FILTER_LINEAR:	return VK_FILTER_LINEAR;
+    case LeTextureFilterMode::NEAREST:	return VK_FILTER_NEAREST;
+    case LeTextureFilterMode::LINEAR:	return VK_FILTER_LINEAR;
     }
 
     LE_DEBUG_ERROR("Unknown LeTextureFilterMode %u", LeFilterMode);
@@ -70,8 +72,8 @@ VkSamplerMipmapMode GetVkSamplerMipmapModeForLeMipmapMode(LeTextureMipmapMode Le
 {
     switch (LeMipmapMode)
     {
-    case LeTextureMipmapMode::MIPMAP_NEAREST:	return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    case LeTextureMipmapMode::MIPMAP_LINEAR:	return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    case LeTextureMipmapMode::NEAREST:	return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case LeTextureMipmapMode::LINEAR:	return VK_SAMPLER_MIPMAP_MODE_LINEAR;
     }
 
     LE_DEBUG_ERROR("Unknown LeTextureMipmapMode %u", LeMipmapMode);
@@ -82,10 +84,10 @@ VkSamplerAddressMode GetVkSamplerAddressModeForLeAddressMode(LeTextureAddressMod
 {
     switch (LeMipmapMode)
     {
-    case ADDRESS_REPEAT: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    case ADDRESS_MIRROR: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    case ADDRESS_CLAMP: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    case ADDRESS_BORDER: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    case LeTextureAddressMode::REPEAT: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    case LeTextureAddressMode::MIRROR: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    case LeTextureAddressMode::CLAMP: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    case LeTextureAddressMode::BORDER: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     }
 
     LE_DEBUG_ERROR("Unknown LeTextureAddressMode %u", LeMipmapMode);

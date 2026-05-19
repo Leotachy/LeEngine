@@ -94,7 +94,7 @@ int main(void)
 	{
 		.RendererParams = 
 		{
-			.api = LeRenderApi::LE_RENDER_API_VULKAN,
+			.api = LeRenderApi::VULKAN,
 			.windowParams = 
 			{
 				.pWindow = pWindow,
@@ -114,7 +114,7 @@ int main(void)
 	};
 	LeEngineInit(Params);
 
-	pCam = new LeCamera(PROJECTION_TYPE_PERSPECTIVE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
+	pCam = new LeCamera(ProjectionType::PERSPECTIVE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
 	glm::vec3 start = glm::vec3(0.0f, 0.0f, 3.0f);
 	pCam->SetPosition(&start);
 
@@ -166,6 +166,8 @@ int main(void)
 	LE_ASSERT(pBaseTexture);
 	Mat->SetBaseTexture(pBaseTexture);
 
+	pScene->GetMaterialDictionary()->AddMaterial(Mat);
+
 	// The triangle is constructed!
 
 
@@ -198,7 +200,7 @@ int main(void)
 	}
 
 	LeStreamFile StreamFile;
-	StreamFile.Open(LeStreamAccessType::STREAM_ACCESS_WRITE, TESTAPP_SCENES_PATH "test_level.ble");
+	StreamFile.Open(LeStreamAccessType::WRITE, TESTAPP_SCENES_PATH "test_level.ble");
 	pScene->SerializeBinaryChunk(&StreamFile);
 
 	LeEngineShutDown();

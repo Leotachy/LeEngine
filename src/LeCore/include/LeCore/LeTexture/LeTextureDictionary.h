@@ -15,7 +15,7 @@ public:
 
 	LeTexture* FindTexture(uint64 nameHash);
 	LeTexture* LoadTexture(const char* pTextureDir, const char* pTextureName);
-	LeBool AddTexture(uint64 nameHash, LeTexture* pTexture);
+	LeBool AddTexture(LeTexture* pTexture);
 	void PurgeAllTextures(void);
 
 	template<typename Func>
@@ -30,9 +30,9 @@ public:
 
 	uint32 flags;
 
-protected:
-	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+
 
 private:
 	std::unordered_map<uint64, LeTexture*> m_textures;

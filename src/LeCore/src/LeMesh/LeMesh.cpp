@@ -22,7 +22,7 @@ LeMatBlock* LeMatBlock::Create(void)
 
 	switch (LeRenderInterface::GetRenderApi())
 	{
-	case LeRenderApi::LE_RENDER_API_VULKAN:
+	case LeRenderApi::VULKAN:
 		return new LeVkMatBlock();
 		break;
 	}
@@ -63,7 +63,7 @@ LeMesh* LeMesh::Create(void)
 {
 	switch (LeRenderInterface::GetRenderApi())
 	{
-	case LeRenderApi::LE_RENDER_API_VULKAN:
+	case LeRenderApi::VULKAN:
 		return new LeVkMesh();
 		break;
 	}
@@ -103,8 +103,11 @@ void LeMesh::PurgeAllMatblocks(void)
 	m_Matblocks.clear();
 }
 
-void LeMesh::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
+void LeMesh::SerializeBinaryChunk(LeStreamFile* pFileStream)
 {
+
+	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
+
 	uint32 numMatblocks = (uint32)m_Matblocks.size();
 	pFileStream->WriteNumber(&numMatblocks);
 
@@ -132,8 +135,11 @@ void LeMesh::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 	}
 }
 
-void LeMesh::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
+void LeMesh::DeserializeBinaryChunk(LeStreamFile* pFileStream)
 {
+
+	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
+
 	uint32 numMatblocks;
 	pFileStream->ReadNumber(&numMatblocks);
 

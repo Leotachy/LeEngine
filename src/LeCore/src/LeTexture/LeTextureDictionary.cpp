@@ -8,7 +8,7 @@
 
 LeTextureDictionary::LeTextureDictionary()
 {
-	flags = 0;
+	flags = TEXTURE_DICTIONARY_TEXTURES_DIRTY;
 }
 
 LeTextureDictionary::~LeTextureDictionary()
@@ -47,27 +47,27 @@ LeTexture* LeTextureDictionary::LoadTexture(const char* pTextureDir, const char*
 
 	LE_DEBUG_ASSERT(ch == 4);
 
-	LeTexture* pTexture = LeTexture::Create(w, h);
+	LeTexture* pTexture = LeTexture::Create();
 	pTexture->SetName(pTextureName);
+	pTexture->AllocatePixels(w, h);
 	pTexture->SetPixels((LeRGBA*)pPixelData);
 	stbi_image_free(pPixelData);
 
-	AddTexture(uNameHash, pTexture);
+	AddTexture(pTexture);
 
 	return pTexture;
 }
 
-LeBool LeTextureDictionary::AddTexture(uint64 nameHash, LeTexture* pTexture)
+LeBool LeTextureDictionary::AddTexture(LeTexture* pTexture)
 {
-	LE_DEBUG_ASSERT(nameHash);
 	LE_DEBUG_ASSERT(pTexture);
 
-	if (FindTexture(nameHash))
+	if (FindTexture(pTexture->GetNameHash()))
 	{
 		return false;
 	}
 
-	m_textures[nameHash] = pTexture;
+	m_textures[pTexture->GetNameHash()] = pTexture;
 	return true;
 }
 
@@ -82,51 +82,33 @@ void LeTextureDictionary::PurgeAllTextures(void)
 	m_textures.clear();
 }
 
-void LeTextureDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
+void LeTextureDictionary::SerializeBinaryChunk(LeStreamFile* pFileStream)
 {
+	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
+
 	uint32 numTextures = (uint32)m_textures.size();
 	pFileStream->WriteNumber(&numTextures);
 
 	for (auto pair : m_textures)
 	{
 		LeTexture* pTexture = pair.second;
-
-		pFileStream->WriteNumber(&pTexture->m_width);
-		pFileStream->WriteNumber(&pTexture->m_height);
-
-		pFileStream->WriteString(pTexture->m_name);
-
-		uint32 numPixels = pTexture->m_width * pTexture->m_height;
-
-		pFileStream->Write(pTexture->m_pixels, numPixels);
-
-		pFileStream->Write(&pTexture->m_attribs, sizeof(pTexture->m_attribs));
+		pTexture->SerializeBinaryChunk(pFileStream);
 	}
 }
 
-void LeTextureDictionary::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
+void LeTextureDictionary::DeserializeBinaryChunk(LeStreamFile* pFileStream)
 {
+	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
+
 	uint32 numTextures;
 	pFileStream->ReadNumber(&numTextures);
 
 	for (uint32 i = 0; i < numTextures; i++)
 	{
-		uint32 width, height;
+		LeTexture* pTexture = LeTexture::Create();
+		pTexture->DeserializeBinaryChunk(pFileStream);
 
-		pFileStream->ReadNumber(&width);
-		pFileStream->ReadNumber(&height);
-
-		LeTexture* pTexture = LeTexture::Create(width, height);
-
-		pFileStream->ReadString(pTexture->m_name, LE_TEXTURE_MAX_NAME);
-
-		uint32 numPixels = pTexture->m_width * pTexture->m_height;
-
-		pTexture->m_pixels = new LeRGBA[numPixels];
-		pFileStream->Read(pTexture->m_pixels, numPixels);
-
-		pFileStream->Read(&pTexture->m_attribs, sizeof(pTexture->m_attribs));
+		if (!AddTexture(pTexture))
+			delete pTexture;
 	}
-
-	flags |= TEXTURE_DICTIONARY_TEXTURES_DIRTY;
 }

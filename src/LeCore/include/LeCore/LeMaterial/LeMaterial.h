@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "LeCore/LeBinary/LeBinaryChunk.h"
 #include "LeCore/LeShader/LeShader.h"
 #include "LeCore/LeTexture/LeTexture.h"
 
@@ -15,23 +16,31 @@ struct LeMaterialAttributes
 #define MATERIAL_BASE_TEXTURE_DIRTY (1<<1)
 #define MATERIAL_SHADER_DIRTY (1<<2)
 
+#define MATERIAL_ALL_DIRTY_FLAGS (MATERIAL_ATTRIB_HASH_DIRTY|MATERIAL_BASE_TEXTURE_DIRTY|MATERIAL_SHADER_DIRTY)
+
 #define LE_MATERIAL_MAX_NAME 128
 
-class LeMaterial
+class LeMaterial : public LeBinaryChunk
 {
 protected:
 	LeMaterial();
 public:
-	virtual ~LeMaterial();
+	virtual ~LeMaterial() = default;
 	static LeMaterial* Create(void);
 
 	uint64 GetAttributeHash(void);
+
+	void SetName(const LeChar* pName);
+	const LeChar* GetName(void) { return m_name; }
 
 	void SetShader(LeShader* pShader);
 	LeShader* GetShader(void) const { return m_shader; }
 
 	void SetBaseTexture(LeTexture* pTexture);
 	LeTexture* GetBaseTexture(void) { return m_baseTexture; }
+
+	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
 
 	uint32 flags;
 

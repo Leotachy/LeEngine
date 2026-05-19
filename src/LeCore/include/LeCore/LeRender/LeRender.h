@@ -11,10 +11,10 @@
 // Lukas Andrijauskas
 // 11th March, 2026
 
-enum LeRenderApi
+enum class LeRenderApi
 {
-	LE_RENDER_API_NONE,
-	LE_RENDER_API_VULKAN,
+	None,
+	VULKAN,
 };
 
 struct WindowParams

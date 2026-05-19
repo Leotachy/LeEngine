@@ -16,10 +16,10 @@ public:
 	LeBool AddMaterial(LeMaterial* pMaterial);
 	void PurgeAllMaterials(void);
 
-protected:
+	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
 
-	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+protected:
 
 	std::unordered_map<uint64, LeMaterial*> m_materials;
 };

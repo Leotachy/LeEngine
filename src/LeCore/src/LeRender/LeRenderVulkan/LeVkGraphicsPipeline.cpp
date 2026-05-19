@@ -117,9 +117,9 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 		.pAttachments = &BlendAttachState
 	};
 
-	VkDescriptorSetLayout PipelineLayouts[LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS];
+	VkDescriptorSetLayout PipelineLayouts[uint64(LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS)];
 
-	for (uint32 i = 0; i < LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS; i++)
+	for (uint32 i = 0; i < uint32(LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS); i++)
 	{
 		LeVkDescriptorPoolType LePoolType = LeVkDescriptorPoolType(i);
 		LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Singleton().GetLeDescriptorPool(LePoolType);
@@ -131,7 +131,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 	VkPipelineLayoutCreateInfo LayoutInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.setLayoutCount = LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS,
+		.setLayoutCount = uint32(LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS),
 		.pSetLayouts = PipelineLayouts
 	};
 

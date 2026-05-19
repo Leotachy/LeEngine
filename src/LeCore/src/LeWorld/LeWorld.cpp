@@ -15,12 +15,16 @@ LeWorld::~LeWorld(void)
 }
 
 
-void LeWorld::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
+void LeWorld::SerializeBinaryChunk(LeStreamFile* pFileStream)
 {
+	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
+
 	m_mesh->SerializeBinaryChunk(pFileStream);
 }
 
-void LeWorld::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
+void LeWorld::DeserializeBinaryChunk(LeStreamFile* pFileStream)
 {
+	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
+
 	m_mesh->DeserializeBinaryChunk(pFileStream);
 }

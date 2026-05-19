@@ -2,4 +2,5 @@
 
 add_subdirectory(LeCore)
 add_subdirectory(TestApp)
+add_subdirectory(SampleGame)
 add_subdirectory(LeEditor)

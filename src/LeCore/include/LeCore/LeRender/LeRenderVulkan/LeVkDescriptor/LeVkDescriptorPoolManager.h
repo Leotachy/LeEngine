@@ -6,7 +6,7 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolMaterial.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorPoolImGui.h"
 
-enum LeVkDescriptorPoolType
+enum class LeVkDescriptorPoolType
 {
 	GLOBAL,
 	MATBLOCK,

@@ -27,7 +27,7 @@ LeEditorInstance::LeEditorInstance(void)
 	{
 		.RendererParams =
 		{
-			.api = LeRenderApi::LE_RENDER_API_VULKAN,
+			.api = LeRenderApi::VULKAN,
 
 			.windowParams =
 			{
@@ -57,7 +57,7 @@ LeEditorInstance::~LeEditorInstance(void)
 void LeEditorInstance::Run(void)
 {
 
-	LeCamera Camera(PROJECTION_TYPE_PERSPECTIVE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
+	LeCamera Camera(ProjectionType::PERSPECTIVE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
 
 	while (!glfwWindowShouldClose(m_gltfWindow))
 	{

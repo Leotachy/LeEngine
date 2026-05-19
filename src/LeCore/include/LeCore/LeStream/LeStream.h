@@ -1,18 +1,18 @@
 
 #pragma once
 
-enum LeStreamType
+enum class LeStreamType
 {
-	STREAM_TYPE_NONE,
-	STREAM_TYPE_FILE,
+	None,
+	FILE,
 };
 
-enum LeStreamAccessType
+enum class LeStreamAccessType
 {
-	STREAM_ACCESS_NONE,
-	STREAM_ACCESS_READ,
-	STREAM_ACCESS_READ_TEXT,
-	STREAM_ACCESS_WRITE
+	None,
+	READ,
+	READ_TEXT,
+	WRITE
 };
 
 
@@ -31,7 +31,7 @@ public:
 
 	// base functionality
 	virtual LeStream* Open(LeStreamAccessType a, const void* data) = 0;
-	virtual LeBool Close(void* data) = 0;
+	virtual LeBool Close() = 0;
 	virtual uint32 Read(void* buffer, uint32 length) = 0;
 	virtual LeStream* Write(const void* buffer, uint32 length) = 0;
 	virtual LeStream* Skip(uint32 offset) = 0;

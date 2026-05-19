@@ -18,10 +18,12 @@ public:
 	LeMaterialDictionary* GetMaterialDictionary(void) { return &m_materialDictionary; }
 	LeWorld* GetWorld(void) { return &m_world; }
 
+	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+
 protected:
 
-	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+
 
 private:
 

@@ -11,7 +11,7 @@ public:
 	LeStreamFile(void);
 
 	LeStream* Open(LeStreamAccessType a, const void* data) override;
-	LeBool Close(void* data) override;
+	LeBool Close() override;
 	uint32 Read(void* buffer, uint32 length) override;
 	LeStream* Write(const void* buffer, uint32 length) override;
 	LeStream* Skip(uint32 offset) override;

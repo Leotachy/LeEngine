@@ -61,11 +61,11 @@ static void le_log_fired(LeChar* string)
 }
 
 
-static void DefaultDebugHandler(LeDebugType type, const LeChar* string)
+static void DefaultDebugHandler(LeDebugMessageType type, const LeChar* string)
 {
 	switch (type)
 	{
-	case leDEBUGASSERT:
+	case LeDebugMessageType::Assert:
 
 		le_log_fired(const_cast<LeChar*> (string));
 
@@ -79,7 +79,7 @@ static void DefaultDebugHandler(LeDebugType type, const LeChar* string)
 
 		break;
 
-	case leDEBUGERROR:
+	case LeDebugMessageType::Error:
 
 		le_log_fired(const_cast<LeChar*> (string));
 
@@ -97,8 +97,8 @@ static void DefaultDebugHandler(LeDebugType type, const LeChar* string)
 		break;
 
 
-	case leDEBUGWARN:
-	case leDEBUGMESSAGE:
+	case LeDebugMessageType::Warn:
+	case LeDebugMessageType::Message:
 	
 		le_log_fired(const_cast<LeChar*> (string));
 	

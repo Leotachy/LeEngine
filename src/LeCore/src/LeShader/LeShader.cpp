@@ -22,7 +22,7 @@ LeShader* LeShader::Create(const char* pName, const char* pShaderBinaryPath)
 {
 	switch (LeRenderInterface::GetRenderApi())
 	{
-	case LeRenderApi::LE_RENDER_API_VULKAN:
+	case LeRenderApi::VULKAN:
 		return new LeVkShader(pName, pShaderBinaryPath);
 		break;
 	}

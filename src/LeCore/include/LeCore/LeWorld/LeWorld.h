@@ -13,10 +13,11 @@ public:
 
 	LeMesh* GetMesh() { return m_mesh; }
 
+	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+
 protected:
 
-	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 private:
 
