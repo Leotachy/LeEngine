@@ -2,7 +2,6 @@
 #pragma once
 
 #include "LeCore/LeTexture/LeTexture.h"
-
 #include "LeCore/LeBinary/LeBinaryChunk.h"
 
 #define TEXTURE_DICTIONARY_TEXTURES_DIRTY (1<<0)

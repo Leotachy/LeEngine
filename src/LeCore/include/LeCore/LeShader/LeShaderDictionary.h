@@ -10,8 +10,8 @@ public:
 	LeShaderDictionary(void);
 	~LeShaderDictionary(void);
 
-	LeShader* FindShader(uint64 uNameHash);
-	LeBool ShaderExists(uint64 uNameHash);
+	LeShader* FindShader(uint64 uNameHash) const;
+	LeBool ShaderExists(uint64 uNameHash) const;
 	
 	void LoadAllShaders(const LeChar* pDirectoryPath);
 	void PurgeAllShaders(void);

@@ -26,7 +26,7 @@ LeTexture* LeTexture::Create()
 {
 	switch (LeRenderInterface::GetRenderApi())
 	{
-	case LeRenderApi::VULKAN:
+	case LeRenderApi::Vulkan:
 		return new LeVkTexture();
 		break;
 	}
@@ -88,13 +88,16 @@ void LeTexture::SerializeBinaryChunk(LeStreamFile* pFileStream)
 	pFileStream->WriteNumber(&m_width);
 	pFileStream->WriteNumber(&m_height);
 	uint32 numPixels = m_width * m_height;
-	pFileStream->Write(m_pixels, numPixels);
+	pFileStream->Write(m_pixels, numPixels * sizeof(LeRGBA));
 
 	pFileStream->Write(&m_attribs, sizeof(m_attribs));
 }
 
 void LeTexture::DeserializeBinaryChunk(LeStreamFile* pFileStream)
 {
+
+	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
+
 	LeChar NameBuffer[LE_TEXTURE_MAX_NAME];
 	pFileStream->ReadString(NameBuffer, LE_TEXTURE_MAX_NAME);
 	SetName(NameBuffer);
@@ -105,7 +108,7 @@ void LeTexture::DeserializeBinaryChunk(LeStreamFile* pFileStream)
 	AllocatePixels(width, height);
 
 	uint32 numPixels = width * height;
-	pFileStream->Read(m_pixels, numPixels);
+	pFileStream->Read(m_pixels, numPixels * sizeof(LeRGBA));
 	
-	pFileStream->Read(&m_attribs, sizeof(&m_attribs));
+	pFileStream->Read(&m_attribs, sizeof(m_attribs));
 }

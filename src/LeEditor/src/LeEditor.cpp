@@ -27,7 +27,7 @@ LeEditorInstance::LeEditorInstance(void)
 	{
 		.RendererParams =
 		{
-			.api = LeRenderApi::VULKAN,
+			.api = LeRenderApi::Vulkan,
 
 			.windowParams =
 			{

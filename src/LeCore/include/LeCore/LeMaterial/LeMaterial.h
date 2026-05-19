@@ -28,6 +28,7 @@ public:
 	virtual ~LeMaterial() = default;
 	static LeMaterial* Create(void);
 
+	const LeMaterialAttributes* GetAttributes(void) { return &m_attribs; }
 	uint64 GetAttributeHash(void);
 
 	void SetName(const LeChar* pName);
@@ -45,8 +46,6 @@ public:
 	uint32 flags;
 
 private:
-
-	friend class LeMaterialDictionary;
 
 	LeMaterialAttributes m_attribs;
 	uint64 m_attribsHash;

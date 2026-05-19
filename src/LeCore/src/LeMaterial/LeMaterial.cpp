@@ -21,7 +21,7 @@ LeMaterial* LeMaterial::Create(void)
 {
 	switch (LeRenderInterface::GetRenderApi())
 	{
-	case LeRenderApi::VULKAN:
+	case LeRenderApi::Vulkan:
 		return new LeVkMaterial();
 		break;
 	}
@@ -72,7 +72,7 @@ void LeMaterial::SerializeBinaryChunk(LeStreamFile* pFileStream)
 
 void LeMaterial::DeserializeBinaryChunk(LeStreamFile* pFileStream)
 {
-	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
+	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
 
 	pFileStream->ReadString(m_name, LE_MATERIAL_MAX_NAME);
 	pFileStream->Read(&m_attribs, sizeof(m_attribs));

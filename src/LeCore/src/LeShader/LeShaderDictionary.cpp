@@ -14,7 +14,7 @@ LeShaderDictionary::~LeShaderDictionary(void)
 	PurgeAllShaders();
 }
 
-LeShader* LeShaderDictionary::FindShader(uint64 uNameHash)
+LeShader* LeShaderDictionary::FindShader(uint64 uNameHash) const
 {
 	LE_DEBUG_ASSERT(uNameHash);
 
@@ -25,7 +25,7 @@ LeShader* LeShaderDictionary::FindShader(uint64 uNameHash)
 	return NULL;
 }
 
-LeBool LeShaderDictionary::ShaderExists(uint64 uNameHash)
+LeBool LeShaderDictionary::ShaderExists(uint64 uNameHash) const
 {
 	LE_DEBUG_ASSERT(uNameHash);
 

@@ -21,6 +21,9 @@ public:
 	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
 	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
 
+	// Linkup objects after deserialization
+	void Fixup(void);
+
 protected:
 
 

@@ -1182,8 +1182,11 @@ void LeVkCore::UpdateMaterial(LeVkMaterial* pMaterial)
 		pMaterial->flags &= ~MATERIAL_SHADER_DIRTY;
 	}
 
+	static LeBool deedIsDone = false;
 	// Run this every frame until I figure it out
-	pMaterial->UpdateDescriptorSet();
+	if (!deedIsDone) pMaterial->UpdateDescriptorSet();
+
+	deedIsDone = true;
 }
 
 void LeVkCore::UpdateMatBlock(LeVkMatBlock* pMatblock)

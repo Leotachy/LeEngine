@@ -94,7 +94,7 @@ int main(void)
 	{
 		.RendererParams = 
 		{
-			.api = LeRenderApi::VULKAN,
+			.api = LeRenderApi::Vulkan,
 			.windowParams = 
 			{
 				.pWindow = pWindow,
@@ -120,9 +120,17 @@ int main(void)
 
 	// Construct the triangle mesh
 
-	LeShader* BasicShader = LeShader::Create("Basic", TESTAPP_SHADER_BIN_PATH "basic.spv");
+	LeShader* BasicShader = LeShader::Create("basic", TESTAPP_SHADER_BIN_PATH "basic.spv");
 	LeMaterial* Mat = LeMaterial::Create();
 	Mat->SetShader(BasicShader);
+	Mat->SetName("uwu");
+
+	LeScene* pScene = new LeScene;
+	LeTexture* pBaseTexture = pScene->GetTextureDictionary()->LoadTexture(TESTAPP_RESOURCES_PATH "textures/", "awesomeface.png");
+	LE_ASSERT(pBaseTexture);
+	Mat->SetBaseTexture(pBaseTexture);
+
+	pScene->GetMaterialDictionary()->AddMaterial(Mat);
 
 	LeMatBlock* Mb = LeMatBlock::Create();
 	Mb->SetMaterial(Mat);
@@ -155,18 +163,14 @@ int main(void)
 	Mb->Faces = indices;
 	Mb->flags |= (MATBLOCK_FACES_DIRTY);
 
-	LeScene* pScene = new LeScene;
+	
 	LeWorld* pWorld = pScene->GetWorld();
 
 	LeMesh* pMesh = pWorld->GetMesh();
 
 	pMesh->AddMatblock(Mb);
 
-	LeTexture* pBaseTexture = pScene->GetTextureDictionary()->LoadTexture(TESTAPP_RESOURCES_PATH "textures/", "awesomeface.png");
-	LE_ASSERT(pBaseTexture);
-	Mat->SetBaseTexture(pBaseTexture);
 
-	pScene->GetMaterialDictionary()->AddMaterial(Mat);
 
 	// The triangle is constructed!
 

@@ -18,7 +18,7 @@ void LeRenderInterface::InitRenderer(InitRendererParams& params)
 	case LeRenderApi::None:
 		LE_ERROR("Bad render api: %u", RenderApi);
 		break;
-	case LeRenderApi::VULKAN:
+	case LeRenderApi::Vulkan:
 		LeVkCore::Singleton().Init(&params.windowParams, &params.viewportParams, &params.pathParams);
 		RenderFunc = VkRenderScene;
 		break;
@@ -35,7 +35,7 @@ void LeRenderInterface::ShutdownRenderer()
 	case LeRenderApi::None:
 		LE_ERROR("Uninitialized renderer");
 		break;
-	case LeRenderApi::VULKAN:
+	case LeRenderApi::Vulkan:
 		LeVkCore::Singleton().ShutDown();
 		break;
 	default:
@@ -51,7 +51,7 @@ void LeRenderInterface::DeInitRenderer(void)
 	case LeRenderApi::None:
 		LE_ERROR("Uninitialized renderer");
 		break;
-	case LeRenderApi::VULKAN:
+	case LeRenderApi::Vulkan:
 		LeVkCore::Singleton().DeInit();
 		RenderFunc = NULL;
 		break;
@@ -70,7 +70,7 @@ void LeRenderInterface::SetViewportDimensions(uint32 width, uint32 height)
 	case LeRenderApi::None:
 		LE_ERROR("Uninitialized renderer");
 		break;
-	case LeRenderApi::VULKAN:
+	case LeRenderApi::Vulkan:
 		LeVkCore::Singleton().SetViewportDimensions(width, height);
 		break;
 	default:
@@ -90,7 +90,7 @@ ImTextureID LeRenderInterface::GetViewportImGuiTexture(void)
 		LE_ERROR("Uninitialized renderer");
 		return 0;
 		break;
-	case LeRenderApi::VULKAN:
+	case LeRenderApi::Vulkan:
 		return LeVkCore::Singleton().GetViewportImGuiTexture();
 		break;
 	default:
@@ -110,6 +110,24 @@ LeBool LeRenderInterface::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bF
 LeBool LeRenderInterface::VkRenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
 {
 	return LeVkCore::Singleton().RenderScene(pScene, pCam, bFramebufferResized);
+}
+
+const LeShaderDictionary* LeRenderInterface::GetShaderDictionary(void)
+{
+	switch (RenderApi)
+	{
+	case LeRenderApi::None:
+		LE_ERROR("Uninitialized renderer");
+		break;
+	case LeRenderApi::Vulkan:
+		return LeVkCore::Singleton().GetShaderDictionary();
+		break;
+	default:
+		LE_ERROR("Unknown render api: %u", RenderApi);
+		break;
+	}
+
+	return NULL;
 }
 
 LeRenderApi LeRenderInterface::RenderApi = LeRenderApi::None;

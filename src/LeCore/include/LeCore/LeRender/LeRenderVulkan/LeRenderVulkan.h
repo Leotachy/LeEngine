@@ -77,6 +77,8 @@ public:
 	const LeVkPhysicalDevice* GetLePhysicalDevice(void);
 	LeSwapchain* GetLeSwapchain(void);
 
+	const LeShaderDictionary* GetShaderDictionary(void) { return &m_shaderDictionary; }
+
 	static const int32 MAX_FRAMES_IN_FLIGHT = 2;
 	static const VkFormat VIEWPORT_COLOR_IMAGE_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
 	static const VkFormat VIEWPORT_DEPTH_IMAGE_FORMAT = VK_FORMAT_D32_SFLOAT;

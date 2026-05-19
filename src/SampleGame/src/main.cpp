@@ -66,19 +66,6 @@ static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 }
 
-static void manipulateMatblockVertex(LeMatBlock* pMb, double dt)
-{
-	static double LifeTime = 0;
-	LifeTime += dt;
-
-	pMb->Vertices[0].pos.z = (float)glm::cos(LifeTime);
-	pMb->Vertices[3].pos.z = (float)glm::sin(LifeTime);
-
-	pMb->flags |= (MATBLOCK_VERTS_DIRTY);
-
-
-}
-
 int main(void)
 {
 
@@ -94,7 +81,7 @@ int main(void)
 	{
 		.RendererParams =
 		{
-			.api = LeRenderApi::VULKAN,
+			.api = LeRenderApi::Vulkan,
 			.windowParams =
 			{
 				.pWindow = pWindow,

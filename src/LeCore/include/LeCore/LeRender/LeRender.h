@@ -7,6 +7,7 @@
 #include "LeCore/LeMesh/LeMesh.h"
 #include "LeCore/LeCamera/LeCamera.h"
 #include "LeCore/LeScene/LeScene.h"
+#include "LeCore/LeShader/LeShaderDictionary.h"
 
 // Lukas Andrijauskas
 // 11th March, 2026
@@ -14,7 +15,7 @@
 enum class LeRenderApi
 {
 	None,
-	VULKAN,
+	Vulkan,
 };
 
 struct WindowParams
@@ -61,6 +62,8 @@ public:
 #endif
 
 	static LeBool RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized);
+
+	static const LeShaderDictionary* GetShaderDictionary(void);
 
 private:
 
