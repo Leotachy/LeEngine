@@ -5,9 +5,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-// Lukas Andrijauskas
-// 10th March, 2026
-// Vulkan renderer API implementation loosely based on OGLDEV Vulkan tutorial
+#include <vk_mem_alloc.h>
 
 struct LeVkMemoryBuffer
 {
