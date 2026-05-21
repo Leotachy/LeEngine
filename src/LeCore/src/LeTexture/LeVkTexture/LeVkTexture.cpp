@@ -25,33 +25,30 @@ LeVkTexture::LeVkTexture()
 {
     m_format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    memoryImage = {};
-    view = VK_NULL_HANDLE;
+    allocatedImage = {};
     sampler = VK_NULL_HANDLE;
 }
 
 LeVkTexture::~LeVkTexture()
 {
-    if (view != VK_NULL_HANDLE)
-    {
-        LeVkUtils::DestroyImageView(view);
-        view = VK_NULL_HANDLE;
-    }
 
-    if (memoryImage.allocationSize)
-        LeVkUtils::DestroyImage(&memoryImage);
+    if (allocatedImage.allocation)
+        LeVkUtils::DestroyImage(&allocatedImage);
 }
 
 void LeVkTexture::OnPixelsAllocated(void)
 {
     VkDeviceSize imageSize = m_width * m_height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
 
-    memoryImage = LeVkUtils::CreateImage(m_width, m_height, m_format,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkExtent3D extent = VkExtent3D(m_width, m_height, 1);
 
-    view = LeVkUtils::CreateImageView(memoryImage.image, m_format,
-        VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
-    LE_DEBUG_ASSERT(view != VK_NULL_HANDLE);
+    LeVkUtils::CreateImage(extent, m_format,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        VK_IMAGE_VIEW_TYPE_2D,
+        1, 1,
+        &allocatedImage);
 }
 
 

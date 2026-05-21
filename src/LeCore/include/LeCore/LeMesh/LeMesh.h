@@ -34,23 +34,33 @@ public:
 	void SetMaterial(LeMaterial* m);
 	LeMaterial* GetMaterial(void);
 
+	uint32 GetNumVerts(void) { return (uint32)m_vertices.size(); }
+	void SetNumVerts(uint32 n);
+	LeVertex* GetVertexData(void) { return m_vertices.data(); }
+
+	uint32 GetNumFaces(void) { return (uint32)m_faces.size(); }
+	void SetNumFaces(uint32 n);
+	LeFace* GetFaceData(void) { return m_faces.data(); }
+
 	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
 	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
 
-	std::vector<LeVertex> Vertices;
-	std::vector<LeFace> Faces;
+	virtual void Compile(void) = 0;
+	LeBool IsCompiled(void) { return m_isCompiled; }
 
 	uint32 flags;
 
 protected:
 
-	uint64 m_materialHash;
 	LeMaterial* m_material;
 
+	std::vector<LeVertex> m_vertices;
+	std::vector<LeFace> m_faces;
+
+	LeBool m_isCompiled;
+
 private:
-
-	friend class LeMesh;
-
+	uint64 m_materialHash; // during (de)serialization only!
 };
 
 class LeMesh : public LeBinaryChunk

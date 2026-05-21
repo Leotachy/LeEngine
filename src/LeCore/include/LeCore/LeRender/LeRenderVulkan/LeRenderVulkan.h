@@ -7,18 +7,22 @@
 
 #include <vk_mem_alloc.h>
 
-struct LeVkMemoryBuffer
+static const uint32 LE_MAX_FRAMES_IN_FLIGHT = 2;
+
+struct LeVkAllocatedBuffer
 {
 	VkBuffer buffer;
-	VkDeviceMemory mem;
-	VkDeviceSize allocationSize;
+	VmaAllocation allocation;
+	VmaAllocationInfo allocationInfo;
 };
 
-struct LeVkMemoryImage
+struct LeVkAllocatedImage
 {
 	VkImage image;
-	VkDeviceMemory mem;
-	VkDeviceSize allocationSize;
+	VkImageView imageView;
+	VmaAllocation allocation;
+	VkExtent3D extent;
+	VkFormat format;
 };
 
 #include "LeCore/LeRender/LeRender.h"
@@ -37,6 +41,7 @@ struct LeVkMemoryImage
 #include "LeCore/LeShader/LeShaderDictionary.h"
 #include "LeCore/LeScene/LeScene.h"
 #include "LeCore/LeUtils/LeDeletionQueue.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkObjectCleaner.h"
 
 struct LeVkFrameUniformData
 {
@@ -48,17 +53,15 @@ struct LeVkFrameContext
 	VkCommandBuffer CommandBuffer;
 	int32 ImageIndex;
 	LeVkFrameUniformData FrameUBO;
-	LeVkMemoryBuffer FrameUBOMemoryBuffer;
+	LeVkAllocatedBuffer FrameUBOMemoryBuffer;
 	LeVkDescriptorSetGlobal DescriptorSet;
 };
 
-class LeVkCore
+class LeVkRenderer
 {
 public:
 
-
-
-	static LeVkCore& Singleton();
+	static LeVkRenderer* Get(void);
 
 	void Init(WindowParams* pWindowParams, ViewportParams* pViewportParams, PathParams* pPathParams);
 	void ShutDown(void);
@@ -74,10 +77,10 @@ public:
 	VkDevice GetDevice(void);
 	const LeVkPhysicalDevice* GetLePhysicalDevice(void);
 	LeSwapchain* GetLeSwapchain(void);
+	VmaAllocator GetVmaAllocator(void);
 
 	const LeShaderDictionary* GetShaderDictionary(void) { return &m_shaderDictionary; }
 
-	static const int32 MAX_FRAMES_IN_FLIGHT = 2;
 	static const VkFormat VIEWPORT_COLOR_IMAGE_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
 	static const VkFormat VIEWPORT_DEPTH_IMAGE_FORMAT = VK_FORMAT_D32_SFLOAT;
 
@@ -92,9 +95,11 @@ private:
 	void CreateSurface(GLFWwindow* pWindow);
 	void DestroySurface(void);
 
-
 	void CreateLogicalDevice();
 	void DestroyLogicalDevice();
+
+	void CreateVulkanMemoryAllocator(void);
+	void DestroyVulkanMemoryAllocator(void);
 
 
 #ifdef SUPPORT_IMGUI
@@ -115,21 +120,16 @@ private:
 	void BeginOneShotCommandBuffer(VkCommandBuffer CommandBuffer);
 	void EndOneShotCommandBuffer(VkCommandBuffer CommandBuffer);
 
-	void CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size);
-
-	void SetupVertexBuffer(const void* pVertices, size_t Size, LeVkMemoryBuffer* pMemoryBuffer);
-	void SetupIndexBuffer(const void* pIndices, size_t Size, LeVkMemoryBuffer* pMemoryBuffer);
-
 	void OnSurfaceSizeChanged(void);
 
-	void UpdateTextureImage(LeVkTexture* pTex);
-	void UpdateTexture(LeVkTexture* pTex);
-	void UpdateTextureDictionary(LeTextureDictionary* pTexDictionary);
+	void UpdateTextureImage(VkCommandBuffer CommandBuffer, LeVkTexture* pTex);
+	void UpdateTexture(VkCommandBuffer CommandBuffer, LeVkTexture* pTex);
+	void UpdateTextureDictionary(VkCommandBuffer CommandBuffer, LeTextureDictionary* pTexDictionary);
 
 	LeBool UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial);
 	void UpdateMaterial(LeVkMaterial* pMaterial);
 
-	void UpdateMatBlock(LeVkMatBlock* pMatblock);
+	void UpdateMatBlock(VkCommandBuffer CommandBuffer, LeVkMatBlock* pMatblock);
 
 
 	// Records a command buffer of rendering the scene into a viewport image
@@ -138,11 +138,14 @@ private:
 
 	// Runs vulkan updates on the scene
 	// e.g. uploading mesh texture pixels to GPU
-	LeBool PreRender(LeScene* pScene);
+	LeBool PreRender(VkCommandBuffer CommandBuffer, LeScene* pScene);
+
 
 
 
 	GLFWwindow* m_gltfWindow;
+
+	VmaAllocator m_vmaAllocator;
 
 	VkDevice m_logicalDevice;
 	VkInstance m_instance;
@@ -151,13 +154,15 @@ private:
 	LeVkPhysicalDevices m_physicalDevices;
 	uint32 m_queueFamily;
 
+
+
 	LeSwapchain m_swapchain;
 
 	VkCommandPool m_commandBufferPool;
 	VkCommandPool m_transientCommandBufferPool; // Command pool for one shot commands
 	LeVkQueue m_queue;
 
-	LeVkFrameContext m_FrameContexts[MAX_FRAMES_IN_FLIGHT];
+	LeVkFrameContext m_FrameContexts[LE_MAX_FRAMES_IN_FLIGHT];
 
 
 	VkExtent2D m_newViewportExtent;
@@ -171,5 +176,6 @@ private:
 
 
 	LeDeletionQueue m_deletionQueue;
+	LeVkObjectCleaner m_objectCleaner;
 };
 

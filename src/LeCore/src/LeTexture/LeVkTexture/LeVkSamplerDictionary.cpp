@@ -33,7 +33,7 @@ VkSampler LeVkSamplerDictionary::GetOrCreateSampler(const LeVkTextureAttributes*
 	if (Result != m_SamplerSet.end())
 		return (*Result).second;
 
-	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetLePhysicalDevice();
+	const LeVkPhysicalDevice* pPhysicalDevice = LeVkRenderer::Get()->GetLePhysicalDevice();
 	LE_DEBUG_ASSERT(pPhysicalDevice);
 	VkSampler NewSampler = LeVkUtils::CreateSampler(pAttribs, true, pPhysicalDevice->m_devProps.limits.maxSamplerAnisotropy);
 
@@ -50,7 +50,7 @@ void LeVkSamplerDictionary::PurgeAllSamplers(void)
 	for (auto pair : m_SamplerSet)
 	{
 		VkSampler Sampler = pair.second;
-		vkDestroySampler(LeVkCore::Singleton().GetDevice(), Sampler, NULL);
+		vkDestroySampler(LeVkRenderer::Get()->GetDevice(), Sampler, NULL);
 	}
 
 	m_SamplerSet.clear();

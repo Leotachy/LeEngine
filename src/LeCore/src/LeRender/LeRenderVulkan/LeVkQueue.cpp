@@ -34,8 +34,8 @@ static VkFence createFence(VkDevice Device)
 
 void LeVkQueue::Init(uint32 QueueFamily, uint32 QueueIndex)
 {
-	m_device = LeVkCore::Singleton().GetDevice();
-	m_swapChain = LeVkCore::Singleton().GetLeSwapchain();
+	m_device = LeVkRenderer::Get()->GetDevice();
+	m_swapChain = LeVkRenderer::Get()->GetLeSwapchain();
 
 	vkGetDeviceQueue(m_device, QueueFamily, QueueIndex, &m_queue);
 
@@ -156,7 +156,7 @@ void LeVkQueue::CreateSyncObjects(void)
 {
 
 	uint32 NumImages = m_swapChain->GetNumImages();
-	uint32 MaxFramesInFlight = LeVkCore::MAX_FRAMES_IN_FLIGHT;
+	uint32 MaxFramesInFlight = LE_MAX_FRAMES_IN_FLIGHT;
 
 	m_renderCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * NumImages);
 	LE_DEBUG_ASSERT(m_renderCompleteSems);

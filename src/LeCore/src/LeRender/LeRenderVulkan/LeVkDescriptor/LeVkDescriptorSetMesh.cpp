@@ -5,7 +5,7 @@
 
 void LeVkDescriptorSetMesh::UpdateSet(void* pData)
 {
-	LeVkMemoryBuffer* ModelMatrix = (LeVkMemoryBuffer*)pData;
+	LeVkAllocatedBuffer* ModelMatrix = (LeVkAllocatedBuffer*)pData;
 	LE_DEBUG_ASSERT(ModelMatrix);
 
 	VkDescriptorBufferInfo BufferInfoUniform =

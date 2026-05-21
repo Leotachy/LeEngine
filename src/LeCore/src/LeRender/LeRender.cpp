@@ -19,7 +19,7 @@ void LeRenderInterface::InitRenderer(InitRendererParams& params)
 		LE_ERROR("Bad render api: %u", RenderApi);
 		break;
 	case LeRenderApi::Vulkan:
-		LeVkCore::Singleton().Init(&params.windowParams, &params.viewportParams, &params.pathParams);
+		LeVkRenderer::Get()->Init(&params.windowParams, &params.viewportParams, &params.pathParams);
 		RenderFunc = VkRenderScene;
 		break;
 	default:
@@ -36,7 +36,7 @@ void LeRenderInterface::ShutdownRenderer()
 		LE_ERROR("Uninitialized renderer");
 		break;
 	case LeRenderApi::Vulkan:
-		LeVkCore::Singleton().ShutDown();
+		LeVkRenderer::Get()->ShutDown();
 		break;
 	default:
 		LE_ERROR("Unknown render api: %u", RenderApi);
@@ -52,7 +52,7 @@ void LeRenderInterface::DeInitRenderer(void)
 		LE_ERROR("Uninitialized renderer");
 		break;
 	case LeRenderApi::Vulkan:
-		LeVkCore::Singleton().DeInit();
+		LeVkRenderer::Get()->DeInit();
 		RenderFunc = NULL;
 		break;
 	default:
@@ -71,7 +71,7 @@ void LeRenderInterface::SetViewportDimensions(uint32 width, uint32 height)
 		LE_ERROR("Uninitialized renderer");
 		break;
 	case LeRenderApi::Vulkan:
-		LeVkCore::Singleton().SetViewportDimensions(width, height);
+		LeVkRenderer::Get()->SetViewportDimensions(width, height);
 		break;
 	default:
 		LE_ERROR("Unknown render api: %u", RenderApi);
@@ -91,7 +91,7 @@ ImTextureID LeRenderInterface::GetViewportImGuiTexture(void)
 		return 0;
 		break;
 	case LeRenderApi::Vulkan:
-		return LeVkCore::Singleton().GetViewportImGuiTexture();
+		return LeVkRenderer::Get()->GetViewportImGuiTexture();
 		break;
 	default:
 		LE_ERROR("Unknown render api: %u", RenderApi);
@@ -109,7 +109,7 @@ LeBool LeRenderInterface::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bF
 
 LeBool LeRenderInterface::VkRenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
 {
-	return LeVkCore::Singleton().RenderScene(pScene, pCam, bFramebufferResized);
+	return LeVkRenderer::Get()->RenderScene(pScene, pCam, bFramebufferResized);
 }
 
 const LeShaderDictionary* LeRenderInterface::GetShaderDictionary(void)
@@ -120,7 +120,7 @@ const LeShaderDictionary* LeRenderInterface::GetShaderDictionary(void)
 		LE_ERROR("Uninitialized renderer");
 		break;
 	case LeRenderApi::Vulkan:
-		return LeVkCore::Singleton().GetShaderDictionary();
+		return LeVkRenderer::Get()->GetShaderDictionary();
 		break;
 	default:
 		LE_ERROR("Unknown render api: %u", RenderApi);

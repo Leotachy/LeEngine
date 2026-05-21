@@ -5,7 +5,7 @@
 
 
 
-LeVkDescriptorPoolManager& LeVkDescriptorPoolManager::Singleton()
+LeVkDescriptorPoolManager& LeVkDescriptorPoolManager::Get()
 {
 	static LeVkDescriptorPoolManager DescriptorPoolManager;
 	return DescriptorPoolManager;

@@ -7,7 +7,7 @@
 
 LeVkShader::LeVkShader(const LeChar* name, const LeChar* pShaderFilepath) : LeShader(name, pShaderFilepath)
 {
-	m_Device = LeVkCore::Singleton().GetDevice();
+	m_Device = LeVkRenderer::Get()->GetDevice();
 	LE_DEBUG_ASSERT(m_Device);
 
 	LeByte ShaderBinary[128000];

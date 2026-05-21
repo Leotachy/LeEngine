@@ -15,17 +15,21 @@ class LeVkUtils
 {
 public:
 
-	static LeVkMemoryBuffer CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties);
-	static void UpdateBuffer(LeVkMemoryBuffer* pMemoryBuffer, const void* pData, size_t Size);
-	static void DestroyBuffer(LeVkMemoryBuffer* pMemoryBuffer);
+	static void CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VmaAllocationCreateFlags AllocCreateFlags, LeVkAllocatedBuffer* pAllocatedBuffer);
+	// Updates the buffer available to CPU
+	static void UpdateBuffer(LeVkAllocatedBuffer* pMemoryBuffer, const void* pData, size_t Size);
+	static void DestroyBuffer(LeVkAllocatedBuffer* pMemoryBuffer);
 
-	static LeVkMemoryBuffer CreateUniformBuffer(size_t Size);
+	static void CreateUniformBuffer(VkDeviceSize Size, LeVkAllocatedBuffer* pAllocatedBuffer);
+	static void CreateStagingBuffer(VkDeviceSize Size, LeVkAllocatedBuffer* pAllocatedBuffer);
 
-	static LeVkMemoryImage CreateImage(uint32 width, uint32 height, VkFormat format,
-		VkImageTiling Tiling, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties);
-	static void DestroyImage(LeVkMemoryImage* OutMemoryImage);
-	static void CopyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkBuffer Src, uint32 width, uint32 height);
-	static void CopyImageToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkImage Src, VkExtent2D DstSize, VkExtent2D SrcSize);
+	static void CreateImage(VkExtent3D Extent, VkFormat Format,
+		VkImageTiling Tiling, VkBufferUsageFlags Usage, VkImageAspectFlags AspectFlags,
+		VkImageViewType ViewType, uint32 LayerCount, uint32 MipLevels, LeVkAllocatedImage* pAllocatedBuffer);
+	static void DestroyImage(LeVkAllocatedImage* OutMemoryImage);
+	static void CopyBufferToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkBuffer Src, VkExtent3D extent);
+	static void CopyImageToImage(VkCommandBuffer CommandBuffer, VkImage Dst, VkImage Src, VkExtent3D DstSize, VkExtent3D SrcSize);
+	static void CopyBufferToBuffer(VkCommandBuffer CommandBuffer, VkBuffer Dst, VkBuffer Src, VkDeviceSize Size);
 
 	static void TransitionImageLayout(VkCommandBuffer cmdBuf, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,

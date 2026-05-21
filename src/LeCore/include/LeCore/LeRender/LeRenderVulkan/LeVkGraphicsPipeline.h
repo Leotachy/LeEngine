@@ -47,7 +47,7 @@ class LeVkGraphicsPipelineDictionary
 
 public:
 
-	static LeVkGraphicsPipelineDictionary* Singleton();
+	static LeVkGraphicsPipelineDictionary* Get();
 
 	void Add(LeVkGraphicsPipeline* pPipeline);
 	LeVkGraphicsPipeline* Find(int64 key);

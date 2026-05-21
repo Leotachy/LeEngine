@@ -11,6 +11,8 @@ LeMatBlock::LeMatBlock()
 
 	m_materialHash = 0;
 	m_material = NULL;
+
+	m_isCompiled = false;
 }
 
 LeMatBlock::~LeMatBlock()
@@ -50,6 +52,21 @@ LeMaterial* LeMatBlock::GetMaterial(void)
 	return m_material;
 }
 
+void LeMatBlock::SetNumVerts(uint32 n)
+{
+	if (m_isCompiled)
+		return;
+
+	m_vertices.resize(n);
+}
+
+void LeMatBlock::SetNumFaces(uint32 n)
+{
+	if (m_isCompiled)
+		return;
+
+	m_faces.resize(n);
+}
 
 void LeMatBlock::SerializeBinaryChunk(LeStreamFile* pFileStream)
 {
@@ -58,21 +75,21 @@ void LeMatBlock::SerializeBinaryChunk(LeStreamFile* pFileStream)
 
 	pFileStream->WriteNumber(&m_materialHash);
 
-	uint32 numVerts = (uint32)Vertices.size();
+	uint32 numVerts = (uint32)m_vertices.size();
 	pFileStream->WriteNumber(&numVerts);
 
 	for (uint32 i = 0; i < numVerts; i++)
 	{
-		LeVertex* pVertex = &Vertices[i];
+		LeVertex* pVertex = &m_vertices[i];
 		pFileStream->Write(pVertex, sizeof(LeVertex));
 	}
 
-	uint32 numFaces = (uint32)Faces.size();
+	uint32 numFaces = (uint32)m_faces.size();
 	pFileStream->WriteNumber(&numFaces);
 
 	for (uint32 i = 0; i < numFaces; i++)
 	{
-		LeFace* pFace = &Faces[i];
+		LeFace* pFace = &m_faces[i];
 		pFileStream->Write(pFace, sizeof(LeFace));
 	}
 }
@@ -86,20 +103,20 @@ void LeMatBlock::DeserializeBinaryChunk(LeStreamFile* pFileStream)
 
 	uint32 numVerts;
 	pFileStream->ReadNumber(&numVerts);
-	Vertices.resize(numVerts);
+	m_vertices.resize(numVerts);
 
 	for (uint32 i = 0; i < numVerts; i++)
 	{
-		pFileStream->Read(&Vertices[i], sizeof(LeVertex));
+		pFileStream->Read(&m_vertices[i], sizeof(LeVertex));
 	}
 
 	uint32 numFaces;
 	pFileStream->ReadNumber(&numFaces);
-	Faces.resize(numFaces);
+	m_faces.resize(numFaces);
 
 	for (uint32 i = 0; i < numFaces; i++)
 	{
-		pFileStream->Read(&Faces[i], sizeof(LeFace));
+		pFileStream->Read(&m_faces[i], sizeof(LeFace));
 	}
 }
 

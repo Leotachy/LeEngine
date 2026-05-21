@@ -13,9 +13,9 @@ LeVkDescriptorSet::LeVkDescriptorSet()
 void LeVkDescriptorSet::Init(void)
 {
 
-	m_device = LeVkCore::Singleton().GetDevice();
+	m_device = LeVkRenderer::Get()->GetDevice();
 
-	LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Singleton().GetLeDescriptorPool(GetPoolType());
+	LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Get().GetLeDescriptorPool(GetPoolType());
 	LE_DEBUG_ASSERT(LeDescriptorPool);
 
 	VkDescriptorPool DescriptorPool = LeDescriptorPool->GetDescriptorPool();

@@ -12,7 +12,7 @@ void LeVkDescriptorSetMaterial::UpdateSet(void* pData)
 	VkDescriptorImageInfo DescriptorImageInfo =
 	{
 		.sampler = Texture->sampler,
-		.imageView = Texture->view,
+		.imageView = Texture->allocatedImage.imageView,
 		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
 

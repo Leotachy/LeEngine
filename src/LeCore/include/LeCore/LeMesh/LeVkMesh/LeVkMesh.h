@@ -11,15 +11,21 @@ public:
 	LeVkMatBlock();
 	~LeVkMatBlock();
 
-	LeVkMemoryBuffer* GetVertexBuffer(void) { return &m_vb; }
-	LeVkMemoryBuffer* GetIndexBuffer(void) { return &m_ib; }
+	LeVkAllocatedBuffer* GetVertexBuffer(void) { return &m_VertexBuffer; }
+	LeVkAllocatedBuffer* GetIndexBuffer(void) { return &m_IndexBuffer; }
+
+	void Compile(void) override;
+
+
+	static const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
+	static const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
+	static uint32 LeVertexGetNumAttributeDescriptions();
 
 private:
 
 
-	LeVkMemoryBuffer m_vb;
-	LeVkMemoryBuffer m_ib;
-
+	LeVkAllocatedBuffer m_VertexBuffer;
+	LeVkAllocatedBuffer m_IndexBuffer;
 
 };
 
@@ -34,13 +40,9 @@ public:
 
 	LeVkDescriptorSetMesh* GetLeDescriptor(void) { return &m_descriptorSet; }
 
-	static const VkVertexInputBindingDescription* LeVertexGetBindingDescription();
-	static const VkVertexInputAttributeDescription* LeVertexGetAttributeDescriptions();
-	static uint32 LeVertexGetNumAttributeDescriptions();
-
 protected:
 
-	LeVkMemoryBuffer m_modelMatrix;
+	LeVkAllocatedBuffer m_modelMatrix;
 
 	LeVkDescriptorSetMesh m_descriptorSet;
 };

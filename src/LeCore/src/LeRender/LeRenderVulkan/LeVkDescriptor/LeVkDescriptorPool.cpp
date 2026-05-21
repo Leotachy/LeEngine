@@ -22,7 +22,7 @@ LeVkDescriptorPool::~LeVkDescriptorPool()
 void LeVkDescriptorPool::Init(void)
 {
 
-	m_device = LeVkCore::Singleton().GetDevice();
+	m_device = LeVkRenderer::Get()->GetDevice();
 
 	VkDescriptorPoolSize* PoolSizes;
 	uint32 NumPoolSizes;

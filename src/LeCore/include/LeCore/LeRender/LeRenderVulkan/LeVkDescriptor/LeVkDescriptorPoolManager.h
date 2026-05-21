@@ -20,7 +20,7 @@ enum class LeVkDescriptorPoolType
 class LeVkDescriptorPoolManager
 {
 public:
-	static LeVkDescriptorPoolManager& Singleton();
+	static LeVkDescriptorPoolManager& Get();
 
 	void Init();
 	void DeInit();

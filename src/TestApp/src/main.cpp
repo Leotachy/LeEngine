@@ -71,8 +71,8 @@ static void manipulateMatblockVertex(LeMatBlock* pMb, double dt)
 	static double LifeTime = 0;
 	LifeTime += dt;
 
-	pMb->Vertices[0].pos.z = (float)glm::cos(LifeTime);
-	pMb->Vertices[3].pos.z = (float)glm::sin(LifeTime);
+	pMb->GetVertexData()[0].pos.z = (float)glm::cos(LifeTime);
+	pMb->GetVertexData()[3].pos.z = (float)glm::sin(LifeTime);
 
 	pMb->flags |= (MATBLOCK_VERTS_DIRTY);
 
@@ -135,7 +135,7 @@ int main(void)
 	LeMatBlock* Mb = LeMatBlock::Create();
 	Mb->SetMaterial(Mat);
 
-	const std::vector<LeVertex> Vertices =
+	const std::vector<LeVertex> verts =
 	{
 		{{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
 		{{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
@@ -157,12 +157,15 @@ int main(void)
 		{6, 7, 4}
 	};
 
-	Mb->Vertices = Vertices;
+	Mb->SetNumVerts(uint32(verts.size()));
+	LeMemcpy(Mb->GetVertexData(), verts.data(), verts.size()*sizeof(LeVertex));
 	Mb->flags |= (MATBLOCK_VERTS_DIRTY);
 
-	Mb->Faces = indices;
+	Mb->SetNumFaces(uint32(indices.size()));
+	LeMemcpy(Mb->GetFaceData(), indices.data(), indices.size() * sizeof(LeFace));
 	Mb->flags |= (MATBLOCK_FACES_DIRTY);
 
+	Mb->Compile();
 	
 	LeWorld* pWorld = pScene->GetWorld();
 

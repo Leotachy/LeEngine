@@ -15,10 +15,10 @@ public:
 	VkExtent2D GetExtent(void) const { return m_extent; }
 
 	VkImage GetColorImage(void) { return m_colorImage.image; }
-	VkImageView GetColorImageView(void) { return m_colorView; }
+	VkImageView GetColorImageView(void) { return m_colorImage.imageView; }
 
 	VkImage GetDepthImage(void) { return m_depthImage.image; }
-	VkImageView GetDepthImageView(void) { return m_depthView; }
+	VkImageView GetDepthImageView(void) { return m_depthImage.imageView; }
 
 private:
 
@@ -29,9 +29,6 @@ private:
 
 	LeBool m_imagesValid;
 
-	LeVkMemoryImage m_colorImage;
-	VkImageView m_colorView;
-
-	LeVkMemoryImage m_depthImage;
-	VkImageView m_depthView;
+	LeVkAllocatedImage m_colorImage;
+	LeVkAllocatedImage m_depthImage;
 };

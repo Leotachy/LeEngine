@@ -6,7 +6,7 @@
 
 void LeVkDescriptorSetGlobal::UpdateSet(void* pData)
 {
-	LeVkMemoryBuffer* WpMatrix = (LeVkMemoryBuffer*)pData;
+	LeVkAllocatedBuffer* WpMatrix = (LeVkAllocatedBuffer*)pData;
 	LE_DEBUG_ASSERT(WpMatrix);
 
 	VkDescriptorBufferInfo BufferInfoUniform =

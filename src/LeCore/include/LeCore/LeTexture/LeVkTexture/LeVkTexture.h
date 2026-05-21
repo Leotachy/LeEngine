@@ -27,15 +27,12 @@ public:
 
     void OnPixelsAllocated(void) override;
 
-    LeVkMemoryImage memoryImage;
-    VkImageView view;
+    LeVkAllocatedImage allocatedImage;
     VkSampler sampler;
 
 private:
 
     VkFormat m_format;
-
-
 };
 
 

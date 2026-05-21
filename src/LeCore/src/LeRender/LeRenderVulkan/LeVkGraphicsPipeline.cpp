@@ -11,7 +11,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 
 	m_key = key;
 
-	m_device = LeVkCore::Singleton().GetDevice();
+	m_device = LeVkRenderer::Get()->GetDevice();
 
 	const VkPipelineShaderStageCreateInfo ShaderStageInfo[] =
 	{
@@ -54,9 +54,9 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		.vertexBindingDescriptionCount = 1,
-		.pVertexBindingDescriptions = LeVkMesh::LeVertexGetBindingDescription(),
-		.vertexAttributeDescriptionCount = LeVkMesh::LeVertexGetNumAttributeDescriptions(),
-		.pVertexAttributeDescriptions = LeVkMesh::LeVertexGetAttributeDescriptions()
+		.pVertexBindingDescriptions = LeVkMatBlock::LeVertexGetBindingDescription(),
+		.vertexAttributeDescriptionCount = LeVkMatBlock::LeVertexGetNumAttributeDescriptions(),
+		.pVertexAttributeDescriptions = LeVkMatBlock::LeVertexGetAttributeDescriptions()
 
 	};
 
@@ -122,7 +122,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 	for (uint32 i = 0; i < uint32(LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS); i++)
 	{
 		LeVkDescriptorPoolType LePoolType = LeVkDescriptorPoolType(i);
-		LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Singleton().GetLeDescriptorPool(LePoolType);
+		LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Get().GetLeDescriptorPool(LePoolType);
 		LE_DEBUG_ASSERT(LeDescriptorPool);
 		PipelineLayouts[i] = LeDescriptorPool->GetDescriptorSetLayout();
 		LE_DEBUG_ASSERT(PipelineLayouts[i] != VK_NULL_HANDLE);
@@ -146,8 +146,8 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
 		.colorAttachmentCount = 1,
-		.pColorAttachmentFormats = &LeVkCore::VIEWPORT_COLOR_IMAGE_FORMAT,
-		.depthAttachmentFormat = LeVkCore::VIEWPORT_DEPTH_IMAGE_FORMAT
+		.pColorAttachmentFormats = &LeVkRenderer::VIEWPORT_COLOR_IMAGE_FORMAT,
+		.depthAttachmentFormat = LeVkRenderer::VIEWPORT_DEPTH_IMAGE_FORMAT
 	};
 
 	VkGraphicsPipelineCreateInfo PipelineInfo =
@@ -193,7 +193,7 @@ LeVkGraphicsPipeline::~LeVkGraphicsPipeline()
 
 
 
-LeVkGraphicsPipelineDictionary* LeVkGraphicsPipelineDictionary::Singleton(void)
+LeVkGraphicsPipelineDictionary* LeVkGraphicsPipelineDictionary::Get(void)
 {
 	static LeVkGraphicsPipelineDictionary instance;
 	return &instance;

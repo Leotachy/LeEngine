@@ -51,8 +51,8 @@ static VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkS
 
 void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 {
-	VkDevice Device = LeVkCore::Singleton().GetDevice();
-	const LeVkPhysicalDevice* pPhysicalDevice = LeVkCore::Singleton().GetLePhysicalDevice();
+	VkDevice Device = LeVkRenderer::Get()->GetDevice();
+	const LeVkPhysicalDevice* pPhysicalDevice = LeVkRenderer::Get()->GetLePhysicalDevice();
 
 	VkSurfaceCapabilitiesKHR SurfaceCaps;
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(pPhysicalDevice->m_physDevice, Surface, &SurfaceCaps);
@@ -129,7 +129,7 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 
 void LeSwapchain::DeInit()
 {
-	VkDevice Device = LeVkCore::Singleton().GetDevice();
+	VkDevice Device = LeVkRenderer::Get()->GetDevice();
 
 	// DeInit image views
 
