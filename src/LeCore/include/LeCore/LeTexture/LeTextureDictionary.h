@@ -2,11 +2,11 @@
 #pragma once
 
 #include "LeCore/LeTexture/LeTexture.h"
-#include "LeCore/LeBinary/LeBinaryChunk.h"
+#include "LeCore/LeBinary/LeSerializableBinaryChunk.h"
 
 #define TEXTURE_DICTIONARY_TEXTURES_DIRTY (1<<0)
 
-class LeTextureDictionary : public LeBinaryChunk
+class LeTextureDictionary : public LeSerializableBinaryChunk
 {
 public:
 	LeTextureDictionary();
@@ -29,8 +29,9 @@ public:
 
 	uint32 flags;
 
-	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::TextureDictionary; }
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 
 private:

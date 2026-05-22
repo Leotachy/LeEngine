@@ -2,8 +2,7 @@
 #pragma once
 
 #include "LeCore/LeMaterial/LeMaterial.h"
-
-#include "LeCore/LeBinary/LeBinaryChunk.h"
+#include "LeCore/LeBinary/LeSerializableBinaryChunk.h"
 
 struct LeVertex
 {
@@ -22,7 +21,7 @@ struct LeFace
 
 #define MATBLOCK_ALL_DIRTY_FLAGS (MATBLOCK_VERTS_DIRTY|MATBLOCK_FACES_DIRTY)
 
-class LeMatBlock : public LeBinaryChunk
+class LeMatBlock : public LeSerializableBinaryChunk
 {
 protected:
 	LeMatBlock();
@@ -30,9 +29,8 @@ public:
 	virtual ~LeMatBlock();
 	static LeMatBlock* Create(void);
 
-	uint64 GetMaterialHash(void);
-	void SetMaterial(LeMaterial* m);
-	LeMaterial* GetMaterial(void);
+	void SetMaterial(LeMaterial* m) { m_material = m; }
+	LeMaterial* GetMaterial(void) { return m_material; }
 
 	uint32 GetNumVerts(void) { return (uint32)m_vertices.size(); }
 	void SetNumVerts(uint32 n);
@@ -42,8 +40,9 @@ public:
 	void SetNumFaces(uint32 n);
 	LeFace* GetFaceData(void) { return m_faces.data(); }
 
-	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::MatBlock; }
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 	virtual void Compile(void) = 0;
 	LeBool IsCompiled(void) { return m_isCompiled; }
@@ -60,10 +59,10 @@ protected:
 	LeBool m_isCompiled;
 
 private:
-	uint64 m_materialHash; // during (de)serialization only!
+
 };
 
-class LeMesh : public LeBinaryChunk
+class LeMesh : public LeSerializableBinaryChunk
 {
 protected:
 	LeMesh();
@@ -86,8 +85,9 @@ public:
 		}
 	}
 
-	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::Mesh; }
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 protected:
 

@@ -34,7 +34,14 @@ uint64 LeMaterial::GetAttributeHash(void)
 {
 	if (flags & MATERIAL_ATTRIB_HASH_DIRTY)
 	{
-		m_attribsHash = lehash64_bin(&m_attribs, sizeof(m_attribs));
+
+		LeMaterialAttributes Attribs =
+		{
+			.ShaderHash = m_shader ? m_shader->GetNameHash() : 0,
+			.BaseTextureHash = m_baseTexture ? m_baseTexture->GetNameHash() : 0,
+		};
+
+		m_attribsHash = lehash64_bin(&Attribs, sizeof(Attribs));
 		flags &= ~MATERIAL_ATTRIB_HASH_DIRTY;
 	}
 	
@@ -51,29 +58,39 @@ void LeMaterial::SetName(const LeChar* pName)
 void LeMaterial::SetShader(LeShader* pShader)
 { 
 	m_shader = pShader;
-	m_attribs.ShaderHash = pShader ? pShader->GetNameHash() : 0;
 	flags |= MATERIAL_SHADER_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
 }
 
 void LeMaterial::SetBaseTexture(LeTexture* pTexture)
 {
 	m_baseTexture = pTexture;
-	m_attribs.BaseTextureHash = pTexture ? pTexture->GetNameHash() : 0;
 	flags |= MATERIAL_BASE_TEXTURE_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
 }
 
-void LeMaterial::SerializeBinaryChunk(LeStreamFile* pFileStream)
+void LeMaterial::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
-
 	pFileStream->WriteString(m_name);
-	pFileStream->Write(&m_attribs, sizeof(m_attribs));
+	
+	uint64 ShaderHash = GetShader() ? GetShader()->GetNameHash() : 0;
+	pFileStream->WriteNumber(&ShaderHash);
+	uint64 BaseTextureHash = GetBaseTexture() ? GetBaseTexture()->GetNameHash() : 0;
+	pFileStream->WriteNumber(&BaseTextureHash);
 }
 
-void LeMaterial::DeserializeBinaryChunk(LeStreamFile* pFileStream)
+void LeMaterial::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
-
 	pFileStream->ReadString(m_name, LE_MATERIAL_MAX_NAME);
-	pFileStream->Read(&m_attribs, sizeof(m_attribs));
+
+	LeScene* pScene = static_cast<LeScene*>(FindParentCached(LeSerializableBinaryChunkType::Scene));
+	LE_DEBUG_ASSERT(pScene);
+
+	uint64 ShaderHash;
+	pFileStream->ReadNumber(&ShaderHash);
+	if (ShaderHash)
+		SetShader(LeRenderInterface::GetShaderDictionary()->FindShader(ShaderHash));
+
+	uint64 BaseTextureHash;
+	pFileStream->ReadNumber(&BaseTextureHash);
+	if (BaseTextureHash)
+		SetBaseTexture(pScene->GetTextureDictionary()->FindTexture(BaseTextureHash));
 }

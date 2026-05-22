@@ -47,31 +47,25 @@ void LeMaterialDictionary::PurgeAllMaterials(void)
 	m_materials.clear();
 }
 
-void LeMaterialDictionary::SerializeBinaryChunk(LeStreamFile* pFileStream)
+void LeMaterialDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-
-	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
-
 	uint32 numMaterials = (uint32)m_materials.size();
 	pFileStream->WriteNumber(&numMaterials);
 	for (auto pair : m_materials)
 	{
 		LeMaterial* pMaterial = pair.second;
-		pMaterial->SerializeBinaryChunk(pFileStream);
+		pMaterial->SerializeBinaryChunk(pFileStream, this);
 	}
 }
 
-void LeMaterialDictionary::DeserializeBinaryChunk(LeStreamFile* pFileStream)
+void LeMaterialDictionary::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-
-	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
-
 	uint32 numMaterials;
 	pFileStream->ReadNumber(&numMaterials);
 	for (uint32 i = 0; i < numMaterials; i++)
 	{
 		LeMaterial* pMaterial = LeMaterial::Create();
-		pMaterial->DeserializeBinaryChunk(pFileStream);
+		pMaterial->DeserializeBinaryChunk(pFileStream, this);
 
 		if (!AddMaterial(pMaterial))
 			delete pMaterial;

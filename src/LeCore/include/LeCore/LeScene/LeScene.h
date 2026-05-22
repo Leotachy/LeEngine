@@ -6,9 +6,9 @@
 #include "LeCore/LeMaterial/LeMaterialDictionary.h"
 #include "LeCore/LeWorld/LeWorld.h"
 
-#include "LeCore/LeBinary/LeBinaryChunk.h"
+#include "LeCore/LeBinary/LeSerializableBinaryChunk.h"
 
-class LeScene : public LeBinaryChunk
+class LeScene : public LeSerializableBinaryChunk
 {
 public:
 	LeScene();
@@ -18,11 +18,9 @@ public:
 	LeMaterialDictionary* GetMaterialDictionary(void) { return &m_materialDictionary; }
 	LeWorld* GetWorld(void) { return &m_world; }
 
-	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
-
-	// Linkup objects after deserialization
-	void Fixup(void);
+	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::Scene; }
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 protected:
 

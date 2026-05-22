@@ -54,7 +54,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeUtils/LeHash.h"
 	"include/LeCore/LeUtils/LeDeletionQueue.h"
 	"include/LeCore/LeRGBA/LeRGBA.h"
-	"include/LeCore/LeBinary/LeBinaryChunk.h"
+	"include/LeCore/LeBinary/LeSerializableBinaryChunk.h"
 
 	"src/LeEngine/LeEngine.cpp"
 	"src/LeRender/LeRender.cpp"
@@ -101,7 +101,7 @@ LeEngine_target_sources_grouped(
 	"src/LeUtils/LeHash.cpp"
 	"src/LeUtils/LeDeletionQueue.cpp"
 	"src/LeRGBA/LeRGBA.cpp"
-	"src/LeBinary/LeBinaryChunk.cpp"
+	"src/LeBinary/LeSerializableBinaryChunk.cpp"
 
 
 

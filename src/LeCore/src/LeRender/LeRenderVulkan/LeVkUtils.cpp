@@ -4,12 +4,11 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 
 
-#define MARK_VMA_OBJECTS_FOR_DEBUGGING
+//#define TRACK_VMA_OBJECTS
 
-#ifdef MARK_VMA_OBJECTS_FOR_DEBUGGING
-
+#ifdef TRACK_VMA_OBJECTS
 static uint64 s_next_vma_object_mark = 0;
-
+std::vector<uint64> s_active_vma_objs;
 #endif
 
 void LeVkUtils::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VmaAllocationCreateFlags AllocCreateFlags, LeVkAllocatedBuffer* pAllocatedBuffer)
@@ -37,8 +36,11 @@ void LeVkUtils::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VmaAll
 		LeVkRenderer::Get()->GetVmaAllocator(), &BufferCreateInfo, &AllocationCreateInfo,
 		&pAllocatedBuffer->buffer, &pAllocatedBuffer->allocation, &pAllocatedBuffer->allocationInfo);
 
-#ifdef MARK_VMA_OBJECTS_FOR_DEBUGGING
-	vmaSetAllocationUserData(LeVkRenderer::Get()->GetVmaAllocator(), pAllocatedBuffer->allocation, (void*)s_next_vma_object_mark++);
+#ifdef TRACK_VMA_OBJECTS
+	vmaSetAllocationUserData(LeVkRenderer::Get()->GetVmaAllocator(), pAllocatedBuffer->allocation, (void*)s_next_vma_object_mark);
+	pAllocatedBuffer->allocationInfo.pUserData = (void*)s_next_vma_object_mark;
+	s_active_vma_objs.push_back(s_next_vma_object_mark);
+	s_next_vma_object_mark++;
 #endif
 
 	LE_CHECK_VK_RESULT(res);
@@ -71,6 +73,10 @@ void LeVkUtils::DestroyBuffer(LeVkAllocatedBuffer* pAllocatedBuffer)
 	LE_DEBUG_ASSERT(pAllocatedBuffer);
 
 	vmaDestroyBuffer(LeVkRenderer::Get()->GetVmaAllocator(), pAllocatedBuffer->buffer, pAllocatedBuffer->allocation);
+
+#ifdef TRACK_VMA_OBJECTS
+	s_active_vma_objs.erase(std::remove(s_active_vma_objs.begin(), s_active_vma_objs.end(), (uint64)pAllocatedBuffer->allocationInfo.pUserData), s_active_vma_objs.end());
+#endif
 }
 
 void LeVkUtils::CreateUniformBuffer(VkDeviceSize Size, LeVkAllocatedBuffer* pAllocatedBuffer)
@@ -133,8 +139,11 @@ void LeVkUtils::CreateImage(VkExtent3D Extent, VkFormat Format,
 		&ImageInfo, &AllocationCreateInfo, &pAllocatedImage->image, &pAllocatedImage->allocation, &pAllocatedImage->allocationInfo);
 	LE_CHECK_VK_RESULT(res);
 
-#ifdef MARK_VMA_OBJECTS_FOR_DEBUGGING
-	vmaSetAllocationUserData(LeVkRenderer::Get()->GetVmaAllocator(), pAllocatedImage->allocation, (void*)s_next_vma_object_mark++);
+#ifdef TRACK_VMA_OBJECTS
+	vmaSetAllocationUserData(LeVkRenderer::Get()->GetVmaAllocator(), pAllocatedImage->allocation, (void*)s_next_vma_object_mark);
+	pAllocatedImage->allocationInfo.pUserData = (void*)s_next_vma_object_mark;
+	s_active_vma_objs.push_back(s_next_vma_object_mark);
+	s_next_vma_object_mark++;
 #endif
 
 	pAllocatedImage->format = Format;
@@ -152,6 +161,10 @@ void LeVkUtils::DestroyImage(LeVkAllocatedImage* pMemoryImage)
 	vkDestroyImageView(Device, pMemoryImage->imageView, NULL);
 
 	vmaDestroyImage(LeVkRenderer::Get()->GetVmaAllocator(), pMemoryImage->image, pMemoryImage->allocation);
+
+#ifdef TRACK_VMA_OBJECTS
+	s_active_vma_objs.erase(std::remove(s_active_vma_objs.begin(), s_active_vma_objs.end(), (uint64)pMemoryImage->allocationInfo.pUserData), s_active_vma_objs.end());
+#endif
 	
 }
 

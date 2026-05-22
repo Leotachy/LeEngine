@@ -107,8 +107,8 @@ int main(void)
 
 	LeStreamFile FileStream;
 	FileStream.Open(LeStreamAccessType::READ, SAMPLEGAME_SCENES_PATH "test_level.ble");
-	LeScene Scene;
-	Scene.DeserializeBinaryChunk(&FileStream);
+	LeScene* pScene = new LeScene();
+	pScene->DeserializeBinaryChunk(&FileStream, NULL);
 
 	FileStream.Close();
 
@@ -134,7 +134,7 @@ int main(void)
 
 		processInput(pWindow, deltaTime);
 
-		LeRenderInterface::RenderScene(&Scene, pCam, s_bFramebufferResized);
+		LeRenderInterface::RenderScene(pScene, pCam, s_bFramebufferResized);
 
 		s_bFramebufferResized = false;
 	}
@@ -142,6 +142,7 @@ int main(void)
 	LeEngineShutDown();
 
 	delete pCam;
+	delete pScene;
 
 	LeEngineDeInit();
 

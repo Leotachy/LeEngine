@@ -208,7 +208,7 @@ int main(void)
 
 	LeStreamFile StreamFile;
 	StreamFile.Open(LeStreamAccessType::WRITE, TESTAPP_SCENES_PATH "test_level.ble");
-	pScene->SerializeBinaryChunk(&StreamFile);
+	pScene->SerializeBinaryChunk(&StreamFile, NULL);
 
 	LeEngineShutDown();
 

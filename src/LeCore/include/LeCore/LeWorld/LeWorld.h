@@ -3,9 +3,9 @@
 
 #include "LeCore/LeMesh/LeMesh.h"
 
-#include "LeCore/LeBinary/LeBinaryChunk.h"
+#include "LeCore/LeBinary/LeSerializableBinaryChunk.h"
 
-class LeWorld : public LeBinaryChunk
+class LeWorld : public LeSerializableBinaryChunk
 {
 public:
 	LeWorld(void);
@@ -13,8 +13,9 @@ public:
 
 	LeMesh* GetMesh() { return m_mesh; }
 
-	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::World; }
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 protected:
 

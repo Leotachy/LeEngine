@@ -79,9 +79,8 @@ void LeTexture::SetAttributes(LeTextureAttributes* pAttribs)
 	flags |= TEXTURE_ATTRIBUTES_DIRTY;
 }
 
-void LeTexture::SerializeBinaryChunk(LeStreamFile* pFileStream)
+void LeTexture::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
 
 	pFileStream->WriteString(m_name);
 
@@ -93,10 +92,8 @@ void LeTexture::SerializeBinaryChunk(LeStreamFile* pFileStream)
 	pFileStream->Write(&m_attribs, sizeof(m_attribs));
 }
 
-void LeTexture::DeserializeBinaryChunk(LeStreamFile* pFileStream)
+void LeTexture::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-
-	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
 
 	LeChar NameBuffer[LE_TEXTURE_MAX_NAME];
 	pFileStream->ReadString(NameBuffer, LE_TEXTURE_MAX_NAME);

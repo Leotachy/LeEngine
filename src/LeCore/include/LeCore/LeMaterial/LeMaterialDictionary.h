@@ -2,9 +2,9 @@
 #pragma once
 
 #include "LeCore/LeMaterial/LeMaterial.h"
-#include "LeCore/LeBinary/LeBinaryChunk.h"
+#include "LeCore/LeBinary/LeSerializableBinaryChunk.h"
 
-class LeMaterialDictionary : public LeBinaryChunk
+class LeMaterialDictionary : public LeSerializableBinaryChunk
 {
 public:
 
@@ -24,8 +24,9 @@ public:
 		}
 	}
 
-	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::MaterialDictionary; }
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 protected:
 

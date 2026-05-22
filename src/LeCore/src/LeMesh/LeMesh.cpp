@@ -9,7 +9,6 @@ LeMatBlock::LeMatBlock()
 {
 	flags = MATBLOCK_ALL_DIRTY_FLAGS;
 
-	m_materialHash = 0;
 	m_material = NULL;
 
 	m_isCompiled = false;
@@ -35,23 +34,6 @@ LeMatBlock* LeMatBlock::Create(void)
 
 }
 
-
-uint64 LeMatBlock::GetMaterialHash(void)
-{
-	return m_materialHash;
-}
-
-void LeMatBlock::SetMaterial(LeMaterial* m)
-{
-	m_material = m;
-	m_materialHash = m ? m->GetAttributeHash() : 0;
-}
-
-LeMaterial* LeMatBlock::GetMaterial(void)
-{
-	return m_material;
-}
-
 void LeMatBlock::SetNumVerts(uint32 n)
 {
 	if (m_isCompiled)
@@ -68,56 +50,44 @@ void LeMatBlock::SetNumFaces(uint32 n)
 	m_faces.resize(n);
 }
 
-void LeMatBlock::SerializeBinaryChunk(LeStreamFile* pFileStream)
+void LeMatBlock::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
+	uint64 materialHash = m_material ? m_material->GetAttributeHash() : 0;
+	pFileStream->WriteNumber(&materialHash);
 
-	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
-
-	pFileStream->WriteNumber(&m_materialHash);
-
-	uint32 numVerts = (uint32)m_vertices.size();
+	uint32 numVerts = GetNumVerts();
 	pFileStream->WriteNumber(&numVerts);
+	pFileStream->Write(GetVertexData(), sizeof(LeVertex) * numVerts);
 
-	for (uint32 i = 0; i < numVerts; i++)
-	{
-		LeVertex* pVertex = &m_vertices[i];
-		pFileStream->Write(pVertex, sizeof(LeVertex));
-	}
-
-	uint32 numFaces = (uint32)m_faces.size();
+	uint32 numFaces = GetNumFaces();
 	pFileStream->WriteNumber(&numFaces);
-
-	for (uint32 i = 0; i < numFaces; i++)
-	{
-		LeFace* pFace = &m_faces[i];
-		pFileStream->Write(pFace, sizeof(LeFace));
-	}
+	pFileStream->Write(GetFaceData(), sizeof(LeFace) * numFaces);
 }
 
-void LeMatBlock::DeserializeBinaryChunk(LeStreamFile* pFileStream)
+void LeMatBlock::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
 
-	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
 
-	pFileStream->ReadNumber(&m_materialHash);
+	uint64 materialHash;
+	pFileStream->ReadNumber(&materialHash);
+
+	// We're gonna need the material dictionary for linking
+	// Get it from the scene
+	LeScene* pScene = static_cast<LeScene*>(FindParentCached(LeSerializableBinaryChunkType::Scene));
+	LE_DEBUG_ASSERT(pScene);
+	SetMaterial(pScene->GetMaterialDictionary()->FindMaterial(materialHash));
 
 	uint32 numVerts;
 	pFileStream->ReadNumber(&numVerts);
-	m_vertices.resize(numVerts);
-
-	for (uint32 i = 0; i < numVerts; i++)
-	{
-		pFileStream->Read(&m_vertices[i], sizeof(LeVertex));
-	}
+	SetNumVerts(numVerts);
+	pFileStream->Read(GetVertexData(), sizeof(LeVertex) * numVerts);
 
 	uint32 numFaces;
 	pFileStream->ReadNumber(&numFaces);
-	m_faces.resize(numFaces);
+	SetNumFaces(numVerts);
+	pFileStream->Read(GetFaceData(), sizeof(LeFace) * numFaces);
 
-	for (uint32 i = 0; i < numFaces; i++)
-	{
-		pFileStream->Read(&m_faces[i], sizeof(LeFace));
-	}
+	Compile();
 }
 
 
@@ -176,24 +146,19 @@ void LeMesh::PurgeAllMatblocks(void)
 	m_Matblocks.clear();
 }
 
-void LeMesh::SerializeBinaryChunk(LeStreamFile* pFileStream)
+void LeMesh::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
-
 	uint32 numMatblocks = (uint32)m_Matblocks.size();
 	pFileStream->WriteNumber(&numMatblocks);
 
 	for (LeMatBlock* pMatblock : m_Matblocks)
 	{
-		pMatblock->SerializeBinaryChunk(pFileStream);
+		pMatblock->SerializeBinaryChunk(pFileStream, this);
 	}
 }
 
-void LeMesh::DeserializeBinaryChunk(LeStreamFile* pFileStream)
+void LeMesh::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-
-	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
-
 	uint32 numMatblocks;
 	pFileStream->ReadNumber(&numMatblocks);
 
@@ -201,7 +166,7 @@ void LeMesh::DeserializeBinaryChunk(LeStreamFile* pFileStream)
 	{
 		LeMatBlock* pMatblock = LeMatBlock::Create();
 
-		pMatblock->DeserializeBinaryChunk(pFileStream);
+		pMatblock->DeserializeBinaryChunk(pFileStream, this);
 
 		AddMatblock(pMatblock);
 	}

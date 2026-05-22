@@ -82,31 +82,27 @@ void LeTextureDictionary::PurgeAllTextures(void)
 	m_textures.clear();
 }
 
-void LeTextureDictionary::SerializeBinaryChunk(LeStreamFile* pFileStream)
+void LeTextureDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	LeBinaryChunk::SerializeBinaryChunk(pFileStream);
-
 	uint32 numTextures = (uint32)m_textures.size();
 	pFileStream->WriteNumber(&numTextures);
 
 	for (auto pair : m_textures)
 	{
 		LeTexture* pTexture = pair.second;
-		pTexture->SerializeBinaryChunk(pFileStream);
+		pTexture->SerializeBinaryChunk(pFileStream, this);
 	}
 }
 
-void LeTextureDictionary::DeserializeBinaryChunk(LeStreamFile* pFileStream)
+void LeTextureDictionary::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	LeBinaryChunk::DeserializeBinaryChunk(pFileStream);
-
 	uint32 numTextures;
 	pFileStream->ReadNumber(&numTextures);
 
 	for (uint32 i = 0; i < numTextures; i++)
 	{
 		LeTexture* pTexture = LeTexture::Create();
-		pTexture->DeserializeBinaryChunk(pFileStream);
+		pTexture->DeserializeBinaryChunk(pFileStream, this);
 
 		if (!AddTexture(pTexture))
 			delete pTexture;

@@ -3,7 +3,7 @@
 
 #include "stb_image.h"
 
-#include "LeCore/LeBinary/LeBinaryChunk.h"
+#include "LeCore/LeBinary/LeSerializableBinaryChunk.h"
 
 #define TEXTURE_NAME_LENGTH 64
 
@@ -49,7 +49,7 @@ struct LeTextureAttributes
 #define LE_TEXTURE_MAX_SIZE 2048
 
 // Supports only 32bit RGBA textures - super primitive
-class LeTexture : public LeBinaryChunk
+class LeTexture : public LeSerializableBinaryChunk
 {
 
 protected:
@@ -75,8 +75,9 @@ public:
 	void SetAttributes(LeTextureAttributes* pAttribs);
 	const LeTextureAttributes* GetAttributes(void) { return &m_attribs; }
 
-	void SerializeBinaryChunk(LeStreamFile* pFileStream) override;
-	void DeserializeBinaryChunk(LeStreamFile* pFileStream) override;
+	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::Texture; }
+	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
+	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 	uint32 flags;
 
