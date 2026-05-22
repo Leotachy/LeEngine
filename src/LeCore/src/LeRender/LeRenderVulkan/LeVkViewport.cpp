@@ -30,8 +30,11 @@ void LeVkViewport::ReInit(VkExtent2D extent)
 
 void LeVkViewport::DeInit(void)
 {
-	LeVkUtils::DestroyImage(&m_colorImage);
-	LeVkUtils::DestroyImage(&m_depthImage);
+	if (m_imagesValid)
+	{
+		LeVkUtils::DestroyImage(&m_colorImage);
+		LeVkUtils::DestroyImage(&m_depthImage);
+	}
 
 	m_imagesValid = false;
 

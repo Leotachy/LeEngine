@@ -21,6 +21,7 @@ struct LeVkAllocatedImage
 	VkImage image;
 	VkImageView imageView;
 	VmaAllocation allocation;
+	VmaAllocationInfo allocationInfo;
 	VkExtent3D extent;
 	VkFormat format;
 };

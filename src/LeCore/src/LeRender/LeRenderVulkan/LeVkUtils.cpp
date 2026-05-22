@@ -4,6 +4,14 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkUtils.h"
 
 
+#define MARK_VMA_OBJECTS_FOR_DEBUGGING
+
+#ifdef MARK_VMA_OBJECTS_FOR_DEBUGGING
+
+static uint64 s_next_vma_object_mark = 0;
+
+#endif
+
 void LeVkUtils::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VmaAllocationCreateFlags AllocCreateFlags, LeVkAllocatedBuffer* pAllocatedBuffer)
 {
 	LE_DEBUG_ASSERT(pAllocatedBuffer);
@@ -28,6 +36,10 @@ void LeVkUtils::CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VmaAll
 	VkResult res = vmaCreateBuffer(
 		LeVkRenderer::Get()->GetVmaAllocator(), &BufferCreateInfo, &AllocationCreateInfo,
 		&pAllocatedBuffer->buffer, &pAllocatedBuffer->allocation, &pAllocatedBuffer->allocationInfo);
+
+#ifdef MARK_VMA_OBJECTS_FOR_DEBUGGING
+	vmaSetAllocationUserData(LeVkRenderer::Get()->GetVmaAllocator(), pAllocatedBuffer->allocation, (void*)s_next_vma_object_mark++);
+#endif
 
 	LE_CHECK_VK_RESULT(res);
 }
@@ -82,13 +94,13 @@ void LeVkUtils::CreateStagingBuffer(VkDeviceSize Size, LeVkAllocatedBuffer* pAll
 
 void LeVkUtils::CreateImage(VkExtent3D Extent, VkFormat Format,
 	VkImageTiling Tiling, VkBufferUsageFlags Usage, VkImageAspectFlags AspectFlags,
-	VkImageViewType ViewType, uint32 LayerCount, uint32 MipLevels, LeVkAllocatedImage* pAllocatedBuffer)
+	VkImageViewType ViewType, uint32 LayerCount, uint32 MipLevels, LeVkAllocatedImage* pAllocatedImage)
 {
 
 	LE_DEBUG_ASSERT(Extent.width > 0 && Extent.height > 0 && Extent.depth > 0);
-	LE_DEBUG_ASSERT(pAllocatedBuffer);
+	LE_DEBUG_ASSERT(pAllocatedImage);
 
-	*pAllocatedBuffer = {};
+	*pAllocatedImage = {};
 
 	// Make the texture image
 
@@ -117,13 +129,18 @@ void LeVkUtils::CreateImage(VkExtent3D Extent, VkFormat Format,
 		.usage = VMA_MEMORY_USAGE_AUTO
 	};
 
-	VkResult res = vmaCreateImage(LeVkRenderer::Get()->GetVmaAllocator(), &ImageInfo, &AllocationCreateInfo, &pAllocatedBuffer->image, &pAllocatedBuffer->allocation, NULL);
+	VkResult res = vmaCreateImage(LeVkRenderer::Get()->GetVmaAllocator(),
+		&ImageInfo, &AllocationCreateInfo, &pAllocatedImage->image, &pAllocatedImage->allocation, &pAllocatedImage->allocationInfo);
 	LE_CHECK_VK_RESULT(res);
 
-	pAllocatedBuffer->format = Format;
-	pAllocatedBuffer->extent = Extent;
+#ifdef MARK_VMA_OBJECTS_FOR_DEBUGGING
+	vmaSetAllocationUserData(LeVkRenderer::Get()->GetVmaAllocator(), pAllocatedImage->allocation, (void*)s_next_vma_object_mark++);
+#endif
 
-	pAllocatedBuffer->imageView = CreateImageView(pAllocatedBuffer->image, pAllocatedBuffer->format, AspectFlags, ViewType, LayerCount, MipLevels);
+	pAllocatedImage->format = Format;
+	pAllocatedImage->extent = Extent;
+
+	pAllocatedImage->imageView = CreateImageView(pAllocatedImage->image, pAllocatedImage->format, AspectFlags, ViewType, LayerCount, MipLevels);
 }
 
 void LeVkUtils::DestroyImage(LeVkAllocatedImage* pMemoryImage)
@@ -134,7 +151,7 @@ void LeVkUtils::DestroyImage(LeVkAllocatedImage* pMemoryImage)
 
 	vkDestroyImageView(Device, pMemoryImage->imageView, NULL);
 
-	vmaDestroyImage(LeVkRenderer::Get()->GetVmaAllocator(), pMemoryImage->image, NULL);
+	vmaDestroyImage(LeVkRenderer::Get()->GetVmaAllocator(), pMemoryImage->image, pMemoryImage->allocation);
 	
 }
 
