@@ -17,7 +17,7 @@ public:
 	template<typename Func>
 	void ForEachMaterial(Func&& func)
 	{
-		for (auto pair : m_materials)
+		for (auto pair : m_Materials)
 		{
 			LeMaterial* pMaterial = pair.second;
 			func(pMaterial);
@@ -30,5 +30,5 @@ public:
 
 protected:
 
-	std::unordered_map<uint64, LeMaterial*> m_materials;
+	std::unordered_map<uint64, LeMaterial*> m_Materials;
 };

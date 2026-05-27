@@ -71,8 +71,8 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 	LE_DEBUG_ASSERT(pWindowParams->pAppName);
 
 	LE_DEBUG_ASSERT(pViewportParams);
-	LE_DEBUG_ASSERT(pViewportParams->uViewportWidth > 0);
-	LE_DEBUG_ASSERT(pViewportParams->uViewportHeight > 0);
+	LE_DEBUG_ASSERT(pViewportParams->ViewportWidth > 0);
+	LE_DEBUG_ASSERT(pViewportParams->ViewportHeight > 0);
 
 	LE_DEBUG_ASSERT(pPathParams);
 	LE_DEBUG_ASSERT(pPathParams->pShaderBinaryPath);
@@ -80,26 +80,26 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 	m_gltfWindow = pWindowParams->pWindow;
 
 	CreateInstance(pWindowParams->pAppName);
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			DestroyInstance();
 		});
 
 	CreateDebugCallback();
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			DestroyDebugCallback();
 		});
 
 
 	CreateSurface(m_gltfWindow);
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			DestroySurface();
 		});
 
 	m_physicalDevices.Init(m_instance, m_surface);
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			m_physicalDevices.DeInit();
 		});
@@ -107,25 +107,25 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 	m_queueFamily = m_physicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 
 	CreateLogicalDevice();
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			DestroyLogicalDevice();
 		});
 
 	CreateVulkanMemoryAllocator();
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			DestroyVulkanMemoryAllocator();
 		});
 
 	m_swapchain.Init(m_surface, m_queueFamily);
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			m_swapchain.DeInit();
 		});
 
 	LeVkDescriptorPoolManager::Get().Init();
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			LeVkDescriptorPoolManager::Get().DeInit();
 		});
@@ -133,7 +133,7 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 	m_commandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_queueFamily);
 	m_transientCommandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, m_queueFamily);
 	LE_DEBUG_MESSAGE("Command buffer pools created");
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			vkDestroyCommandPool(m_logicalDevice, m_transientCommandBufferPool, NULL);
 			vkDestroyCommandPool(m_logicalDevice, m_commandBufferPool, NULL);
@@ -152,7 +152,7 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 		FrameContext.DescriptorSet.UpdateSet(&FrameContext.FrameUBOMemoryBuffer);
 	}
 	m_FrameIndex = 0;
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			for (uint32 i = 0; i < LE_MAX_FRAMES_IN_FLIGHT; i++)
 			{
@@ -162,21 +162,21 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 			}
 		});
 
-	m_queue.Init(m_queueFamily, 0);
-	m_deletionQueue.push_function([this]()
+	m_hQueue.Init(m_queueFamily, 0);
+	m_deletionQueue.AddFunction([this]()
 		{
-			m_queue.DeInit();
+			m_hQueue.DeInit();
 		});
 
 	m_shaderDictionary.LoadAllShaders(pPathParams->pShaderBinaryPath);
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			m_shaderDictionary.PurgeAllShaders();
 		});
 
 #ifdef SUPPORT_IMGUI
 	InitImGui();
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			DeInitImGui();
 		});
@@ -184,20 +184,20 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 
 	m_newViewportExtent = { 0, 0 };
 	m_bRebuildViewportPending = false;
-	m_viewport.Init({ pViewportParams->uViewportWidth, pViewportParams->uViewportHeight });
-	m_deletionQueue.push_function([this]()
+	m_viewport.Init({ pViewportParams->ViewportWidth, pViewportParams->ViewportHeight });
+	m_deletionQueue.AddFunction([this]()
 		{
 			m_viewport.DeInit();
 		});
 
 	m_samplerDictionary.Init();
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			m_samplerDictionary.DeInit();
 		});
 
 	m_objectCleaner.Init();
-	m_deletionQueue.push_function([this]()
+	m_deletionQueue.AddFunction([this]()
 		{
 			m_objectCleaner.DeInit();
 		});
@@ -211,7 +211,7 @@ void LeVkRenderer::ShutDown(void)
 	LE_DEBUG_MESSAGE("Shutting down LeVkRenderer..");
 
 	// currently just this.. hack until I sort my world objects
-	m_queue.WaitIdle();
+	m_hQueue.WaitIdle();
 
 	LE_DEBUG_MESSAGE("Finished shutting down LeVkRenderer");
 }
@@ -224,7 +224,7 @@ void LeVkRenderer::DeInit(void)
 	// DeInit graphics pipelines
 	LeVkGraphicsPipelineDictionary::Get()->Purge();
 
-	m_deletionQueue.flush();
+	m_deletionQueue.Flush();
 
 
 	LE_DEBUG_MESSAGE("Finished deinitializing LeVkRenderer");
@@ -233,24 +233,24 @@ void LeVkRenderer::DeInit(void)
 
 LeBool LeVkRenderer::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFramebufferResized)
 {
-	m_queue.WaitForFences(m_FrameIndex);
+	m_hQueue.WaitForFences(m_FrameIndex);
 
 	LeVkFrameContext* pRenderFrame = GetFrameContext(m_FrameIndex);
 
-	pRenderFrame->ImageIndex = m_queue.AcquireNextImage(m_FrameIndex);
+	pRenderFrame->ImageIndex = m_hQueue.AcquireNextImage(m_FrameIndex);
 	if (pRenderFrame->ImageIndex == -1)
 	{
 		OnSurfaceSizeChanged();
 		return false;
 	}
 
-	m_queue.ResetFences(m_FrameIndex);
+	m_hQueue.ResetFences(m_FrameIndex);
 
 	m_objectCleaner.Flush(m_FrameIndex);
 
 	if (m_bRebuildViewportPending)
 	{
-		m_queue.WaitIdle();
+		m_hQueue.WaitIdle();
 		m_viewport.ReInit(m_newViewportExtent);
 		m_bRebuildViewportPending = false;
 	}
@@ -436,10 +436,10 @@ LeBool LeVkRenderer::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFrameb
 
 	EndCommandBuffer(CommandBuffer);
 
-	m_queue.SubmitAsync(CommandBuffer, pRenderFrame->ImageIndex, m_FrameIndex);
+	m_hQueue.SubmitAsync(CommandBuffer, pRenderFrame->ImageIndex, m_FrameIndex);
 
 
-	if (!m_queue.Present(pRenderFrame->ImageIndex, m_FrameIndex) || bFramebufferResized)
+	if (!m_hQueue.Present(pRenderFrame->ImageIndex, m_FrameIndex) || bFramebufferResized)
 		OnSurfaceSizeChanged();
 
 	m_FrameIndex++;
@@ -776,13 +776,13 @@ void LeVkRenderer::CreateLogicalDevice()
 		VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
 	};
 
-	if (m_physicalDevices.Selected()->m_features.geometryShader == VK_FALSE)
+	if (m_physicalDevices.Selected()->Features.geometryShader == VK_FALSE)
 		LE_ERROR("The Geometry Shader is not supported!");
 
-	if (m_physicalDevices.Selected()->m_features.tessellationShader == VK_FALSE)
+	if (m_physicalDevices.Selected()->Features.tessellationShader == VK_FALSE)
 		LE_ERROR("The Tessellation Shader is not supported!");
 
-	if (m_physicalDevices.Selected()->m_features.samplerAnisotropy == VK_FALSE)
+	if (m_physicalDevices.Selected()->Features.samplerAnisotropy == VK_FALSE)
 		LE_ERROR("Sampler Anisotropy is not supported!");
 
 
@@ -817,7 +817,7 @@ void LeVkRenderer::CreateLogicalDevice()
 		.ppEnabledExtensionNames = DevExts
 	};
 
-	VkResult res = vkCreateDevice(m_physicalDevices.Selected()->m_physDevice, &DeviceCreateInfo, NULL, &m_logicalDevice);
+	VkResult res = vkCreateDevice(m_physicalDevices.Selected()->hPhysDevice, &DeviceCreateInfo, NULL, &m_logicalDevice);
 	LE_CHECK_VK_RESULT(res);
 
 	LE_DEBUG_MESSAGE("Logical device created");
@@ -833,7 +833,7 @@ void LeVkRenderer::DestroyLogicalDevice()
 void LeVkRenderer::CreateVulkanMemoryAllocator(void)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
-	allocatorInfo.physicalDevice = m_physicalDevices.Selected()->m_physDevice;
+	allocatorInfo.physicalDevice = m_physicalDevices.Selected()->hPhysDevice;
 	allocatorInfo.device = m_logicalDevice;
 	allocatorInfo.instance = m_instance;
 	allocatorInfo.flags = 0;
@@ -876,10 +876,10 @@ void LeVkRenderer::InitImGui(void)
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.ApiVersion = VK_API_VERSION_1_4;
 	init_info.Instance = m_instance;
-	init_info.PhysicalDevice = m_physicalDevices.Selected()->m_physDevice;
+	init_info.PhysicalDevice = m_physicalDevices.Selected()->hPhysDevice;
 	init_info.Device = m_logicalDevice;
 	init_info.QueueFamily = m_queueFamily;
-	init_info.Queue = m_queue.GetQueue();
+	init_info.Queue = m_hQueue.GetQueue();
 	init_info.PipelineCache = NULL;
 	init_info.DescriptorPool = LeDescriptorPool->GetDescriptorPool();
 	init_info.MinImageCount = m_swapchain.GetMinNumImages();
@@ -958,7 +958,7 @@ void LeVkRenderer::OnSurfaceSizeChanged(void)
 		glfwWaitEvents();
 	}
 
-	m_queue.WaitIdle();
+	m_hQueue.WaitIdle();
 
 
 	m_swapchain.DeInit();
@@ -1005,16 +1005,16 @@ void LeVkRenderer::UpdateTexture(VkCommandBuffer CommandBuffer, LeVkTexture* pTe
 {
 	LE_DEBUG_ASSERT(pTex);
 
-	if (pTex->flags & (TEXTURE_PIXELS_DIRTY))
+	if (pTex->Flags & (TEXTURE_PIXELS_DIRTY))
 	{
 		UpdateTextureImage(CommandBuffer, pTex);
-		pTex->flags &= ~(TEXTURE_PIXELS_DIRTY);
+		pTex->Flags &= ~(TEXTURE_PIXELS_DIRTY);
 	}
 
-	if (pTex->flags & TEXTURE_ATTRIBUTES_DIRTY)
+	if (pTex->Flags & TEXTURE_ATTRIBUTES_DIRTY)
 	{
 		pTex->sampler = m_samplerDictionary.GetOrCreateSampler(pTex->GetAttributes());
-		pTex->flags &= ~TEXTURE_ATTRIBUTES_DIRTY;
+		pTex->Flags &= ~TEXTURE_ATTRIBUTES_DIRTY;
 	}
 }
 
@@ -1085,10 +1085,10 @@ void LeVkRenderer::UpdateMaterial(LeVkMaterial* pMaterial)
 {
 	LE_DEBUG_ASSERT(pMaterial);
 
-	if (pMaterial->flags & MATERIAL_SHADER_DIRTY)
+	if (pMaterial->Flags & MATERIAL_SHADER_DIRTY)
 	{
 		UpdateGraphicsPipelineForMaterial(pMaterial);
-		pMaterial->flags &= ~MATERIAL_SHADER_DIRTY;
+		pMaterial->Flags &= ~MATERIAL_SHADER_DIRTY;
 	}
 
 	static LeBool deedIsDone = false;
@@ -1104,7 +1104,7 @@ void LeVkRenderer::UpdateMatBlock(VkCommandBuffer CommandBuffer, LeVkMatBlock* p
 
 	LE_ASSERT(pMatblock->IsCompiled());
 
-	if (pMatblock->flags & (MATBLOCK_VERTS_DIRTY))
+	if (pMatblock->Flags & (MATBLOCK_VERTS_DIRTY))
 	{
 		uint64 uLocalSizeOfVerts = pMatblock->GetNumVerts() * sizeof(LeVertex);
 		LeVkAllocatedBuffer StagingBuffer;
@@ -1116,10 +1116,10 @@ void LeVkRenderer::UpdateMatBlock(VkCommandBuffer CommandBuffer, LeVkMatBlock* p
 		// push for deletion
 		m_objectCleaner.PushBuffer(&StagingBuffer, m_FrameIndex);
 
-		pMatblock->flags &= ~(MATBLOCK_VERTS_DIRTY);
+		pMatblock->Flags &= ~(MATBLOCK_VERTS_DIRTY);
 	}
 
-	if (pMatblock->flags & (MATBLOCK_FACES_DIRTY))
+	if (pMatblock->Flags & (MATBLOCK_FACES_DIRTY))
 	{
 		uint64 uLocalSizeOfFaces = pMatblock->GetNumFaces() * sizeof(LeFace);
 		LeVkAllocatedBuffer StagingBuffer;
@@ -1131,7 +1131,7 @@ void LeVkRenderer::UpdateMatBlock(VkCommandBuffer CommandBuffer, LeVkMatBlock* p
 		// push for deletion
 		m_objectCleaner.PushBuffer(&StagingBuffer, m_FrameIndex);
 
-		pMatblock->flags &= ~(MATBLOCK_FACES_DIRTY);
+		pMatblock->Flags &= ~(MATBLOCK_FACES_DIRTY);
 	}
 }
 

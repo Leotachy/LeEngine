@@ -29,34 +29,34 @@ public:
 	virtual ~LeMatBlock();
 	static LeMatBlock* Create(void);
 
-	void SetMaterial(LeMaterial* m) { m_material = m; }
-	LeMaterial* GetMaterial(void) { return m_material; }
+	void SetMaterial(LeMaterial* m) { m_pMaterial = m; }
+	LeMaterial* GetMaterial(void) { return m_pMaterial; }
 
-	uint32 GetNumVerts(void) { return (uint32)m_vertices.size(); }
+	uint32 GetNumVerts(void) { return (uint32)m_Vertices.size(); }
 	void SetNumVerts(uint32 n);
-	LeVertex* GetVertexData(void) { return m_vertices.data(); }
+	LeVertex* GetVertexData(void) { return m_Vertices.data(); }
 
-	uint32 GetNumFaces(void) { return (uint32)m_faces.size(); }
+	uint32 GetNumFaces(void) { return (uint32)m_Faces.size(); }
 	void SetNumFaces(uint32 n);
-	LeFace* GetFaceData(void) { return m_faces.data(); }
+	LeFace* GetFaceData(void) { return m_Faces.data(); }
 
 	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::MatBlock; }
 	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
 	virtual void Compile(void) = 0;
-	LeBool IsCompiled(void) { return m_isCompiled; }
+	LeBool IsCompiled(void) { return m_bIsCompiled; }
 
-	uint32 flags;
+	uint32 Flags;
 
 protected:
 
-	LeMaterial* m_material;
+	LeMaterial* m_pMaterial;
 
-	std::vector<LeVertex> m_vertices;
-	std::vector<LeFace> m_faces;
+	std::vector<LeVertex> m_Vertices;
+	std::vector<LeFace> m_Faces;
 
-	LeBool m_isCompiled;
+	LeBool m_bIsCompiled;
 
 private:
 

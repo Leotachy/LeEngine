@@ -13,19 +13,19 @@ public:
 	LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader);
 	~LeVkGraphicsPipeline();
 
-	uint64 GetKey() const { return m_key; }
+	uint64 GetKey() const { return m_Key; }
 
-	VkPipeline GetPipeline() const { return m_pipeline; }
-	VkPipelineLayout GetPipelineLayout() const { return m_pipelineLayout; }
+	VkPipeline GetPipeline() const { return m_hPipeline; }
+	VkPipelineLayout GetPipelineLayout() const { return m_hPipelineLayout; }
 
 private:
 
-	uint64 m_key; // Key in dictionary
+	uint64 m_Key; // Key in dictionary
 
-	VkDevice m_device;
+	VkDevice m_hDevice;
 
-	VkPipeline m_pipeline;
-	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_hPipeline;
+	VkPipelineLayout m_hPipelineLayout;
 
 
 

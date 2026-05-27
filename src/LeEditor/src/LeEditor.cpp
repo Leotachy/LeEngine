@@ -27,17 +27,17 @@ LeEditorInstance::LeEditorInstance(void)
 	{
 		.RendererParams =
 		{
-			.api = LeRenderApi::Vulkan,
+			.API = LeRenderApi::Vulkan,
 
-			.windowParams =
+			.WindowParams =
 			{
 				.pWindow = m_gltfWindow,
 				.pAppName = EDITOR_APP_NAME
 			},
-			.viewportParams = 
+			.ViewportParams = 
 			{
-				.uViewportWidth = DEFAULT_SCREEN_WIDTH,
-				.uViewportHeight = DEFAULT_SCREEN_HEIGHT,
+				.ViewportWidth = DEFAULT_SCREEN_WIDTH,
+				.ViewportHeight = DEFAULT_SCREEN_HEIGHT,
 				.bRenderViewportToImGuiTexture = true
 			}
 		}

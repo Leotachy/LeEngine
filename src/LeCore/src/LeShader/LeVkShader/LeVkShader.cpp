@@ -7,8 +7,8 @@
 
 LeVkShader::LeVkShader(const LeChar* name, const LeChar* pShaderFilepath) : LeShader(name, pShaderFilepath)
 {
-	m_Device = LeVkRenderer::Get()->GetDevice();
-	LE_DEBUG_ASSERT(m_Device);
+	m_hDevice = LeVkRenderer::Get()->GetDevice();
+	LE_DEBUG_ASSERT(m_hDevice);
 
 	LeByte ShaderBinary[128000];
 
@@ -26,11 +26,11 @@ LeVkShader::LeVkShader(const LeChar* name, const LeChar* pShaderFilepath) : LeSh
 
 LeVkShader::~LeVkShader(void)
 {
-	if (m_Device)
+	if (m_hDevice)
 	{
-		if (m_ShaderModule)
+		if (m_hShaderModule)
 		{
-			vkDestroyShaderModule(m_Device, m_ShaderModule, NULL);
+			vkDestroyShaderModule(m_hDevice, m_hShaderModule, NULL);
 		}
 	}
 }
@@ -52,8 +52,8 @@ VkShaderModule LeVkShader::CreateShaderModule(const LeByte* ShaderBinary, uint32
 	};
 
 
-	VkResult res = vkCreateShaderModule(m_Device, &CreateInfo, NULL, &m_ShaderModule);
+	VkResult res = vkCreateShaderModule(m_hDevice, &CreateInfo, NULL, &m_hShaderModule);
 	LE_CHECK_VK_RESULT(res);
 
-	return m_ShaderModule;
+	return m_hShaderModule;
 }

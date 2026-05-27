@@ -14,9 +14,9 @@ public:
 	LeScene();
 	virtual ~LeScene() = default;
 
-	LeTextureDictionary* GetTextureDictionary(void) { return &m_textureDictionary; }
-	LeMaterialDictionary* GetMaterialDictionary(void) { return &m_materialDictionary; }
-	LeWorld* GetWorld(void) { return &m_world; }
+	LeTextureDictionary* GetTextureDictionary(void) { return &m_TextureDictionary; }
+	LeMaterialDictionary* GetMaterialDictionary(void) { return &m_MaterialDictionary; }
+	LeWorld* GetWorld(void) { return &m_World; }
 
 	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::Scene; }
 	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
@@ -28,7 +28,7 @@ protected:
 
 private:
 
-	LeTextureDictionary m_textureDictionary;
-	LeMaterialDictionary m_materialDictionary;
-	LeWorld m_world;
+	LeTextureDictionary m_TextureDictionary;
+	LeMaterialDictionary m_MaterialDictionary;
+	LeWorld m_World;
 };

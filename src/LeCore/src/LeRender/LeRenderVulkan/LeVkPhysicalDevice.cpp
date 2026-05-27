@@ -73,7 +73,7 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
 
     LE_DEBUG_MESSAGE("Num physical devices %d", NumDevices);
 
-    m_devices.resize(NumDevices);
+    m_Devices.resize(NumDevices);
 
     std::vector<VkPhysicalDevice> Devices;
     Devices.resize(NumDevices);
@@ -84,12 +84,12 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
     for (uint32 i = 0; i < NumDevices; i++)
     {
         VkPhysicalDevice PhysDev = Devices[i];
-        m_devices[i].m_physDevice = PhysDev;
+        m_Devices[i].hPhysDevice = PhysDev;
 
-        vkGetPhysicalDeviceProperties(PhysDev, &m_devices[i].m_devProps);
+        vkGetPhysicalDeviceProperties(PhysDev, &m_Devices[i].hDevProps);
 
-        LE_DEBUG_MESSAGE("Device name: %s", m_devices[i].m_devProps.deviceName);
-        uint32 apiVer = m_devices[i].m_devProps.apiVersion;
+        LE_DEBUG_MESSAGE("Device name: %s", m_Devices[i].hDevProps.deviceName);
+        uint32 apiVer = m_Devices[i].hDevProps.apiVersion;
         LE_DEBUG_MESSAGE("    API version: %d.%d.%d.%d", 
             VK_API_VERSION_VARIANT(apiVer), 
             VK_API_VERSION_MAJOR(apiVer), 
@@ -100,13 +100,13 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
         vkGetPhysicalDeviceQueueFamilyProperties(PhysDev, &NumQFamilies, NULL);
         LE_DEBUG_MESSAGE("    Num of family queues: %d", NumQFamilies);
 
-        m_devices[i].m_qFamilyProps.resize(NumQFamilies);
-        m_devices[i].m_qSupportsPresent.resize(NumQFamilies);
+        m_Devices[i].QueueFamilyProps.resize(NumQFamilies);
+        m_Devices[i].QueueSupportsPresent.resize(NumQFamilies);
 
-        vkGetPhysicalDeviceQueueFamilyProperties(PhysDev, &NumQFamilies, m_devices[i].m_qFamilyProps.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(PhysDev, &NumQFamilies, m_Devices[i].QueueFamilyProps.data());
 
         for (uint32 q = 0; q < NumQFamilies; q++) {
-            const VkQueueFamilyProperties& QFamilyProp = m_devices[i].m_qFamilyProps[q];
+            const VkQueueFamilyProperties& QFamilyProp = m_Devices[i].QueueFamilyProps[q];
 
             LE_DEBUG_MESSAGE("    Family %d Num queues: %d ", q, QFamilyProp.queueCount);
             VkQueueFlags Flags = QFamilyProp.queueFlags;
@@ -116,7 +116,7 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
                 (Flags & VK_QUEUE_TRANSFER_BIT) ? "Yes" : "No",
                 (Flags & VK_QUEUE_SPARSE_BINDING_BIT) ? "Yes" : "No");
 
-            res = vkGetPhysicalDeviceSurfaceSupportKHR(PhysDev, q, Surface, &(m_devices[i].m_qSupportsPresent[q]));
+            res = vkGetPhysicalDeviceSurfaceSupportKHR(PhysDev, q, Surface, &(m_Devices[i].QueueSupportsPresent[q]));
             LE_CHECK_VK_RESULT(res);
         }
 
@@ -125,20 +125,20 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
         LE_CHECK_VK_RESULT(res);
         LE_DEBUG_ASSERT(NumFormats > 0);
 
-        m_devices[i].m_surfaceFormats.resize(NumFormats);
+        m_Devices[i].SurfaceFormats.resize(NumFormats);
 
-        res = vkGetPhysicalDeviceSurfaceFormatsKHR(PhysDev, Surface, &NumFormats, m_devices[i].m_surfaceFormats.data());
+        res = vkGetPhysicalDeviceSurfaceFormatsKHR(PhysDev, Surface, &NumFormats, m_Devices[i].SurfaceFormats.data());
         LE_CHECK_VK_RESULT(res);
 
         for (uint32 j = 0; j < NumFormats; j++) {
-            const VkSurfaceFormatKHR& SurfaceFormat = m_devices[i].m_surfaceFormats[j];
+            const VkSurfaceFormatKHR& SurfaceFormat = m_Devices[i].SurfaceFormats[j];
             LE_DEBUG_MESSAGE("    Format %x color space %x", SurfaceFormat.format, SurfaceFormat.colorSpace);
         }
 
-        res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhysDev, Surface, &(m_devices[i].m_surfaceCaps));
+        res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhysDev, Surface, &(m_Devices[i].SurfaceCaps));
         LE_CHECK_VK_RESULT(res);
 
-        PrintImageUsageFlags(m_devices[i].m_surfaceCaps.supportedUsageFlags);
+        PrintImageUsageFlags(m_Devices[i].SurfaceCaps.supportedUsageFlags);
 
         uint32 NumPresentModes = 0;
 
@@ -147,27 +147,27 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
 
         LE_DEBUG_ASSERT(NumPresentModes != 0);
 
-        m_devices[i].m_presentModes.resize(NumPresentModes);
+        m_Devices[i].PresentModes.resize(NumPresentModes);
 
-        res = vkGetPhysicalDeviceSurfacePresentModesKHR(PhysDev, Surface, &NumPresentModes, m_devices[i].m_presentModes.data());
+        res = vkGetPhysicalDeviceSurfacePresentModesKHR(PhysDev, Surface, &NumPresentModes, m_Devices[i].PresentModes.data());
         LE_CHECK_VK_RESULT(res);
 
         LE_DEBUG_MESSAGE("Number of presentation modes %d", NumPresentModes);
 
-        vkGetPhysicalDeviceMemoryProperties(PhysDev, &(m_devices[i].m_memProps));
+        vkGetPhysicalDeviceMemoryProperties(PhysDev, &(m_Devices[i].MemProps));
 
-        LE_DEBUG_MESSAGE("Num memory types %d", m_devices[i].m_memProps.memoryTypeCount);
-        for (uint32 j = 0; j < m_devices[i].m_memProps.memoryTypeCount; j++) {
-            LE_DEBUG_MESSAGE("%d: flags %x heap %d ", j, 
-                m_devices[i].m_memProps.memoryTypes[j].propertyFlags,
-                m_devices[i].m_memProps.memoryTypes[j].heapIndex);
+        LE_DEBUG_MESSAGE("Num memory types %d", m_Devices[i].MemProps.memoryTypeCount);
+        for (uint32 j = 0; j < m_Devices[i].MemProps.memoryTypeCount; j++) {
+            LE_DEBUG_MESSAGE("%d: Flags %x heap %d ", j, 
+                m_Devices[i].MemProps.memoryTypes[j].propertyFlags,
+                m_Devices[i].MemProps.memoryTypes[j].heapIndex);
 
-            PrintMemoryProperty(m_devices[i].m_memProps.memoryTypes[j].propertyFlags);
+            PrintMemoryProperty(m_Devices[i].MemProps.memoryTypes[j].propertyFlags);
         }
-        LE_DEBUG_MESSAGE("Num heap types %d", m_devices[i].m_memProps.memoryHeapCount);
+        LE_DEBUG_MESSAGE("Num heap types %d", m_Devices[i].MemProps.memoryHeapCount);
 
 
-        vkGetPhysicalDeviceFeatures(m_devices[i].m_physDevice, &m_devices[i].m_features);
+        vkGetPhysicalDeviceFeatures(m_Devices[i].hPhysDevice, &m_Devices[i].Features);
 
     }
 
@@ -176,29 +176,29 @@ void LeVkPhysicalDevices::Init(const VkInstance& Instance, const VkSurfaceKHR& S
 
 void LeVkPhysicalDevices::DeInit()
 {
-    m_devices.clear();
-    m_devIndex = -1;
+    m_Devices.clear();
+    m_DeviceIndex = -1;
 
     LE_DEBUG_MESSAGE("Physical devices cleared");
 }
 
 uint32 LeVkPhysicalDevices::SelectDevice(VkQueueFlags RequiredQueueType, LeBool SupportsPresent)
 {
-    for (uint32 i = 0; i < m_devices.size(); i++) {
+    for (uint32 i = 0; i < m_Devices.size(); i++) {
 
-        for (uint32 j = 0; j < m_devices[i].m_qFamilyProps.size(); j++) {
-            const VkQueueFamilyProperties& QFamilyProp = m_devices[i].m_qFamilyProps[j];
+        for (uint32 j = 0; j < m_Devices[i].QueueFamilyProps.size(); j++) {
+            const VkQueueFamilyProperties& QFamilyProp = m_Devices[i].QueueFamilyProps[j];
 
-            if ((QFamilyProp.queueFlags & RequiredQueueType) && ((LeBool)m_devices[i].m_qSupportsPresent[j] == SupportsPresent)) {
-                m_devIndex = i;
+            if ((QFamilyProp.queueFlags & RequiredQueueType) && ((LeBool)m_Devices[i].QueueSupportsPresent[j] == SupportsPresent)) {
+                m_DeviceIndex = i;
                 int QueueFamily = j;
-                LE_DEBUG_MESSAGE("Using GFX device %d and queue family %d", m_devIndex, QueueFamily);
+                LE_DEBUG_MESSAGE("Using GFX device %d and queue family %d", m_DeviceIndex, QueueFamily);
                 return QueueFamily;
             }
         }
     }
     
-    LE_ERROR("Required queue type %x and supports present %d not found", RequiredQueueType, SupportsPresent);
+    LE_ERROR("Required queue Type %x and supports present %d not found", RequiredQueueType, SupportsPresent);
     
     return -1;
 }
@@ -206,8 +206,8 @@ uint32 LeVkPhysicalDevices::SelectDevice(VkQueueFlags RequiredQueueType, LeBool 
 
 const LeVkPhysicalDevice* LeVkPhysicalDevices::Selected() const
 {
-    if (m_devIndex < 0)
+    if (m_DeviceIndex < 0)
         LE_ERROR("A physical device has not been selected");
 
-    return &m_devices[m_devIndex];
+    return &m_Devices[m_DeviceIndex];
 }

@@ -7,19 +7,19 @@
 LeTexture::LeTexture()
 {
 
-	m_name[0] = 0;
-	m_nameHash = 0;
+	m_Name[0] = 0;
+	m_NameHash = 0;
 
-	m_width = m_height = 0;
-	m_pixels = NULL;
+	m_Width = m_Height = 0;
+	m_pPixels = NULL;
 
-	flags = TEXTURE_ALL_DIRTY_FLAGS;
+	Flags = TEXTURE_ALL_DIRTY_FLAGS;
 }
 
 LeTexture::~LeTexture()
 {
-	LeFree(m_pixels);
-	m_pixels = NULL;
+	LeFree(m_pPixels);
+	m_pPixels = NULL;
 }
 
 LeTexture* LeTexture::Create()
@@ -37,21 +37,21 @@ LeTexture* LeTexture::Create()
 
 void LeTexture::SetName(const LeChar* pName)
 {
-	strncpy(m_name, pName, sizeof(m_name));
-	m_nameHash = lehash64(m_name);
+	strncpy(m_Name, pName, sizeof(m_Name));
+	m_NameHash = lehash64(m_Name);
 }
 
 
 void LeTexture::AllocatePixels(uint32 width, uint32 height)
 {
-	if (m_pixels)
+	if (m_pPixels)
 		return;
 
-	m_width = width;
-	m_height = height;
+	m_Width = width;
+	m_Height = height;
 
-	int32 numPixels = m_width * m_height;
-	m_pixels = new LeRGBA[numPixels];
+	int32 numPixels = m_Width * m_Height;
+	m_pPixels = new LeRGBA[numPixels];
 
 	OnPixelsAllocated();
 }
@@ -59,37 +59,37 @@ void LeTexture::AllocatePixels(uint32 width, uint32 height)
 void LeTexture::SetPixels(const LeRGBA* pPixels)
 {
 
-	int32 numPixels = m_width * m_height;
-	LeMemcpy(m_pixels, pPixels, numPixels * sizeof(LeRGBA));
+	int32 numPixels = m_Width * m_Height;
+	LeMemcpy(m_pPixels, pPixels, numPixels * sizeof(LeRGBA));
 
-	flags |= TEXTURE_PIXELS_DIRTY;
+	Flags |= TEXTURE_PIXELS_DIRTY;
 }
 
 const LeRGBA* LeTexture::GetPixels(void) const
 {
-	return m_pixels;
+	return m_pPixels;
 }
 
 void LeTexture::SetAttributes(LeTextureAttributes* pAttribs)
 {
 	LE_DEBUG_ASSERT(pAttribs);
 
-	m_attribs = *pAttribs;
+	m_Attribs = *pAttribs;
 
-	flags |= TEXTURE_ATTRIBUTES_DIRTY;
+	Flags |= TEXTURE_ATTRIBUTES_DIRTY;
 }
 
 void LeTexture::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
 
-	pFileStream->WriteString(m_name);
+	pFileStream->WriteString(m_Name);
 
-	pFileStream->WriteNumber(&m_width);
-	pFileStream->WriteNumber(&m_height);
-	uint32 numPixels = m_width * m_height;
-	pFileStream->Write(m_pixels, numPixels * sizeof(LeRGBA));
+	pFileStream->WriteNumber(&m_Width);
+	pFileStream->WriteNumber(&m_Height);
+	uint32 numPixels = m_Width * m_Height;
+	pFileStream->Write(m_pPixels, numPixels * sizeof(LeRGBA));
 
-	pFileStream->Write(&m_attribs, sizeof(m_attribs));
+	pFileStream->Write(&m_Attribs, sizeof(m_Attribs));
 }
 
 void LeTexture::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
@@ -105,7 +105,7 @@ void LeTexture::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 	AllocatePixels(width, height);
 
 	uint32 numPixels = width * height;
-	pFileStream->Read(m_pixels, numPixels * sizeof(LeRGBA));
+	pFileStream->Read(m_pPixels, numPixels * sizeof(LeRGBA));
 	
-	pFileStream->Read(&m_attribs, sizeof(m_attribs));
+	pFileStream->Read(&m_Attribs, sizeof(m_Attribs));
 }

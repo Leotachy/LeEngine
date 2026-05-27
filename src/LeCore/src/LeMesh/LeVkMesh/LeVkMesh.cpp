@@ -13,7 +13,7 @@ LeVkMatBlock::LeVkMatBlock()
 
 LeVkMatBlock::~LeVkMatBlock()
 {
-	if (m_isCompiled)
+	if (m_bIsCompiled)
 	{
 		LeVkUtils::DestroyBuffer(&m_VertexBuffer);
 		LeVkUtils::DestroyBuffer(&m_IndexBuffer);
@@ -23,34 +23,34 @@ LeVkMatBlock::~LeVkMatBlock()
 void LeVkMatBlock::Compile(void)
 {
 
-	if (m_isCompiled)
+	if (m_bIsCompiled)
 	{
 		// Cannot compile again
 		return;
 	}
 
 	{
-		LE_ASSERT(m_vertices.size() > 0 && "Compiling matblock with 0 vertices!");
+		LE_ASSERT(m_Vertices.size() > 0 && "Compiling matblock with 0 vertices!");
 
 		VkBufferUsageFlags Usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		VkDeviceSize VertexBufferSize = sizeof(LeVertex) * m_vertices.size();
+		VkDeviceSize VertexBufferSize = sizeof(LeVertex) * m_Vertices.size();
 		VmaAllocationCreateFlags AllocCreateFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
 		LeVkUtils::CreateBuffer(VertexBufferSize, Usage, AllocCreateFlags, &m_VertexBuffer);
 	}
 
 	{
-		LE_ASSERT(m_faces.size() > 0 && "Compiling matblock with 0 faces!");
+		LE_ASSERT(m_Faces.size() > 0 && "Compiling matblock with 0 faces!");
 
 		VkBufferUsageFlags Usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		VkDeviceSize IndexBufferSize = sizeof(LeFace) * m_faces.size();
+		VkDeviceSize IndexBufferSize = sizeof(LeFace) * m_Faces.size();
 		VmaAllocationCreateFlags AllocCreateFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
 		LeVkUtils::CreateBuffer(IndexBufferSize, Usage, AllocCreateFlags, &m_IndexBuffer);
 	}
 
 
-	m_isCompiled = true;
+	m_bIsCompiled = true;
 }
 
 
@@ -85,17 +85,17 @@ uint32 LeVkMatBlock::LeVertexGetNumAttributeDescriptions()
 
 LeVkMesh::LeVkMesh()
 {
-	LeVkUtils::CreateUniformBuffer(sizeof(glm::mat4), &m_modelMatrix);
+	LeVkUtils::CreateUniformBuffer(sizeof(glm::mat4), &m_ModelMatrix);
 
 	glm::mat4 GlobalMatrix = glm::mat4(1.0f);
-	LeVkUtils::UpdateBuffer(&m_modelMatrix, &GlobalMatrix, sizeof(GlobalMatrix));
+	LeVkUtils::UpdateBuffer(&m_ModelMatrix, &GlobalMatrix, sizeof(GlobalMatrix));
 
-	m_descriptorSet.Init();
-	m_descriptorSet.UpdateSet(&m_modelMatrix);
+	m_DescriptorSet.Init();
+	m_DescriptorSet.UpdateSet(&m_ModelMatrix);
 }
 
 LeVkMesh::~LeVkMesh()
 {
-	LeVkUtils::DestroyBuffer(&m_modelMatrix);
+	LeVkUtils::DestroyBuffer(&m_ModelMatrix);
 }
 

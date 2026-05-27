@@ -8,9 +8,7 @@ LeEngine_target_sources_grouped(
 
 	"include/LeCore/LeCore.h"
 
-	"src/LeDebug/LeDebug.cpp"
-	"src/LeDebug/LeDebugWin/DefDbg.h"
-
+	"include/LeCore/LeDebug/LeDebug.h"
 	"include/LeCore/LeEngine/LeEngine.h"
 	"include/LeCore/LeRender/LeRender.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
@@ -56,6 +54,8 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeRGBA/LeRGBA.h"
 	"include/LeCore/LeBinary/LeSerializableBinaryChunk.h"
 
+	"src/LeDebug/LeDebug.cpp"
+	"src/LeDebug/LeDebugWin/DefDbg.h"
 	"src/LeEngine/LeEngine.cpp"
 	"src/LeRender/LeRender.cpp"
 	"src/LeRender/LeRenderVulkan/LeRenderVulkan.cpp"

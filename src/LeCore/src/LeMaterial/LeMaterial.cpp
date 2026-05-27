@@ -8,13 +8,13 @@
 
 LeMaterial::LeMaterial()
 {
-	m_attribsHash = 0;
-	m_name[0] = 0;
+	m_AttribsHash = 0;
+	m_Name[0] = 0;
 
-	m_shader = NULL;
-	m_baseTexture = NULL;
+	m_pShader = NULL;
+	m_pBaseTexture = NULL;
 
-	flags = MATERIAL_ALL_DIRTY_FLAGS;
+	Flags = MATERIAL_ALL_DIRTY_FLAGS;
 }
 
 LeMaterial* LeMaterial::Create(void)
@@ -32,44 +32,44 @@ LeMaterial* LeMaterial::Create(void)
 
 uint64 LeMaterial::GetAttributeHash(void)
 {
-	if (flags & MATERIAL_ATTRIB_HASH_DIRTY)
+	if (Flags & MATERIAL_ATTRIB_HASH_DIRTY)
 	{
 
 		LeMaterialAttributes Attribs =
 		{
-			.ShaderHash = m_shader ? m_shader->GetNameHash() : 0,
-			.BaseTextureHash = m_baseTexture ? m_baseTexture->GetNameHash() : 0,
+			.ShaderHash = m_pShader ? m_pShader->GetNameHash() : 0,
+			.BaseTextureHash = m_pBaseTexture ? m_pBaseTexture->GetNameHash() : 0,
 		};
 
-		m_attribsHash = lehash64_bin(&Attribs, sizeof(Attribs));
-		flags &= ~MATERIAL_ATTRIB_HASH_DIRTY;
+		m_AttribsHash = lehash64_bin(&Attribs, sizeof(Attribs));
+		Flags &= ~MATERIAL_ATTRIB_HASH_DIRTY;
 	}
 	
-	return m_attribsHash;
+	return m_AttribsHash;
 }
 
 void LeMaterial::SetName(const LeChar* pName)
 {
 	LE_DEBUG_ASSERT(pName);
 
-	strcpy(m_name, pName);
+	strcpy(m_Name, pName);
 }
 
 void LeMaterial::SetShader(LeShader* pShader)
 { 
-	m_shader = pShader;
-	flags |= MATERIAL_SHADER_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
+	m_pShader = pShader;
+	Flags |= MATERIAL_SHADER_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
 }
 
 void LeMaterial::SetBaseTexture(LeTexture* pTexture)
 {
-	m_baseTexture = pTexture;
-	flags |= MATERIAL_BASE_TEXTURE_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
+	m_pBaseTexture = pTexture;
+	Flags |= MATERIAL_BASE_TEXTURE_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
 }
 
 void LeMaterial::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	pFileStream->WriteString(m_name);
+	pFileStream->WriteString(m_Name);
 	
 	uint64 ShaderHash = GetShader() ? GetShader()->GetNameHash() : 0;
 	pFileStream->WriteNumber(&ShaderHash);
@@ -79,7 +79,7 @@ void LeMaterial::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 
 void LeMaterial::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	pFileStream->ReadString(m_name, LE_MATERIAL_MAX_NAME);
+	pFileStream->ReadString(m_Name, LE_MATERIAL_MAX_NAME);
 
 	LeScene* pScene = static_cast<LeScene*>(FindParentCached(LeSerializableBinaryChunkType::Scene));
 	LE_DEBUG_ASSERT(pScene);

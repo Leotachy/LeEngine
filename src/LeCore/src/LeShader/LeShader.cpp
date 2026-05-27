@@ -7,11 +7,11 @@
 
 
 
-LeShader::LeShader(const LeChar* name, const char* pShaderBinaryPath)
+LeShader::LeShader(const char* pName, const char* pShaderBinaryPath)
 {
-	LE_ASSERT(name);
+	LE_ASSERT(pName);
 
-	m_NameHash = lehash64(name);
+	m_NameHash = lehash64(pName);
 }
 
 LeShader::~LeShader()

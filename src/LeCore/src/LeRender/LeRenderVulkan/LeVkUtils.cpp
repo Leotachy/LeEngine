@@ -409,7 +409,7 @@ uint32 LeVkUtils::GetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMe
 		return i;
 	}
 
-	LE_DEBUG_ERROR("Cannot find memory type for type %x requested mem props %x", MemTypeBitsMask, ReqMemPropFlags);
+	LE_DEBUG_ERROR("Cannot find memory Type for Type %x requested mem props %x", MemTypeBitsMask, ReqMemPropFlags);
 	return -1;
 }
 
@@ -452,7 +452,7 @@ const LeChar* LeVkUtils::GetVkDebugUtilsMessageType(VkDebugUtilsMessageTypeFlags
 		return "Device address binding";
 
 	default:
-		LE_ERROR("Invalid type code %d\n", Type);
+		LE_ERROR("Invalid Type code %d\n", Type);
 		exit(1);
 	}
 

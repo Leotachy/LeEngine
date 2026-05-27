@@ -55,20 +55,20 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 	const LeVkPhysicalDevice* pPhysicalDevice = LeVkRenderer::Get()->GetLePhysicalDevice();
 
 	VkSurfaceCapabilitiesKHR SurfaceCaps;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(pPhysicalDevice->m_physDevice, Surface, &SurfaceCaps);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(pPhysicalDevice->hPhysDevice, Surface, &SurfaceCaps);
 
-	m_extent = SurfaceCaps.currentExtent;
+	m_Extent = SurfaceCaps.currentExtent;
 
-	m_minNumImages = SurfaceCaps.minImageCount;
+	m_MinNumImages = SurfaceCaps.minImageCount;
 
 	uint32 NumImages = ChooseNumImages(SurfaceCaps);
 
-	const std::vector<VkPresentModeKHR>& PresentModes = pPhysicalDevice->m_presentModes;
+	const std::vector<VkPresentModeKHR>& PresentModes = pPhysicalDevice->PresentModes;
 	VkPresentModeKHR PresentMode = ChoosePresentMode(PresentModes);
 
-	VkSurfaceFormatKHR SurfaceFormat = ChooseSurfaceFormatAndColorSpace(pPhysicalDevice->m_surfaceFormats);
+	VkSurfaceFormatKHR SurfaceFormat = ChooseSurfaceFormatAndColorSpace(pPhysicalDevice->SurfaceFormats);
 
-	m_imageFormat = SurfaceFormat.format;
+	m_ImageFormat = SurfaceFormat.format;
 
 	VkSwapchainCreateInfoKHR SwapChainInfo =
 	{
@@ -91,7 +91,7 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 		.clipped = VK_TRUE
 	};
 
-	VkResult res = vkCreateSwapchainKHR(Device, &SwapChainInfo, NULL, &m_swapChain);
+	VkResult res = vkCreateSwapchainKHR(Device, &SwapChainInfo, NULL, &m_hSwapchain);
 	LE_CHECK_VK_RESULT(res);
 
 	LE_DEBUG_MESSAGE("Swapchain created");
@@ -99,21 +99,21 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 	// make the images also
 
 	uint32 NumSwapChainImages = 0;
-	res = vkGetSwapchainImagesKHR(Device, m_swapChain, &NumSwapChainImages, NULL);
+	res = vkGetSwapchainImagesKHR(Device, m_hSwapchain, &NumSwapChainImages, NULL);
 	LE_CHECK_VK_RESULT(res);
 	LE_DEBUG_ASSERT(NumImages == NumSwapChainImages);
 
 	LE_DEBUG_MESSAGE("Number of swapchain images %d", NumSwapChainImages);
 
-	m_numImages = NumSwapChainImages;
+	m_NumImages = NumSwapChainImages;
 
-	m_images = (VkImage*)LeMalloc(NumSwapChainImages * sizeof(VkImage));
-	LE_DEBUG_ASSERT(m_images);
+	m_phImages = (VkImage*)LeMalloc(NumSwapChainImages * sizeof(VkImage));
+	LE_DEBUG_ASSERT(m_phImages);
 
-	m_imageViews = (VkImageView*)LeMalloc(NumSwapChainImages * sizeof(VkImageView));
-	LE_DEBUG_ASSERT(m_imageViews);
+	m_phImageViews = (VkImageView*)LeMalloc(NumSwapChainImages * sizeof(VkImageView));
+	LE_DEBUG_ASSERT(m_phImageViews);
 
-	res = vkGetSwapchainImagesKHR(Device, m_swapChain, &NumSwapChainImages, m_images);
+	res = vkGetSwapchainImagesKHR(Device, m_hSwapchain, &NumSwapChainImages, m_phImages);
 	LE_CHECK_VK_RESULT(res);
 
 	// And the image views
@@ -122,7 +122,7 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 	int MipLevels = 1;
 	for (uint32 i = 0; i < NumSwapChainImages; i++)
 	{
-		m_imageViews[i] = LeVkUtils::CreateImageView(m_images[i], SurfaceFormat.format,
+		m_phImageViews[i] = LeVkUtils::CreateImageView(m_phImages[i], SurfaceFormat.format,
 			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, LayerCount, MipLevels);
 	}
 }
@@ -133,20 +133,20 @@ void LeSwapchain::DeInit()
 
 	// DeInit image views
 
-	for (uint32 i = 0; i < m_numImages; i++)
+	for (uint32 i = 0; i < m_NumImages; i++)
 	{
-		LeVkUtils::DestroyImageView(m_imageViews[i]);
-		m_imageViews[i] = NULL;
+		LeVkUtils::DestroyImageView(m_phImageViews[i]);
+		m_phImageViews[i] = NULL;
 	}
 		
-	m_numImages = 0;
-	m_minNumImages = 0;
+	m_NumImages = 0;
+	m_MinNumImages = 0;
 
 
 	// DeInit the swap chain
 
-	vkDestroySwapchainKHR(Device, m_swapChain, NULL);
-	m_swapChain = NULL;
+	vkDestroySwapchainKHR(Device, m_hSwapchain, NULL);
+	m_hSwapchain = NULL;
 
 	LE_DEBUG_MESSAGE("Swapchain destroyed");
 }

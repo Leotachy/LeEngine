@@ -5,47 +5,47 @@
 
 LeStreamFile::LeStreamFile(void)
 {
-	type = LeStreamType::FILE;
+	Type = LeStreamType::FILE;
 
-	LeMemset(filename, 0, sizeof(filename));
-	m_file = NULL;
+	LeMemset(m_Filename, 0, sizeof(m_Filename));
+	m_pFile = NULL;
 }
 
 LeStream* LeStreamFile::Open(LeStreamAccessType a, const void* data)
 {
 	LE_DEBUG_ASSERT(data);
 
-	accessType = a;
+	AccessType = a;
 
-	position = 0; 
+	Position = 0; 
 
-	strncpy(filename, (const char*)data, MAX_LE_FILENAME-1);
-	filename[MAX_LE_FILENAME - 1] = 0;
+	strncpy(m_Filename, (const char*)data, MAX_LE_FILENAME-1);
+	m_Filename[MAX_LE_FILENAME - 1] = 0;
 
 
-	switch (accessType)
+	switch (AccessType)
 	{
 	case LeStreamAccessType::READ:
-		m_file = fopen(filename, "rb");
+		m_pFile = fopen(m_Filename, "rb");
 		break;
 
 	case LeStreamAccessType::READ_TEXT:
-		m_file = fopen(filename, "rt");
+		m_pFile = fopen(m_Filename, "rt");
 		break;
 
 	case LeStreamAccessType::WRITE:
-		m_file = fopen(filename, "wb");
+		m_pFile = fopen(m_Filename, "wb");
 		break;
 
 	default:
 		LE_DEBUG_ASSERT(0);
-		m_file = NULL;
+		m_pFile = NULL;
 		break;
 	}
 
-	LE_DEBUG_ASSERT(m_file);
+	LE_DEBUG_ASSERT(m_pFile);
 
-	if (m_file == NULL)
+	if (m_pFile == NULL)
 	{
 		return NULL;
 	}
@@ -57,9 +57,9 @@ LeStream* LeStreamFile::Open(LeStreamAccessType a, const void* data)
 
 LeBool LeStreamFile::Close()
 {
-	LE_DEBUG_ASSERT(m_file);
+	LE_DEBUG_ASSERT(m_pFile);
 
-	int code = fclose(m_file);
+	int code = fclose(m_pFile);
 	LE_DEBUG_ASSERT(code == 0);
 
 	if (code != 0)
@@ -74,21 +74,21 @@ LeBool LeStreamFile::Close()
 
 uint32 LeStreamFile::Read(void* buffer, uint32 length)
 {
-	LE_DEBUG_ASSERT(accessType == LeStreamAccessType::READ || accessType == LeStreamAccessType::READ_TEXT);
+	LE_DEBUG_ASSERT(AccessType == LeStreamAccessType::READ || AccessType == LeStreamAccessType::READ_TEXT);
 	LE_DEBUG_ASSERT(buffer);
 	LE_DEBUG_ASSERT(length > 0);
 
 	uint32 BytesRead = 0;
 
-	LE_DEBUG_ASSERT(m_file);
+	LE_DEBUG_ASSERT(m_pFile);
 
-	BytesRead = int32(fread(buffer, sizeof(uint8), length, m_file));
+	BytesRead = int32(fread(buffer, sizeof(uint8), length, m_pFile));
 
-	position += BytesRead;
+	Position += BytesRead;
 
 	if (BytesRead < length)
 	{
-		if (feof(m_file))
+		if (feof(m_pFile))
 		{
 			//LE_DEBUG_ERROR("Unexpected end of file!");
 		}
@@ -106,13 +106,13 @@ LeStream* LeStreamFile::Write(const void* buffer, uint32 length)
 
 	LeStream* ret;
 
-	if (accessType == LeStreamAccessType::WRITE)
+	if (AccessType == LeStreamAccessType::WRITE)
 	{
-		LE_DEBUG_ASSERT(m_file);
+		LE_DEBUG_ASSERT(m_pFile);
 
-		BytesWritten = int32(fwrite(buffer, sizeof(uint8), length, m_file));
+		BytesWritten = int32(fwrite(buffer, sizeof(uint8), length, m_pFile));
 
-		position += BytesWritten;
+		Position += BytesWritten;
 
 		if (BytesWritten < length)
 		{
@@ -136,12 +136,12 @@ LeStream* LeStreamFile::Skip(uint32 offset)
 {
 	int32 code;
 
-	LE_DEBUG_ASSERT(m_file);
+	LE_DEBUG_ASSERT(m_pFile);
 
-	code = fseek(m_file, offset, SEEK_CUR);
+	code = fseek(m_pFile, offset, SEEK_CUR);
 	LE_DEBUG_ASSERT(code == 0);
 
-	position += offset;
+	Position += offset;
 
 	if (code == 0)
 	{
@@ -155,16 +155,16 @@ LeStream* LeStreamFile::Skip(uint32 offset)
 
 LeStream* LeStreamFile::SkipBack(uint32 offset)
 {
-	LE_DEBUG_ASSERT(accessType == LeStreamAccessType::WRITE);
-	LE_DEBUG_ASSERT(m_file);
+	LE_DEBUG_ASSERT(AccessType == LeStreamAccessType::WRITE);
+	LE_DEBUG_ASSERT(m_pFile);
 
 	LeStream* ret = NULL;
 
-	int32 code = fseek(m_file, -(static_cast<int32> (offset)), SEEK_CUR);
+	int32 code = fseek(m_pFile, -(static_cast<int32> (offset)), SEEK_CUR);
 		
 	LE_DEBUG_ASSERT(code == 0);
 
-	position -= offset;
+	Position -= offset;
 
 	if (code == 0)
 	{

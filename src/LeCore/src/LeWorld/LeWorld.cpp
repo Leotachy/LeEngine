@@ -5,22 +5,22 @@
 
 LeWorld::LeWorld()
 {
-	m_mesh = LeMesh::Create();
+	m_pMesh = LeMesh::Create();
 }
 
 LeWorld::~LeWorld(void)
 {
-	delete m_mesh;
-	m_mesh = NULL;
+	delete m_pMesh;
+	m_pMesh = NULL;
 }
 
 
 void LeWorld::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	m_mesh->SerializeBinaryChunk(pFileStream, this);
+	m_pMesh->SerializeBinaryChunk(pFileStream, this);
 }
 
 void LeWorld::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	m_mesh->DeserializeBinaryChunk(pFileStream, this);
+	m_pMesh->DeserializeBinaryChunk(pFileStream, this);
 }

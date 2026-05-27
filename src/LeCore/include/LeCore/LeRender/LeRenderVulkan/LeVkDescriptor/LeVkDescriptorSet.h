@@ -13,13 +13,13 @@ public:
 
 	virtual void UpdateSet(void* pData) = 0;
 
-	VkDescriptorSet GetDescriptorSet(void) { return m_descriptorSet; };
+	VkDescriptorSet GetDescriptorSet(void) { return m_DescriptorSet; };
 
 protected:
 	virtual LeVkDescriptorPoolType GetPoolType(void) = 0;
 
-	VkDevice m_device;
-	VkDescriptorSet m_descriptorSet;
+	VkDevice m_hDevice;
+	VkDescriptorSet m_DescriptorSet;
 
 private:
 

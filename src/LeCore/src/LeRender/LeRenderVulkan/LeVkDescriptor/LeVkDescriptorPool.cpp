@@ -9,7 +9,7 @@
 
 LeVkDescriptorPool::LeVkDescriptorPool()
 {
-	m_device = VK_NULL_HANDLE;
+	m_hDevice = VK_NULL_HANDLE;
 	m_descriptorPool = VK_NULL_HANDLE;
 	m_descriptorSetLayout = VK_NULL_HANDLE;
 }
@@ -22,7 +22,7 @@ LeVkDescriptorPool::~LeVkDescriptorPool()
 void LeVkDescriptorPool::Init(void)
 {
 
-	m_device = LeVkRenderer::Get()->GetDevice();
+	m_hDevice = LeVkRenderer::Get()->GetDevice();
 
 	VkDescriptorPoolSize* PoolSizes;
 	uint32 NumPoolSizes;
@@ -41,7 +41,7 @@ void LeVkDescriptorPool::Init(void)
 		.pPoolSizes = PoolSizes
 	};
 
-	VkResult res = vkCreateDescriptorPool(m_device, &PoolInfo, NULL, &m_descriptorPool);
+	VkResult res = vkCreateDescriptorPool(m_hDevice, &PoolInfo, NULL, &m_descriptorPool);
 	LE_CHECK_VK_RESULT(res);
 
 
@@ -59,7 +59,7 @@ void LeVkDescriptorPool::Init(void)
 			.pBindings = Bindings
 		};
 
-		res = vkCreateDescriptorSetLayout(m_device, &LayoutInfo, NULL, &m_descriptorSetLayout);
+		res = vkCreateDescriptorSetLayout(m_hDevice, &LayoutInfo, NULL, &m_descriptorSetLayout);
 		LE_CHECK_VK_RESULT(res);
 	}
 }
@@ -68,19 +68,19 @@ void LeVkDescriptorPool::DeInit(void)
 {
 	if (m_descriptorSetLayout != VK_NULL_HANDLE)
 	{
-		LE_DEBUG_ASSERT(m_device != VK_NULL_HANDLE);
-		vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, NULL);
+		LE_DEBUG_ASSERT(m_hDevice != VK_NULL_HANDLE);
+		vkDestroyDescriptorSetLayout(m_hDevice, m_descriptorSetLayout, NULL);
 		m_descriptorSetLayout = VK_NULL_HANDLE;
 	}
 
 	if (m_descriptorPool)
 	{
-		LE_DEBUG_ASSERT(m_device != VK_NULL_HANDLE);
-		vkDestroyDescriptorPool(m_device, m_descriptorPool, NULL);
+		LE_DEBUG_ASSERT(m_hDevice != VK_NULL_HANDLE);
+		vkDestroyDescriptorPool(m_hDevice, m_descriptorPool, NULL);
 		m_descriptorPool = VK_NULL_HANDLE;
 	}
 
-	m_device = VK_NULL_HANDLE;
+	m_hDevice = VK_NULL_HANDLE;
 }
 
 VkDescriptorPool LeVkDescriptorPool::GetDescriptorPool(void) const

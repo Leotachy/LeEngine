@@ -38,11 +38,11 @@ public:
 	LeVkMesh();
 	~LeVkMesh();
 
-	LeVkDescriptorSetMesh* GetLeDescriptor(void) { return &m_descriptorSet; }
+	LeVkDescriptorSetMesh* GetLeDescriptor(void) { return &m_DescriptorSet; }
 
 protected:
 
-	LeVkAllocatedBuffer m_modelMatrix;
+	LeVkAllocatedBuffer m_ModelMatrix;
 
-	LeVkDescriptorSetMesh m_descriptorSet;
+	LeVkDescriptorSetMesh m_DescriptorSet;
 };

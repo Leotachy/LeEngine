@@ -11,7 +11,7 @@ public:
 	LeWorld(void);
 	~LeWorld(void);
 
-	LeMesh* GetMesh() { return m_mesh; }
+	LeMesh* GetMesh() { return m_pMesh; }
 
 	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::World; }
 	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
@@ -22,5 +22,5 @@ protected:
 
 private:
 
-	LeMesh* m_mesh;
+	LeMesh* m_pMesh;
 };

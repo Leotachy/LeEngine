@@ -22,7 +22,7 @@ protected:
 	virtual uint32 GetMaxSets(void) = 0;
 	virtual void GetLayoutBindings(VkDescriptorSetLayoutBinding** Bindings, uint32* NumSizes) = 0;
 
-	VkDevice m_device;
+	VkDevice m_hDevice;
 	VkDescriptorPool m_descriptorPool;
 	VkDescriptorSetLayout m_descriptorSetLayout;
 };

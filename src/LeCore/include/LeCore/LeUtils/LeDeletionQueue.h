@@ -6,8 +6,8 @@
 
 struct LeDeletionQueue
 {
-	std::deque<std::function<void()>> deletors;
+	std::deque<std::function<void()>> Deletors;
 
-	void push_function(std::function<void()>&& function);
-	void flush();
+	void AddFunction(std::function<void()>&& function);
+	void Flush();
 };

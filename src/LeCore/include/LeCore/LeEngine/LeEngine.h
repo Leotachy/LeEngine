@@ -13,6 +13,6 @@ struct InitEngineParams
 	InitRendererParams RendererParams;
 };
 
-void LeEngineInit(InitEngineParams& Params);
+void LeEngineInit(InitEngineParams* Params);
 void LeEngineShutDown(void);
 void LeEngineDeInit(void);

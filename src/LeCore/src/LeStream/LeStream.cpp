@@ -5,9 +5,9 @@
 
 LeStream::LeStream()
 {
-	type = LeStreamType::None;
-	accessType = LeStreamAccessType::None;
-	position = 0;
+	Type = LeStreamType::None;
+	AccessType = LeStreamAccessType::None;
+	Position = 0;
 }
 
 

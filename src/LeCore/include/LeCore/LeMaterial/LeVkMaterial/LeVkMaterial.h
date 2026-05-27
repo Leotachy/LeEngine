@@ -14,15 +14,15 @@ public:
 	LeVkMaterial();
 	virtual ~LeVkMaterial();
 
-	const LeVkGraphicsPipeline* GetGraphicsPipeline(void) { return m_graphicsPipeline; }
-	void SetGraphicsPipeline(LeVkGraphicsPipeline* pPipeline) { m_graphicsPipeline = pPipeline; }
+	const LeVkGraphicsPipeline* GetGraphicsPipeline(void) { return m_pGraphicsPipeline; }
+	void SetGraphicsPipeline(LeVkGraphicsPipeline* pPipeline) { m_pGraphicsPipeline = pPipeline; }
 
-	LeVkDescriptorSetMaterial* GetLeDescriptorSet(void) { return &m_descriptorSet; }
+	LeVkDescriptorSetMaterial* GetLeDescriptorSet(void) { return &m_DescriptorSet; }
 
 	void UpdateDescriptorSet(void);
 
 private:
-	LeVkGraphicsPipeline* m_graphicsPipeline;
+	LeVkGraphicsPipeline* m_pGraphicsPipeline;
 
-	LeVkDescriptorSetMaterial m_descriptorSet;
+	LeVkDescriptorSetMaterial m_DescriptorSet;
 };

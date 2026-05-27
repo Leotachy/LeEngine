@@ -10,9 +10,9 @@ void LeVkViewport::Init(VkExtent2D extent)
 {
 	LE_DEBUG_ASSERT(extent.width > 0 && extent.height > 0);
 
-	m_extent = extent;
+	m_Extent = extent;
 
-	m_imagesValid = false;
+	m_bImagesValid = false;
 
 	RebuildImages();
 
@@ -23,20 +23,20 @@ void LeVkViewport::ReInit(VkExtent2D extent)
 {
 	LE_DEBUG_ASSERT(extent.width > 0 && extent.height > 0);
 
-	m_extent = extent;
+	m_Extent = extent;
 
 	RebuildImages();
 }
 
 void LeVkViewport::DeInit(void)
 {
-	if (m_imagesValid)
+	if (m_bImagesValid)
 	{
-		LeVkUtils::DestroyImage(&m_colorImage);
-		LeVkUtils::DestroyImage(&m_depthImage);
+		LeVkUtils::DestroyImage(&m_ColorImage);
+		LeVkUtils::DestroyImage(&m_DepthImage);
 	}
 
-	m_imagesValid = false;
+	m_bImagesValid = false;
 
 	LE_DEBUG_MESSAGE("LeVkViewport deinitialized");
 }
@@ -44,13 +44,13 @@ void LeVkViewport::DeInit(void)
 void LeVkViewport::RebuildImages()
 {
 	
-	if (m_imagesValid)
+	if (m_bImagesValid)
 	{
-		LeVkUtils::DestroyImage(&m_colorImage);
-		LeVkUtils::DestroyImage(&m_depthImage);
+		LeVkUtils::DestroyImage(&m_ColorImage);
+		LeVkUtils::DestroyImage(&m_DepthImage);
 	}
 
-	VkExtent3D extent = VkExtent3D(m_extent.width, m_extent.height, 1);
+	VkExtent3D extent = VkExtent3D(m_Extent.width, m_Extent.height, 1);
 
 	LeVkUtils::CreateImage(
 		extent, LeVkRenderer::VIEWPORT_COLOR_IMAGE_FORMAT, VK_IMAGE_TILING_OPTIMAL,
@@ -59,15 +59,15 @@ void LeVkViewport::RebuildImages()
 		VK_IMAGE_USAGE_STORAGE_BIT		|
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT,
-		VK_IMAGE_VIEW_TYPE_2D, 1, 1, &m_colorImage);
+		VK_IMAGE_VIEW_TYPE_2D, 1, 1, &m_ColorImage);
 
 	LeVkUtils::CreateImage(
 		extent, LeVkRenderer::VIEWPORT_DEPTH_IMAGE_FORMAT, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		VK_IMAGE_ASPECT_DEPTH_BIT,
-		VK_IMAGE_VIEW_TYPE_2D, 1, 1, &m_depthImage);
+		VK_IMAGE_VIEW_TYPE_2D, 1, 1, &m_DepthImage);
 
-	m_imagesValid = true;
+	m_bImagesValid = true;
 }
 
 //#ifdef SUPPORT_IMGUI

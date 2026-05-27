@@ -3,15 +3,15 @@
 
 struct LeVkPhysicalDevice
 {
-	VkPhysicalDevice m_physDevice;
-	VkPhysicalDeviceProperties m_devProps;
-	std::vector<VkQueueFamilyProperties> m_qFamilyProps;
-	std::vector<VkBool32> m_qSupportsPresent;
-	std::vector<VkSurfaceFormatKHR> m_surfaceFormats;
-	VkSurfaceCapabilitiesKHR m_surfaceCaps;
-	VkPhysicalDeviceMemoryProperties m_memProps;
-	std::vector<VkPresentModeKHR> m_presentModes;
-	VkPhysicalDeviceFeatures m_features;
+	VkPhysicalDevice hPhysDevice;
+	VkPhysicalDeviceProperties hDevProps;
+	std::vector<VkQueueFamilyProperties> QueueFamilyProps;
+	std::vector<VkBool32> QueueSupportsPresent;
+	std::vector<VkSurfaceFormatKHR> SurfaceFormats;
+	VkSurfaceCapabilitiesKHR SurfaceCaps;
+	VkPhysicalDeviceMemoryProperties MemProps;
+	std::vector<VkPresentModeKHR> PresentModes;
+	VkPhysicalDeviceFeatures Features;
 };
 
 class LeVkPhysicalDevices
@@ -28,8 +28,8 @@ public:
 	const LeVkPhysicalDevice* Selected() const;
 
 private:
-	std::vector<LeVkPhysicalDevice> m_devices;
+	std::vector<LeVkPhysicalDevice> m_Devices;
 
-	int m_devIndex = -1;
+	int m_DeviceIndex = -1;
 };
 

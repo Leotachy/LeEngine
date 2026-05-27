@@ -74,7 +74,7 @@ static void manipulateMatblockVertex(LeMatBlock* pMb, double dt)
 	pMb->GetVertexData()[0].pos.z = (float)glm::cos(LifeTime);
 	pMb->GetVertexData()[3].pos.z = (float)glm::sin(LifeTime);
 
-	pMb->flags |= (MATBLOCK_VERTS_DIRTY);
+	pMb->Flags |= (MATBLOCK_VERTS_DIRTY);
 
 
 }
@@ -94,19 +94,19 @@ int main(void)
 	{
 		.RendererParams = 
 		{
-			.api = LeRenderApi::Vulkan,
-			.windowParams = 
+			.API = LeRenderApi::Vulkan,
+			.WindowParams = 
 			{
 				.pWindow = pWindow,
 				.pAppName = "TestApp"
 			},
-			.viewportParams = 
+			.ViewportParams = 
 			{
-				.uViewportWidth = DEFAULT_SCREEN_WIDTH,
-				.uViewportHeight = DEFAULT_SCREEN_HEIGHT,
+				.ViewportWidth = DEFAULT_SCREEN_WIDTH,
+				.ViewportHeight = DEFAULT_SCREEN_HEIGHT,
 				.bRenderViewportToImGuiTexture = false
 			},
-			.pathParams = 
+			.PathParams = 
 			{
 				.pShaderBinaryPath = TESTAPP_SHADER_BIN_PATH
 			}
@@ -159,11 +159,11 @@ int main(void)
 
 	Mb->SetNumVerts(uint32(verts.size()));
 	LeMemcpy(Mb->GetVertexData(), verts.data(), verts.size()*sizeof(LeVertex));
-	Mb->flags |= (MATBLOCK_VERTS_DIRTY);
+	Mb->Flags |= (MATBLOCK_VERTS_DIRTY);
 
 	Mb->SetNumFaces(uint32(indices.size()));
 	LeMemcpy(Mb->GetFaceData(), indices.data(), indices.size() * sizeof(LeFace));
-	Mb->flags |= (MATBLOCK_FACES_DIRTY);
+	Mb->Flags |= (MATBLOCK_FACES_DIRTY);
 
 	Mb->Compile();
 	

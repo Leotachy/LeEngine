@@ -35,7 +35,7 @@ VkSampler LeVkSamplerDictionary::GetOrCreateSampler(const LeVkTextureAttributes*
 
 	const LeVkPhysicalDevice* pPhysicalDevice = LeVkRenderer::Get()->GetLePhysicalDevice();
 	LE_DEBUG_ASSERT(pPhysicalDevice);
-	VkSampler NewSampler = LeVkUtils::CreateSampler(pAttribs, true, pPhysicalDevice->m_devProps.limits.maxSamplerAnisotropy);
+	VkSampler NewSampler = LeVkUtils::CreateSampler(pAttribs, true, pPhysicalDevice->hDevProps.limits.maxSamplerAnisotropy);
 
 	m_SamplerSet[hash] = NewSampler;
 

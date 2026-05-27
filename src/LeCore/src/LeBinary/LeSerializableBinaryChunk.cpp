@@ -12,14 +12,14 @@ void LeSerializableBinaryChunk::SerializeBinaryChunk(LeStreamFile* pFileStream, 
 
 	ClearCache();
 
-	m_parent = pParent;
+	m_pParent = pParent;
 
 	LeSerializableBinaryChunkType type = GetBinaryChunkType();
 	pFileStream->Write(&type, sizeof(type));
 
 	SerializeBinaryChunkImpl(pFileStream);
 
-	m_parent = NULL;
+	m_pParent = NULL;
 
 	ClearCache();
 }
@@ -30,7 +30,7 @@ void LeSerializableBinaryChunk::DeserializeBinaryChunk(LeStreamFile* pFileStream
 
 	ClearCache();
 
-	m_parent = pParent;
+	m_pParent = pParent;
 
 	LeSerializableBinaryChunkType type;
 	pFileStream->Read(&type, sizeof(type));
@@ -38,7 +38,7 @@ void LeSerializableBinaryChunk::DeserializeBinaryChunk(LeStreamFile* pFileStream
 
 	DeserializeBinaryChunkImpl(pFileStream);
 
-	m_parent = NULL;
+	m_pParent = NULL;
 
 	ClearCache();
 
@@ -46,13 +46,13 @@ void LeSerializableBinaryChunk::DeserializeBinaryChunk(LeStreamFile* pFileStream
 
 LeSerializableBinaryChunk* LeSerializableBinaryChunk::FindParent(LeSerializableBinaryChunkType type)
 {
-	LeSerializableBinaryChunk* pScan = m_parent;
+	LeSerializableBinaryChunk* pScan = m_pParent;
 	while (pScan)
 	{
 		if (pScan->GetBinaryChunkType() == type)
 			return pScan;
 
-		pScan = pScan->m_parent;
+		pScan = pScan->m_pParent;
 	}
 
 	return NULL;
@@ -63,21 +63,21 @@ LeSerializableBinaryChunk* LeSerializableBinaryChunk::FindParentCached(LeSeriali
 	int32 i;
 	for (i = 0; i < CACHE_SIZE; i++)
 	{
-		if (!m_cache[i])
+		if (!m_Cache[i])
 			break;
 	
-		if (m_cache[i]->GetBinaryChunkType() == type)
-			return m_cache[i];
+		if (m_Cache[i]->GetBinaryChunkType() == type)
+			return m_Cache[i];
 	}
 
 	LeSerializableBinaryChunk* pFound = FindParent(type);
 	if (pFound == NULL)
 		return NULL;
 
-	if (m_last_written_cache_index >= CACHE_SIZE)
-		m_last_written_cache_index = 0;
+	if (m_LastWrittenCacheIndex >= CACHE_SIZE)
+		m_LastWrittenCacheIndex = 0;
 
-	m_cache[m_last_written_cache_index++] = pFound;
+	m_Cache[m_LastWrittenCacheIndex++] = pFound;
 
 	return pFound;
 
@@ -87,7 +87,7 @@ LeSerializableBinaryChunk* LeSerializableBinaryChunk::FindParentCached(LeSeriali
 void LeSerializableBinaryChunk::ClearCache(void)
 {
 	for (int32 i = 0; i < CACHE_SIZE; i++)
-		m_cache[i] = NULL;
+		m_Cache[i] = NULL;
 
-	m_last_written_cache_index = 0;
+	m_LastWrittenCacheIndex = 0;
 }

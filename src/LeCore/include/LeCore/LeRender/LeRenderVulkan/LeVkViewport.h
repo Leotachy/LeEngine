@@ -12,23 +12,23 @@ public:
 	void ReInit(VkExtent2D extent);
 	void DeInit(void);
 
-	VkExtent2D GetExtent(void) const { return m_extent; }
+	VkExtent2D GetExtent(void) const { return m_Extent; }
 
-	VkImage GetColorImage(void) { return m_colorImage.image; }
-	VkImageView GetColorImageView(void) { return m_colorImage.imageView; }
+	VkImage GetColorImage(void) { return m_ColorImage.image; }
+	VkImageView GetColorImageView(void) { return m_ColorImage.imageView; }
 
-	VkImage GetDepthImage(void) { return m_depthImage.image; }
-	VkImageView GetDepthImageView(void) { return m_depthImage.imageView; }
+	VkImage GetDepthImage(void) { return m_DepthImage.image; }
+	VkImageView GetDepthImageView(void) { return m_DepthImage.imageView; }
 
 private:
 
 	void RebuildImages();
 
 
-	VkExtent2D m_extent;
+	VkExtent2D m_Extent;
 
-	LeBool m_imagesValid;
+	LeBool m_bImagesValid;
 
-	LeVkAllocatedImage m_colorImage;
-	LeVkAllocatedImage m_depthImage;
+	LeVkAllocatedImage m_ColorImage;
+	LeVkAllocatedImage m_DepthImage;
 };

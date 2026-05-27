@@ -20,8 +20,8 @@ LeTexture* LeTextureDictionary::FindTexture(uint64 nameHash)
 {
 	LE_DEBUG_ASSERT(nameHash);
 
-	auto found = m_textures.find(nameHash);
-	if (found != m_textures.end())
+	auto found = m_Textures.find(nameHash);
+	if (found != m_Textures.end())
 	{
 		return found->second;
 	}
@@ -67,27 +67,27 @@ LeBool LeTextureDictionary::AddTexture(LeTexture* pTexture)
 		return false;
 	}
 
-	m_textures[pTexture->GetNameHash()] = pTexture;
+	m_Textures[pTexture->GetNameHash()] = pTexture;
 	return true;
 }
 
 void LeTextureDictionary::PurgeAllTextures(void)
 {
-	for (auto pair : m_textures)
+	for (auto pair : m_Textures)
 	{
 		LeTexture* pTexture = pair.second;
 		delete pTexture;
 	}
 
-	m_textures.clear();
+	m_Textures.clear();
 }
 
 void LeTextureDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	uint32 numTextures = (uint32)m_textures.size();
+	uint32 numTextures = (uint32)m_Textures.size();
 	pFileStream->WriteNumber(&numTextures);
 
-	for (auto pair : m_textures)
+	for (auto pair : m_Textures)
 	{
 		LeTexture* pTexture = pair.second;
 		pTexture->SerializeBinaryChunk(pFileStream, this);

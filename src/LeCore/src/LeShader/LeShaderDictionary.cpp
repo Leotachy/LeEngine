@@ -18,8 +18,8 @@ LeShader* LeShaderDictionary::FindShader(uint64 uNameHash) const
 {
 	LE_DEBUG_ASSERT(uNameHash);
 
-	auto found = m_ShaderSet.find(uNameHash);
-	if (found != m_ShaderSet.end())
+	auto found = m_Shaders.find(uNameHash);
+	if (found != m_Shaders.end())
 		return found->second;
 
 	return NULL;
@@ -29,7 +29,7 @@ LeBool LeShaderDictionary::ShaderExists(uint64 uNameHash) const
 {
 	LE_DEBUG_ASSERT(uNameHash);
 
-	return m_ShaderSet.find(uNameHash) != m_ShaderSet.end();
+	return m_Shaders.find(uNameHash) != m_Shaders.end();
 }
 
 void LeShaderDictionary::LoadAllShaders(const LeChar* pDirectoryPath)
@@ -66,15 +66,15 @@ void LeShaderDictionary::LoadAllShaders(const LeChar* pDirectoryPath)
 void LeShaderDictionary::PurgeAllShaders(void)
 {
 
-	uint32 NumShaders = (uint32)m_ShaderSet.size();
+	uint32 NumShaders = (uint32)m_Shaders.size();
 
-	for (auto pair : m_ShaderSet)
+	for (auto pair : m_Shaders)
 	{
 		LeShader* pShader = pair.second;
 		delete pShader;
 	}
 
-	m_ShaderSet.clear();
+	m_Shaders.clear();
 
 	LE_DEBUG_MESSAGE("Purged %u shaders", NumShaders);
 }
@@ -86,6 +86,6 @@ LeBool LeShaderDictionary::AddShader(LeShader* pShader)
 	if (LeShader* pShaderDupe = FindShader(pShader->GetNameHash()))
 		delete pShaderDupe;
 
-	m_ShaderSet[pShader->GetNameHash()] = pShader;
+	m_Shaders[pShader->GetNameHash()] = pShader;
 	return true;
 }

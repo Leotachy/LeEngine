@@ -19,8 +19,8 @@ public:
 
 protected:
 
-	LeChar filename[MAX_LE_FILENAME];
+	LeChar m_Filename[MAX_LE_FILENAME];
 
-	FILE* m_file;
+	FILE* m_pFile;
 
 };

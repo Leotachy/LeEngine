@@ -26,7 +26,7 @@ struct WindowParams
 
 struct ViewportParams
 {
-	uint32 uViewportWidth, uViewportHeight;
+	uint32 ViewportWidth, ViewportHeight;
 	LeBool bRenderViewportToImGuiTexture;
 };
 
@@ -37,11 +37,11 @@ struct PathParams
 
 struct InitRendererParams
 {
-	LeRenderApi api;
+	LeRenderApi API;
 
-	WindowParams windowParams;
-	ViewportParams viewportParams;
-	PathParams pathParams;
+	WindowParams WindowParams;
+	ViewportParams ViewportParams;
+	PathParams PathParams;
 };
 
 typedef LeBool(*LeRenderFunc)(LeScene*, LeCamera*, LeBool);
@@ -51,7 +51,7 @@ class LeRenderInterface
 public:
 	static LeRenderApi GetRenderApi(void);
 
-	static void InitRenderer(InitRendererParams& params);
+	static void InitRenderer(InitRendererParams* params);
 	static void ShutdownRenderer();
 	static void DeInitRenderer(void);
 

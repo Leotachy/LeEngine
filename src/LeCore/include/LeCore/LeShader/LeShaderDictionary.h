@@ -20,6 +20,6 @@ private:
 
 	LeBool AddShader(LeShader* pShader);
 
-	std::unordered_map<uint64, LeShader*> m_ShaderSet;
+	std::unordered_map<uint64, LeShader*> m_Shaders;
 
 };

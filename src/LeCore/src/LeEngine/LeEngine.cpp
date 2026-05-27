@@ -3,9 +3,9 @@
 #include "LeCore/LeEngine/LeEngine.h"
 #include "LeCore/LeRender/LeRender.h"
 
-void LeEngineInit(InitEngineParams& Params)
+void LeEngineInit(InitEngineParams* Params)
 {
-	LeRenderInterface::InitRenderer(Params.RendererParams);
+	LeRenderInterface::InitRenderer(&Params->RendererParams);
 }
 
 void LeEngineShutDown(void)

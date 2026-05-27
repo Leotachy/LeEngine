@@ -81,19 +81,19 @@ int main(void)
 	{
 		.RendererParams =
 		{
-			.api = LeRenderApi::Vulkan,
-			.windowParams =
+			.API = LeRenderApi::Vulkan,
+			.WindowParams =
 			{
 				.pWindow = pWindow,
 				.pAppName = SAMPLEGAME_NAME
 			},
-			.viewportParams =
+			.ViewportParams =
 			{
-				.uViewportWidth = DEFAULT_SCREEN_WIDTH,
-				.uViewportHeight = DEFAULT_SCREEN_HEIGHT,
+				.ViewportWidth = DEFAULT_SCREEN_WIDTH,
+				.ViewportHeight = DEFAULT_SCREEN_HEIGHT,
 				.bRenderViewportToImGuiTexture = false
 			},
-			.pathParams =
+			.PathParams =
 			{
 				.pShaderBinaryPath = SAMPLEGAME_SHADER_BIN_PATH
 			}

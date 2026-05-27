@@ -9,9 +9,9 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 	LE_DEBUG_ASSERT(key);
 	LE_DEBUG_ASSERT(pShader);
 
-	m_key = key;
+	m_Key = key;
 
-	m_device = LeVkRenderer::Get()->GetDevice();
+	m_hDevice = LeVkRenderer::Get()->GetDevice();
 
 	const VkPipelineShaderStageCreateInfo ShaderStageInfo[] =
 	{
@@ -137,7 +137,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 
 
 
-	VkResult res = vkCreatePipelineLayout(m_device, &LayoutInfo, NULL, &m_pipelineLayout);
+	VkResult res = vkCreatePipelineLayout(m_hDevice, &LayoutInfo, NULL, &m_hPipelineLayout);
 	LE_CHECK_VK_RESULT(res);
 
 	// Dynamic rendering config
@@ -164,14 +164,14 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 		.pDepthStencilState = &DepthStencilStateInfo,
 		.pColorBlendState = &BlendStateInfo,
 		.pDynamicState = &DynamicStateInfo,
-		.layout = m_pipelineLayout,
+		.layout = m_hPipelineLayout,
 		.renderPass = NULL,
 		.subpass = 0,
 		.basePipelineHandle = VK_NULL_HANDLE,
 		.basePipelineIndex = -1
 	};
 
-	res = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &PipelineInfo, NULL, &m_pipeline);
+	res = vkCreateGraphicsPipelines(m_hDevice, VK_NULL_HANDLE, 1, &PipelineInfo, NULL, &m_hPipeline);
 	LE_CHECK_VK_RESULT(res);
 
 	LE_DEBUG_MESSAGE("Graphics pipeline created");
@@ -181,10 +181,10 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 
 LeVkGraphicsPipeline::~LeVkGraphicsPipeline()
 {
-	if (m_device)
+	if (m_hDevice)
 	{
-		vkDestroyPipelineLayout(m_device, m_pipelineLayout, NULL);
-		vkDestroyPipeline(m_device, m_pipeline, NULL);
+		vkDestroyPipelineLayout(m_hDevice, m_hPipelineLayout, NULL);
+		vkDestroyPipeline(m_hDevice, m_hPipeline, NULL);
 	}
 
 	LE_DEBUG_MESSAGE("Graphics pipeline destroyed");

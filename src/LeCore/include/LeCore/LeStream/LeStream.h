@@ -26,9 +26,9 @@ protected:
 public:
 	virtual ~LeStream() = default;
 
-	LeStreamType type;
-	LeStreamAccessType accessType;
-	uint32 position;
+	LeStreamType Type;
+	LeStreamAccessType AccessType;
+	uint32 Position;
 
 	// base functionality
 	virtual LeStream* Open(LeStreamAccessType a, const void* data) = 0;

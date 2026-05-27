@@ -58,10 +58,10 @@ public:
 	virtual ~LeTexture();
 	static LeTexture* Create();
 
-	const LeChar* GetName(void) const { return m_name; }
+	const LeChar* GetName(void) const { return m_Name; }
 	void SetName(const LeChar* pName);
 
-	uint64 GetNameHash(void) const { return m_nameHash; }
+	uint64 GetNameHash(void) const { return m_NameHash; }
 
 	void AllocatePixels(uint32 width, uint32 height);
 	void SetPixels(const LeRGBA* pPixels);
@@ -69,31 +69,31 @@ public:
 
 	virtual void OnPixelsAllocated(void) = 0;
 
-	uint32 GetWidth(void) const { return m_width; }
-	uint32 GetHeight(void) const { return m_height; }
+	uint32 GetWidth(void) const { return m_Width; }
+	uint32 GetHeight(void) const { return m_Height; }
 
 	void SetAttributes(LeTextureAttributes* pAttribs);
-	const LeTextureAttributes* GetAttributes(void) { return &m_attribs; }
+	const LeTextureAttributes* GetAttributes(void) { return &m_Attribs; }
 
 	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::Texture; }
 	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
-	uint32 flags;
+	uint32 Flags;
 
 protected:
 
-	uint32 m_width, m_height;
-	LeRGBA* m_pixels;
+	uint32 m_Width, m_Height;
+	LeRGBA* m_pPixels;
 
-	LeTextureAttributes m_attribs;
+	LeTextureAttributes m_Attribs;
 
 private:
 
 	friend class LeTextureDictionary;
 
-	LeChar m_name[LE_TEXTURE_MAX_NAME];
-	uint64 m_nameHash;
+	LeChar m_Name[LE_TEXTURE_MAX_NAME];
+	uint64 m_NameHash;
 
 
 

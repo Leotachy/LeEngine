@@ -5,12 +5,12 @@
 #include "fnv64.hpp"
 
 
-uint64 lehash64(const LeChar* str)
+uint64 LeHash::hash64(const LeChar* str)
 {
 	return fnv64::fnv1_hash_cstr(str);
 }
 
-uint64 lehash64_bin(const void* p, size_t size)
+uint64 LeHash::hash64_bin(const void* p, size_t size)
 {
 	return fnv64::fnv1_hash(p, size);
 }

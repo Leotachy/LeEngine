@@ -2,18 +2,18 @@
 #include "LeCore/LeCore.h"
 #include "LeCore/LeUtils/LeDeletionQueue.h"
 
-void LeDeletionQueue::push_function(std::function<void()>&& function)
+void LeDeletionQueue::AddFunction(std::function<void()>&& function)
 {
-	deletors.push_back(function);
+	Deletors.push_back(function);
 }
 
-void LeDeletionQueue::flush()
+void LeDeletionQueue::Flush()
 {
 	// reverse iterate the deletion queue to execute all the functions
-	for (auto it = deletors.rbegin(); it != deletors.rend(); it++)
+	for (auto it = Deletors.rbegin(); it != Deletors.rend(); it++)
 	{
 		(*it)(); //call functors
 	}
 
-	deletors.clear();
+	Deletors.clear();
 }

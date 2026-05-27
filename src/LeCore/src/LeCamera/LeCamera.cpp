@@ -225,7 +225,7 @@ void LeCamera::CalculateProjMatrix()
     }
     else
     {
-        LE_DEBUG_ERROR("Unsupported projection type");
+        LE_DEBUG_ERROR("Unsupported projection Type");
     }
 }
 

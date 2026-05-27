@@ -37,9 +37,9 @@ private:
 
 	void ClearCache(void);
 
-	LeSerializableBinaryChunk* m_parent;
+	LeSerializableBinaryChunk* m_pParent;
 
 	static const int32 CACHE_SIZE = 3;
-	LeSerializableBinaryChunk* m_cache[CACHE_SIZE];
-	int32 m_last_written_cache_index;
+	LeSerializableBinaryChunk* m_Cache[CACHE_SIZE];
+	int32 m_LastWrittenCacheIndex;
 };

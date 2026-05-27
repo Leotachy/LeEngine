@@ -6,14 +6,14 @@
 
 LeVkDescriptorSet::LeVkDescriptorSet()
 {
-	m_device = VK_NULL_HANDLE;
-	m_descriptorSet = VK_NULL_HANDLE;
+	m_hDevice = VK_NULL_HANDLE;
+	m_DescriptorSet = VK_NULL_HANDLE;
 }
 
 void LeVkDescriptorSet::Init(void)
 {
 
-	m_device = LeVkRenderer::Get()->GetDevice();
+	m_hDevice = LeVkRenderer::Get()->GetDevice();
 
 	LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Get().GetLeDescriptorPool(GetPoolType());
 	LE_DEBUG_ASSERT(LeDescriptorPool);
@@ -39,6 +39,6 @@ void LeVkDescriptorSet::CreateSet(VkDescriptorPool DescriptorPool, VkDescriptorS
 	};
 
 
-	VkResult res = vkAllocateDescriptorSets(m_device, &AllocInfo, &m_descriptorSet);
+	VkResult res = vkAllocateDescriptorSets(m_hDevice, &AllocInfo, &m_DescriptorSet);
 	LE_CHECK_VK_RESULT(res);
 }

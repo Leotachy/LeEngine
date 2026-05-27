@@ -161,7 +161,7 @@ private:
 
 	VkCommandPool m_commandBufferPool;
 	VkCommandPool m_transientCommandBufferPool; // Command pool for one shot commands
-	LeVkQueue m_queue;
+	LeVkQueue m_hQueue;
 
 	LeVkFrameContext m_FrameContexts[LE_MAX_FRAMES_IN_FLIGHT];
 

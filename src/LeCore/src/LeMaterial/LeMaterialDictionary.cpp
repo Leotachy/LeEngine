@@ -12,8 +12,8 @@ LeMaterial* LeMaterialDictionary::FindMaterial(uint64 materialHash)
 {
 	LE_DEBUG_ASSERT(materialHash);
 
-	auto found = m_materials.find(materialHash);
-	if (found != m_materials.end())
+	auto found = m_Materials.find(materialHash);
+	if (found != m_Materials.end())
 	{
 		return found->second;
 	}
@@ -32,26 +32,26 @@ LeBool LeMaterialDictionary::AddMaterial(LeMaterial* pMaterial)
 		return false;
 	}
 
-	m_materials[hash] = pMaterial;
+	m_Materials[hash] = pMaterial;
 	return true;
 }
 
 void LeMaterialDictionary::PurgeAllMaterials(void)
 {
-	for (auto pair : m_materials)
+	for (auto pair : m_Materials)
 	{
 		LeMaterial* pMaterial = pair.second;
 		delete pMaterial;
 	}
 
-	m_materials.clear();
+	m_Materials.clear();
 }
 
 void LeMaterialDictionary::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	uint32 numMaterials = (uint32)m_materials.size();
+	uint32 numMaterials = (uint32)m_Materials.size();
 	pFileStream->WriteNumber(&numMaterials);
-	for (auto pair : m_materials)
+	for (auto pair : m_Materials)
 	{
 		LeMaterial* pMaterial = pair.second;
 		pMaterial->SerializeBinaryChunk(pFileStream, this);

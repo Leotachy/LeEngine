@@ -8,22 +8,22 @@ LeRenderApi LeRenderInterface::GetRenderApi(void)
 	return RenderApi;
 }
 
-void LeRenderInterface::InitRenderer(InitRendererParams& params)
+void LeRenderInterface::InitRenderer(InitRendererParams* params)
 {
 
-	RenderApi = params.api;
+	RenderApi = params->API;
 
-	switch (params.api)
+	switch (params->API)
 	{
 	case LeRenderApi::None:
-		LE_ERROR("Bad render api: %u", RenderApi);
+		LE_ERROR("Bad render API: %u", RenderApi);
 		break;
 	case LeRenderApi::Vulkan:
-		LeVkRenderer::Get()->Init(&params.windowParams, &params.viewportParams, &params.pathParams);
+		LeVkRenderer::Get()->Init(&params->WindowParams, &params->ViewportParams, &params->PathParams);
 		RenderFunc = VkRenderScene;
 		break;
 	default:
-		LE_ERROR("Unknown render api: %u", RenderApi);
+		LE_ERROR("Unknown render API: %u", RenderApi);
 		break;
 	}
 }
@@ -39,7 +39,7 @@ void LeRenderInterface::ShutdownRenderer()
 		LeVkRenderer::Get()->ShutDown();
 		break;
 	default:
-		LE_ERROR("Unknown render api: %u", RenderApi);
+		LE_ERROR("Unknown render API: %u", RenderApi);
 		break;
 	}
 }
@@ -56,7 +56,7 @@ void LeRenderInterface::DeInitRenderer(void)
 		RenderFunc = NULL;
 		break;
 	default:
-		LE_ERROR("Unknown render api: %u", RenderApi);
+		LE_ERROR("Unknown render API: %u", RenderApi);
 		break;
 	}
 
@@ -74,7 +74,7 @@ void LeRenderInterface::SetViewportDimensions(uint32 width, uint32 height)
 		LeVkRenderer::Get()->SetViewportDimensions(width, height);
 		break;
 	default:
-		LE_ERROR("Unknown render api: %u", RenderApi);
+		LE_ERROR("Unknown render API: %u", RenderApi);
 		break;
 	}
 
@@ -94,7 +94,7 @@ ImTextureID LeRenderInterface::GetViewportImGuiTexture(void)
 		return LeVkRenderer::Get()->GetViewportImGuiTexture();
 		break;
 	default:
-		LE_ERROR("Unknown render api: %u", RenderApi);
+		LE_ERROR("Unknown render API: %u", RenderApi);
 		return 0;
 		break;
 	}
@@ -123,7 +123,7 @@ const LeShaderDictionary* LeRenderInterface::GetShaderDictionary(void)
 		return LeVkRenderer::Get()->GetShaderDictionary();
 		break;
 	default:
-		LE_ERROR("Unknown render api: %u", RenderApi);
+		LE_ERROR("Unknown render API: %u", RenderApi);
 		break;
 	}
 

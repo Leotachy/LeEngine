@@ -31,27 +31,27 @@ public:
 	uint64 GetAttributeHash(void);
 
 	void SetName(const LeChar* pName);
-	const LeChar* GetName(void) { return m_name; }
+	const LeChar* GetName(void) { return m_Name; }
 
 	void SetShader(LeShader* pShader);
-	LeShader* GetShader(void) const { return m_shader; }
+	LeShader* GetShader(void) const { return m_pShader; }
 
 	void SetBaseTexture(LeTexture* pTexture);
-	LeTexture* GetBaseTexture(void) { return m_baseTexture; }
+	LeTexture* GetBaseTexture(void) { return m_pBaseTexture; }
 
 	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::Material; }
 	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 
-	uint32 flags;
+	uint32 Flags;
 
 private:
 
-	uint64 m_attribsHash;
+	uint64 m_AttribsHash;
 
-	LeChar m_name[LE_MATERIAL_MAX_NAME];
+	LeChar m_Name[LE_MATERIAL_MAX_NAME];
 
-	LeShader* m_shader;
-	LeTexture* m_baseTexture;
+	LeShader* m_pShader;
+	LeTexture* m_pBaseTexture;
 
 };

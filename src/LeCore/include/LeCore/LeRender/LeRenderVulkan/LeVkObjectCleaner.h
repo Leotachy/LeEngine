@@ -14,6 +14,6 @@ public:
 
 private:
 
-	std::vector<LeVkAllocatedBuffer> m_buffers[LE_MAX_FRAMES_IN_FLIGHT];
+	std::vector<LeVkAllocatedBuffer> m_Buffers[LE_MAX_FRAMES_IN_FLIGHT];
 
 };

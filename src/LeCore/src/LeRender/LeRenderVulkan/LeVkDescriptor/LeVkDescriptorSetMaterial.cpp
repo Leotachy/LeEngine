@@ -19,7 +19,7 @@ void LeVkDescriptorSetMaterial::UpdateSet(void* pData)
 	VkWriteDescriptorSet WriteDescriptorSet =
 	{
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-		.dstSet = m_descriptorSet,
+		.dstSet = m_DescriptorSet,
 		.dstBinding = 0,
 		.dstArrayElement = 0,
 		.descriptorCount = 1,
@@ -27,7 +27,7 @@ void LeVkDescriptorSetMaterial::UpdateSet(void* pData)
 		.pImageInfo = &DescriptorImageInfo
 	};
 
-	vkUpdateDescriptorSets(m_device, 1, &WriteDescriptorSet, 0, NULL);
+	vkUpdateDescriptorSets(m_hDevice, 1, &WriteDescriptorSet, 0, NULL);
 }
 
 LeVkDescriptorPoolType LeVkDescriptorSetMaterial::GetPoolType(void)

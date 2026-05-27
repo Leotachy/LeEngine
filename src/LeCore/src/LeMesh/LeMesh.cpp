@@ -7,11 +7,11 @@
 
 LeMatBlock::LeMatBlock()
 {
-	flags = MATBLOCK_ALL_DIRTY_FLAGS;
+	Flags = MATBLOCK_ALL_DIRTY_FLAGS;
 
-	m_material = NULL;
+	m_pMaterial = NULL;
 
-	m_isCompiled = false;
+	m_bIsCompiled = false;
 }
 
 LeMatBlock::~LeMatBlock()
@@ -36,23 +36,23 @@ LeMatBlock* LeMatBlock::Create(void)
 
 void LeMatBlock::SetNumVerts(uint32 n)
 {
-	if (m_isCompiled)
+	if (m_bIsCompiled)
 		return;
 
-	m_vertices.resize(n);
+	m_Vertices.resize(n);
 }
 
 void LeMatBlock::SetNumFaces(uint32 n)
 {
-	if (m_isCompiled)
+	if (m_bIsCompiled)
 		return;
 
-	m_faces.resize(n);
+	m_Faces.resize(n);
 }
 
 void LeMatBlock::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 {
-	uint64 materialHash = m_material ? m_material->GetAttributeHash() : 0;
+	uint64 materialHash = m_pMaterial ? m_pMaterial->GetAttributeHash() : 0;
 	pFileStream->WriteNumber(&materialHash);
 
 	uint32 numVerts = GetNumVerts();

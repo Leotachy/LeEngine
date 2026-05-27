@@ -34,21 +34,21 @@ private:
 	void FreeSyncObjects(void);
 
 
-	VkQueue m_queue;
+	VkQueue m_hQueue;
 
 
 
-	int32 m_numRenderCompleteSems;
-	VkSemaphore* m_renderCompleteSems;
+	int32 m_NumRenderCompleteSems;
+	VkSemaphore* m_phRenderCompleteSems;
 
-	int32 m_numPresentCompleteSems;
-	VkSemaphore* m_presentCompleteSems;
+	int32 m_NumPresentCompleteSems;
+	VkSemaphore* m_phPresentCompleteSems;
 
-	int32 m_numRenderCompleteFences;
-	VkFence* m_renderCompleteFences;
+	int32 m_NumRenderCompleteFences;
+	VkFence* m_phRenderCompleteFences;
 
 
 
-	VkDevice m_device;
-	LeSwapchain* m_swapChain;
+	VkDevice m_hDevice;
+	LeSwapchain* m_hSwapchain;
 };

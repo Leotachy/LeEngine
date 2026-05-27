@@ -34,10 +34,10 @@ static VkFence createFence(VkDevice Device)
 
 void LeVkQueue::Init(uint32 QueueFamily, uint32 QueueIndex)
 {
-	m_device = LeVkRenderer::Get()->GetDevice();
-	m_swapChain = LeVkRenderer::Get()->GetLeSwapchain();
+	m_hDevice = LeVkRenderer::Get()->GetDevice();
+	m_hSwapchain = LeVkRenderer::Get()->GetLeSwapchain();
 
-	vkGetDeviceQueue(m_device, QueueFamily, QueueIndex, &m_queue);
+	vkGetDeviceQueue(m_hDevice, QueueFamily, QueueIndex, &m_hQueue);
 
 	CreateSyncObjects();
 
@@ -53,30 +53,30 @@ void LeVkQueue::DeInit()
 
 void LeVkQueue::WaitIdle()
 {
-	vkQueueWaitIdle(m_queue);
+	vkQueueWaitIdle(m_hQueue);
 }
 
 void LeVkQueue::WaitForFences(int32 frameIndex)
 {
 
-	vkWaitForFences(m_device, 1, &m_renderCompleteFences[frameIndex], true, UINT64_MAX);
+	vkWaitForFences(m_hDevice, 1, &m_phRenderCompleteFences[frameIndex], true, UINT64_MAX);
 }
 
 void LeVkQueue::ResetFences(int32 frameIndex)
 {
-	vkResetFences(m_device, 1, &m_renderCompleteFences[frameIndex]);
+	vkResetFences(m_hDevice, 1, &m_phRenderCompleteFences[frameIndex]);
 }
 
 VkQueue LeVkQueue::GetQueue(void) const
 {
-	return m_queue;
+	return m_hQueue;
 }
 
 uint32 LeVkQueue::AcquireNextImage(int32 frameIndex)
 {
 	uint32 ImageIndex = 0;
-	VkResult res = vkAcquireNextImageKHR(m_device,
-		m_swapChain->GetSwapchain(), UINT64_MAX, m_presentCompleteSems[frameIndex], NULL, &ImageIndex);
+	VkResult res = vkAcquireNextImageKHR(m_hDevice,
+		m_hSwapchain->GetSwapchain(), UINT64_MAX, m_phPresentCompleteSems[frameIndex], NULL, &ImageIndex);
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 		return -1; //TODO fix this
@@ -101,7 +101,7 @@ void LeVkQueue::SubmitSync(VkCommandBuffer CmbBuf)
 		.pSignalSemaphores = VK_NULL_HANDLE
 	};
 
-	VkResult res = vkQueueSubmit(m_queue, 1, &SubmitInfo, NULL);
+	VkResult res = vkQueueSubmit(m_hQueue, 1, &SubmitInfo, NULL);
 	LE_CHECK_VK_RESULT(res);
 }
 
@@ -114,15 +114,15 @@ void LeVkQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 fra
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 		.pNext = NULL,
 		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &m_presentCompleteSems[frameIndex],
+		.pWaitSemaphores = &m_phPresentCompleteSems[frameIndex],
 		.pWaitDstStageMask = &waitFlags,
 		.commandBufferCount = 1,
 		.pCommandBuffers = &CmbBuf,
 		.signalSemaphoreCount = 1,
-		.pSignalSemaphores = &m_renderCompleteSems[imageIndex]
+		.pSignalSemaphores = &m_phRenderCompleteSems[imageIndex]
 	};
 
-	VkResult res = vkQueueSubmit(m_queue, 1, &SubmitInfo, m_renderCompleteFences[frameIndex]);
+	VkResult res = vkQueueSubmit(m_hQueue, 1, &SubmitInfo, m_phRenderCompleteFences[frameIndex]);
 	LE_CHECK_VK_RESULT(res);
 }
 
@@ -130,19 +130,19 @@ void LeVkQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 fra
 bool LeVkQueue::Present(uint32 imageIndex, int32 frameIndex)
 {
 
-	VkSwapchainKHR Swapchain = m_swapChain->GetSwapchain();
+	VkSwapchainKHR Swapchain = m_hSwapchain->GetSwapchain();
 
 	VkPresentInfoKHR PresentInfo = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.pNext = NULL,
 		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &m_renderCompleteSems[imageIndex],
+		.pWaitSemaphores = &m_phRenderCompleteSems[imageIndex],
 		.swapchainCount = 1,
 		.pSwapchains = &Swapchain,
 		.pImageIndices = &imageIndex
 	};
 
-	VkResult res = vkQueuePresentKHR(m_queue, &PresentInfo);
+	VkResult res = vkQueuePresentKHR(m_hQueue, &PresentInfo);
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 		return false; //TODO fix this
@@ -155,53 +155,53 @@ bool LeVkQueue::Present(uint32 imageIndex, int32 frameIndex)
 void LeVkQueue::CreateSyncObjects(void)
 {
 
-	uint32 NumImages = m_swapChain->GetNumImages();
+	uint32 NumImages = m_hSwapchain->GetNumImages();
 	uint32 MaxFramesInFlight = LE_MAX_FRAMES_IN_FLIGHT;
 
-	m_renderCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * NumImages);
-	LE_DEBUG_ASSERT(m_renderCompleteSems);
-	m_numRenderCompleteSems = NumImages;
-	for (int32 i = 0; i < m_numRenderCompleteSems; i++)
-		m_renderCompleteSems[i] = createSemaphore(m_device);
+	m_phRenderCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * NumImages);
+	LE_DEBUG_ASSERT(m_phRenderCompleteSems);
+	m_NumRenderCompleteSems = NumImages;
+	for (int32 i = 0; i < m_NumRenderCompleteSems; i++)
+		m_phRenderCompleteSems[i] = createSemaphore(m_hDevice);
 
-	m_presentCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * MaxFramesInFlight);
-	LE_DEBUG_ASSERT(m_presentCompleteSems);
-	m_numPresentCompleteSems = MaxFramesInFlight;
-	for (int32 i = 0; i < m_numPresentCompleteSems; i++)
-		m_presentCompleteSems[i] = createSemaphore(m_device);
+	m_phPresentCompleteSems = (VkSemaphore*)LeMalloc(sizeof(VkSemaphore) * MaxFramesInFlight);
+	LE_DEBUG_ASSERT(m_phPresentCompleteSems);
+	m_NumPresentCompleteSems = MaxFramesInFlight;
+	for (int32 i = 0; i < m_NumPresentCompleteSems; i++)
+		m_phPresentCompleteSems[i] = createSemaphore(m_hDevice);
 
-	m_renderCompleteFences = (VkFence*)LeMalloc(sizeof(VkFence) * MaxFramesInFlight);
-	LE_DEBUG_ASSERT(m_renderCompleteFences);
-	m_numRenderCompleteFences = MaxFramesInFlight;
-	for (int32 i = 0; i < m_numRenderCompleteFences; i++)
-		m_renderCompleteFences[i] = createFence(m_device);
+	m_phRenderCompleteFences = (VkFence*)LeMalloc(sizeof(VkFence) * MaxFramesInFlight);
+	LE_DEBUG_ASSERT(m_phRenderCompleteFences);
+	m_NumRenderCompleteFences = MaxFramesInFlight;
+	for (int32 i = 0; i < m_NumRenderCompleteFences; i++)
+		m_phRenderCompleteFences[i] = createFence(m_hDevice);
 
 }
 
 void LeVkQueue::FreeSyncObjects(void)
 {
 
-	for (int32 i = 0; i < m_numRenderCompleteSems; i++)
-		vkDestroySemaphore(m_device, m_renderCompleteSems[i], NULL);
-	LeFree(m_renderCompleteSems);
-	m_renderCompleteSems = NULL;
-	m_numRenderCompleteSems = 0;
+	for (int32 i = 0; i < m_NumRenderCompleteSems; i++)
+		vkDestroySemaphore(m_hDevice, m_phRenderCompleteSems[i], NULL);
+	LeFree(m_phRenderCompleteSems);
+	m_phRenderCompleteSems = NULL;
+	m_NumRenderCompleteSems = 0;
 
 
 
-	for (int32 i = 0; i < m_numPresentCompleteSems; i++)
-		vkDestroySemaphore(m_device, m_presentCompleteSems[i], NULL);
-	LeFree(m_presentCompleteSems);
-	m_presentCompleteSems = NULL;
-	m_numPresentCompleteSems = 0;
+	for (int32 i = 0; i < m_NumPresentCompleteSems; i++)
+		vkDestroySemaphore(m_hDevice, m_phPresentCompleteSems[i], NULL);
+	LeFree(m_phPresentCompleteSems);
+	m_phPresentCompleteSems = NULL;
+	m_NumPresentCompleteSems = 0;
 
 
 
-	for (int32 i = 0; i < m_numRenderCompleteFences; i++)
-		vkDestroyFence(m_device, m_renderCompleteFences[i], NULL);
-	LeFree(m_renderCompleteFences);
-	m_renderCompleteFences = NULL;
-	m_numRenderCompleteFences = 0;
+	for (int32 i = 0; i < m_NumRenderCompleteFences; i++)
+		vkDestroyFence(m_hDevice, m_phRenderCompleteFences[i], NULL);
+	LeFree(m_phRenderCompleteFences);
+	m_phRenderCompleteFences = NULL;
+	m_NumRenderCompleteFences = 0;
 
 	
 }

@@ -20,7 +20,7 @@ public:
 	template<typename Func>
 	void ForEachTexture(Func&& func)
 	{
-		for (auto pair : m_textures)
+		for (auto pair : m_Textures)
 		{
 			LeTexture* pTexture = pair.second;
 			func(pTexture);
@@ -35,6 +35,6 @@ public:
 
 
 private:
-	std::unordered_map<uint64, LeTexture*> m_textures;
+	std::unordered_map<uint64, LeTexture*> m_Textures;
 
 };
