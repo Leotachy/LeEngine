@@ -27,7 +27,7 @@ VkSampler LeVkSamplerDictionary::GetOrCreateSampler(const LeVkTextureAttributes*
 {
 	LE_DEBUG_ASSERT(pAttribs);
 
-	uint64 hash = lehash64_bin(pAttribs, sizeof(*pAttribs));
+	uint64 hash = LeHash::hash64_bin(pAttribs, sizeof(*pAttribs));
 
 	auto Result = m_SamplerSet.find(hash);
 	if (Result != m_SamplerSet.end())

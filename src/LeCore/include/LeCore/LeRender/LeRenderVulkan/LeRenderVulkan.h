@@ -80,7 +80,7 @@ public:
 	LeSwapchain* GetLeSwapchain(void);
 	VmaAllocator GetVmaAllocator(void);
 
-	const LeShaderDictionary* GetShaderDictionary(void) { return &m_shaderDictionary; }
+	const LeShaderDictionary* GetShaderDictionary(void) { return &m_ShaderDictionary; }
 
 	static const VkFormat VIEWPORT_COLOR_IMAGE_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
 	static const VkFormat VIEWPORT_DEPTH_IMAGE_FORMAT = VK_FORMAT_D32_SFLOAT;
@@ -144,39 +144,39 @@ private:
 
 
 
-	GLFWwindow* m_gltfWindow;
+	GLFWwindow* m_pGltfWindow;
 
-	VmaAllocator m_vmaAllocator;
+	VmaAllocator m_hVmaAllocator;
 
-	VkDevice m_logicalDevice;
-	VkInstance m_instance;
-	VkDebugUtilsMessengerEXT m_debugMessenger;
-	VkSurfaceKHR m_surface;
-	LeVkPhysicalDevices m_physicalDevices;
-	uint32 m_queueFamily;
+	VkDevice m_hLogicalDevice;
+	VkInstance m_hInstance;
+	VkDebugUtilsMessengerEXT m_hDebugMessenger;
+	VkSurfaceKHR m_hSurface;
+	LeVkPhysicalDevices m_hPhysicalDevices;
+	uint32 m_QueueFamily;
 
 
 
-	LeSwapchain m_swapchain;
+	LeSwapchain m_Swapchain;
 
-	VkCommandPool m_commandBufferPool;
-	VkCommandPool m_transientCommandBufferPool; // Command pool for one shot commands
-	LeVkQueue m_hQueue;
+	VkCommandPool m_hCommandBufferPool;
+	VkCommandPool m_hTransientCommandBufferPool; // Command pool for one shot commands
+	LeVkQueue m_Queue;
 
 	LeVkFrameContext m_FrameContexts[LE_MAX_FRAMES_IN_FLIGHT];
 
 
-	VkExtent2D m_newViewportExtent;
+	VkExtent2D m_NewViewportExtent;
 	LeBool m_bRebuildViewportPending;
-	LeVkViewport m_viewport;
+	LeVkViewport m_Viewport;
 
 	int32 m_FrameIndex;
 
-	LeVkSamplerDictionary m_samplerDictionary;
-	LeShaderDictionary m_shaderDictionary;
+	LeVkSamplerDictionary m_SamplerDictionary;
+	LeShaderDictionary m_ShaderDictionary;
 
 
-	LeDeletionQueue m_deletionQueue;
-	LeVkObjectCleaner m_objectCleaner;
+	LeDeletionQueue m_DeletionQueue;
+	LeVkObjectCleaner m_ObjectCleaner;
 };
 

@@ -38,7 +38,7 @@ LeTexture* LeTexture::Create()
 void LeTexture::SetName(const LeChar* pName)
 {
 	strncpy(m_Name, pName, sizeof(m_Name));
-	m_NameHash = lehash64(m_Name);
+	m_NameHash = LeHash::hash64(m_Name);
 }
 
 

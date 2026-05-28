@@ -112,7 +112,7 @@ int main(void)
 			}
 		}
 	};
-	LeEngineInit(Params);
+	LeEngineInit(&Params);
 
 	pCam = new LeCamera(ProjectionType::PERSPECTIVE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
 	glm::vec3 start = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -120,9 +120,7 @@ int main(void)
 
 	// Construct the triangle mesh
 
-	LeShader* BasicShader = LeShader::Create("basic", TESTAPP_SHADER_BIN_PATH "basic.spv");
 	LeMaterial* Mat = LeMaterial::Create();
-	Mat->SetShader(BasicShader);
 	Mat->SetName("uwu");
 
 	LeScene* pScene = new LeScene;
@@ -214,7 +212,6 @@ int main(void)
 
 	delete pCam;
 	delete pScene;
-	delete BasicShader;
 
 	LeEngineDeInit();
 

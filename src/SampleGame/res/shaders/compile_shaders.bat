@@ -1,3 +1,4 @@
 mkdir bin
-slangc.exe src/basic.slang -target spirv -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry vertMain -entry fragMain -o bin/basic.spv
+glslangValidator.exe -V src/basic.vert -o bin/basic.vert.spv
+glslangValidator.exe -V src/basic.frag -o bin/basic.frag.spv
 PAUSE

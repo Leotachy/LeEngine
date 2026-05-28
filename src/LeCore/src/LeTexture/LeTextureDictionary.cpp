@@ -34,7 +34,7 @@ LeTexture* LeTextureDictionary::LoadTexture(const char* pTextureDir, const char*
 	LE_DEBUG_ASSERT(pTextureDir);
 	LE_DEBUG_ASSERT(pTextureName);
 
-	uint64 uNameHash = lehash64(pTextureName);
+	uint64 uNameHash = LeHash::hash64(pTextureName);
 	if (LeTexture* pFoundTexture = FindTexture(uNameHash))
 		return pFoundTexture;
 

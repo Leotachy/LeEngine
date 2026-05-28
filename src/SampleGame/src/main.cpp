@@ -99,7 +99,7 @@ int main(void)
 			}
 		}
 	};
-	LeEngineInit(Params);
+	LeEngineInit(&Params);
 
 	pCam = new LeCamera(ProjectionType::PERSPECTIVE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
 	glm::vec3 start = glm::vec3(0.0f, 0.0f, 3.0f);

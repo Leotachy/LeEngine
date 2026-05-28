@@ -10,7 +10,7 @@ class LeVkGraphicsPipeline
 
 public:
 
-	LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader);
+	LeVkGraphicsPipeline(uint64 key, LeVkShader* pVertexShader, LeVkShader* pFragmentShader);
 	~LeVkGraphicsPipeline();
 
 	uint64 GetKey() const { return m_Key; }
@@ -22,21 +22,16 @@ private:
 
 	uint64 m_Key; // Key in dictionary
 
-	VkDevice m_hDevice;
-
 	VkPipeline m_hPipeline;
 	VkPipelineLayout m_hPipelineLayout;
-
-
-
-
 };
 
 // an attribute struct that I hash, works as a key for the graphics pipeline dictionary
 struct LeGraphicsPipelineVkKey
 {
 	// material
-	uint64 ShaderHash;
+	uint64 VertexShaderHash;
+	uint64 FragmentShaderHash;
 };
 
 class LeVkGraphicsPipelineDictionary

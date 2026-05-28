@@ -4,28 +4,27 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 
-LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
+LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pVertexShader, LeVkShader* pFragmentShader)
 {
 	LE_DEBUG_ASSERT(key);
-	LE_DEBUG_ASSERT(pShader);
+	LE_DEBUG_ASSERT(pVertexShader);
+	LE_DEBUG_ASSERT(pFragmentShader);
 
 	m_Key = key;
-
-	m_hDevice = LeVkRenderer::Get()->GetDevice();
 
 	const VkPipelineShaderStageCreateInfo ShaderStageInfo[] =
 	{
 		{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 			.stage = VK_SHADER_STAGE_VERTEX_BIT,
-			.module = pShader->GetShaderModule(),
-			.pName = "vertMain",
+			.module = pVertexShader->GetShaderModule(),
+			.pName = "main"
 		},
 		{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 			.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-			.module = pShader->GetShaderModule(),
-			.pName = "fragMain"
+			.module = pFragmentShader->GetShaderModule(),
+			.pName = "main"
 		}
 	};
 	const uint32 NumShaderStages = ARRAY_SIZE(ShaderStageInfo);
@@ -137,7 +136,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 
 
 
-	VkResult res = vkCreatePipelineLayout(m_hDevice, &LayoutInfo, NULL, &m_hPipelineLayout);
+	VkResult res = vkCreatePipelineLayout(LeVkRenderer::Get()->GetDevice(), &LayoutInfo, NULL, &m_hPipelineLayout);
 	LE_CHECK_VK_RESULT(res);
 
 	// Dynamic rendering config
@@ -171,7 +170,7 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 		.basePipelineIndex = -1
 	};
 
-	res = vkCreateGraphicsPipelines(m_hDevice, VK_NULL_HANDLE, 1, &PipelineInfo, NULL, &m_hPipeline);
+	res = vkCreateGraphicsPipelines(LeVkRenderer::Get()->GetDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, NULL, &m_hPipeline);
 	LE_CHECK_VK_RESULT(res);
 
 	LE_DEBUG_MESSAGE("Graphics pipeline created");
@@ -181,11 +180,8 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pShader)
 
 LeVkGraphicsPipeline::~LeVkGraphicsPipeline()
 {
-	if (m_hDevice)
-	{
-		vkDestroyPipelineLayout(m_hDevice, m_hPipelineLayout, NULL);
-		vkDestroyPipeline(m_hDevice, m_hPipeline, NULL);
-	}
+	vkDestroyPipelineLayout(LeVkRenderer::Get()->GetDevice(), m_hPipelineLayout, NULL);
+	vkDestroyPipeline(LeVkRenderer::Get()->GetDevice(), m_hPipeline, NULL);
 
 	LE_DEBUG_MESSAGE("Graphics pipeline destroyed");
 }

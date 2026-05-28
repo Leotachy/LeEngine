@@ -13,7 +13,7 @@ class LeVkShader : public LeShader
 {
 public:
 
-    LeVkShader(const LeChar* name, const LeChar* pShaderFilepath);
+    LeVkShader(const LeChar* name, const LeChar* pShaderFilepath, LeShaderType type);
     ~LeVkShader(void);
 
     VkShaderModule CreateShaderModule(const LeByte* ShaderBinary, uint32 ShaderBinarySize);
@@ -23,8 +23,7 @@ public:
 
 private:
 
-   
-    VkDevice m_hDevice;
+  
     VkShaderModule m_hShaderModule;
 
 };

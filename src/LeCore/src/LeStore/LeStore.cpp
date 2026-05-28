@@ -7,20 +7,31 @@ LeBool LeStore::HasFileExtension(const LeChar* pFilename, const LeChar* pExtensi
 {
 	LE_DEBUG_ASSERT(pFilename);
 
-	const LeChar* pExtensionChar = strrchr(pFilename, '.');
-	if (!pExtensionChar)
+	LeChar buf[256];
+	if (GetFileExtension(buf, pFilename))
 	{
-		if (pExtension)
-			return false;
+		return strcmp(buf, pExtension) == 0;
+	}
+
+	if (!pExtension) // the file has no extension and no extension was provided
+		return true;
+
+	// file has no extension and extension was provided
+	return false;
+
+	
+}
+
+LeBool LeStore::GetFileExtension(LeChar* pBuf, const LeChar* pFilename)
+{
+	const LeChar* pExtensionChar = strrchr(pFilename, '.');
+	if (pExtensionChar)
+	{
+		strcpy(pBuf, pExtensionChar);
 		return true;
 	}
-		
-	if (!pExtension)
-		return false;
 
-	const LeChar* pFoundExtension = pExtensionChar;
-
-	return strcmp(pFoundExtension, pExtension) == 0;
+	return false;
 }
 
 LeBool LeStore::DropExtension(LeChar* pBuf, const LeChar* pFilename, const LeChar* pExtension)

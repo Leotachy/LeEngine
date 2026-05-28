@@ -41,7 +41,7 @@ uint64 LeMaterial::GetAttributeHash(void)
 			.BaseTextureHash = m_pBaseTexture ? m_pBaseTexture->GetNameHash() : 0,
 		};
 
-		m_AttribsHash = lehash64_bin(&Attribs, sizeof(Attribs));
+		m_AttribsHash = LeHash::hash64_bin(&Attribs, sizeof(Attribs));
 		Flags &= ~MATERIAL_ATTRIB_HASH_DIRTY;
 	}
 	
@@ -86,8 +86,11 @@ void LeMaterial::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 
 	uint64 ShaderHash;
 	pFileStream->ReadNumber(&ShaderHash);
-	if (ShaderHash)
-		SetShader(LeRenderInterface::GetShaderDictionary()->FindShader(ShaderHash));
+
+	// Specified shaders currently not implemented
+	//if (ShaderHash)
+	//	SetShader(LeRenderInterface::GetShaderDictionary()->FindShader(ShaderHash, LeShaderType::Fragment));
+
 
 	uint64 BaseTextureHash;
 	pFileStream->ReadNumber(&BaseTextureHash);

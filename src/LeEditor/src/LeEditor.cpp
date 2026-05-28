@@ -42,7 +42,7 @@ LeEditorInstance::LeEditorInstance(void)
 			}
 		}
 	};
-	LeEngineInit(Params);
+	LeEngineInit(&Params);
 
 	m_bDocksBuilt = false;
 }

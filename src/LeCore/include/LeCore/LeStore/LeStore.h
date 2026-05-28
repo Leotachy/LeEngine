@@ -13,6 +13,7 @@ public:
 
 	// util
 	static LeBool HasFileExtension(const LeChar* pFilename, const LeChar* pExtension);
+	static LeBool GetFileExtension(LeChar* pBuf, const LeChar* pFilename);
 	static LeBool DropExtension(LeChar* pBuf, const LeChar* pFilename, const LeChar* pExtension);
 
 	template<typename Func>
