@@ -50,5 +50,5 @@ private:
 
 
 	VkDevice m_hDevice;
-	LeSwapchain* m_hSwapchain;
+	LeVkSwapchain* m_hSwapchain;
 };

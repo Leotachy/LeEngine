@@ -90,8 +90,7 @@ LeVkMesh::LeVkMesh()
 	glm::mat4 GlobalMatrix = glm::mat4(1.0f);
 	LeVkUtils::UpdateBuffer(&m_ModelMatrix, &GlobalMatrix, sizeof(GlobalMatrix));
 
-	m_DescriptorSet.Init();
-	m_DescriptorSet.UpdateSet(&m_ModelMatrix);
+	m_hDescriptorSet = VK_NULL_HANDLE;
 }
 
 LeVkMesh::~LeVkMesh()

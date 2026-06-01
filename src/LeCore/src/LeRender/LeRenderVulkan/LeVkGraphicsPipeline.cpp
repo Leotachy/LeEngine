@@ -116,21 +116,22 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pVertexShader
 		.pAttachments = &BlendAttachState
 	};
 
-	VkDescriptorSetLayout PipelineLayouts[uint64(LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS)];
+	VkDescriptorSetLayout PipelineLayouts[uint64(LeVkDescriptorType::NumDescriptorTypes)];
+	LeVkDescriptorManager* pDescriptorManager = LeVkRenderer::Get()->GetDescriptorManager();
+	LE_DEBUG_ASSERT(pDescriptorManager);
 
-	for (uint32 i = 0; i < uint32(LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS); i++)
+	for (uint32 i = 0; i < uint32(LeVkDescriptorType::NumDescriptorTypes); i++)
 	{
-		LeVkDescriptorPoolType LePoolType = LeVkDescriptorPoolType(i);
-		LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Get().GetLeDescriptorPool(LePoolType);
-		LE_DEBUG_ASSERT(LeDescriptorPool);
-		PipelineLayouts[i] = LeDescriptorPool->GetDescriptorSetLayout();
-		LE_DEBUG_ASSERT(PipelineLayouts[i] != VK_NULL_HANDLE);
+		LeVkDescriptor* pDescriptor = pDescriptorManager->GetDescriptor(LeVkDescriptorType(i));
+		LE_DEBUG_ASSERT(pDescriptor);
+
+		PipelineLayouts[i] = pDescriptor->GetDescriptorSetLayout();
 	}
 
 	VkPipelineLayoutCreateInfo LayoutInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.setLayoutCount = uint32(LeVkDescriptorPoolType::NUM_DESCRIPTOR_POOLS),
+		.setLayoutCount = uint32(LeVkDescriptorType::NumDescriptorTypes),
 		.pSetLayouts = PipelineLayouts
 	};
 

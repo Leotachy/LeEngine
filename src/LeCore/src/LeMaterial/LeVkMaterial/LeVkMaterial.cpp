@@ -6,15 +6,9 @@
 LeVkMaterial::LeVkMaterial()
 {
 	m_pGraphicsPipeline = NULL;
-	m_DescriptorSet.Init();
+	m_hDescriptorSet = VK_NULL_HANDLE;
 }
 
 LeVkMaterial::~LeVkMaterial()
 {
-}
-
-
-void LeVkMaterial::UpdateDescriptorSet(void)
-{
-	m_DescriptorSet.UpdateSet(GetBaseTexture());
 }

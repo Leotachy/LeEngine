@@ -7,7 +7,7 @@
 
 #include <vk_mem_alloc.h>
 
-static const uint32 LE_MAX_FRAMES_IN_FLIGHT = 2;
+#define LE_MAX_FRAMES_IN_FLIGHT 2
 
 struct LeVkAllocatedBuffer
 {
@@ -36,13 +36,13 @@ struct LeVkAllocatedImage
 #include "LeCore/LeRender/LeRenderVulkan/LeVkViewport.h"
 #include "LeCore/LeMaterial/LeVkMaterial/LeVkMaterial.h"
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetGlobal.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkTexture.h"
 #include "LeCore/LeTexture/LeVkTexture/LeVkSamplerDictionary.h"
 #include "LeCore/LeShader/LeShaderDictionary.h"
 #include "LeCore/LeScene/LeScene.h"
 #include "LeCore/LeUtils/LeDeletionQueue.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkObjectCleaner.h"
+#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor.h"
 
 struct LeVkFrameUniformData
 {
@@ -55,7 +55,7 @@ struct LeVkFrameContext
 	int32 ImageIndex;
 	LeVkFrameUniformData FrameUBO;
 	LeVkAllocatedBuffer FrameUBOMemoryBuffer;
-	LeVkDescriptorSetGlobal DescriptorSet;
+	VkDescriptorSet FrameDescriptorSet;
 };
 
 class LeVkRenderer
@@ -77,8 +77,9 @@ public:
 
 	VkDevice GetDevice(void);
 	const LeVkPhysicalDevice* GetLePhysicalDevice(void);
-	LeSwapchain* GetLeSwapchain(void);
+	LeVkSwapchain* GetLeSwapchain(void);
 	VmaAllocator GetVmaAllocator(void);
+	LeVkDescriptorManager* GetDescriptorManager(void);
 
 	const LeShaderDictionary* GetShaderDictionary(void) { return &m_ShaderDictionary; }
 
@@ -129,9 +130,12 @@ private:
 
 	LeBool UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial);
 	void UpdateMaterial(LeVkMaterial* pMaterial);
+	void UpdateMaterialDictionary(LeMaterialDictionary* pMatDictionary);
+
 
 	void UpdateMatBlock(VkCommandBuffer CommandBuffer, LeVkMatBlock* pMatblock);
 
+	void UpdateMesh(VkCommandBuffer CommandBuffer, LeVkMesh* pMesh);
 
 	// Records a command buffer of rendering the scene into a viewport image
 
@@ -157,7 +161,9 @@ private:
 
 
 
-	LeSwapchain m_Swapchain;
+	LeVkSwapchain m_Swapchain;
+
+	LeVkDescriptorManager m_DescriptorManager;
 
 	VkCommandPool m_hCommandBufferPool;
 	VkCommandPool m_hTransientCommandBufferPool; // Command pool for one shot commands

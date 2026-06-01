@@ -124,10 +124,10 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 			m_Swapchain.DeInit();
 		});
 
-	LeVkDescriptorPoolManager::Get().Init();
+	m_DescriptorManager.Init();
 	m_DeletionQueue.AddFunction([this]()
 		{
-			LeVkDescriptorPoolManager::Get().DeInit();
+			m_DescriptorManager.DeInit();
 		});
 
 	m_hCommandBufferPool = CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_QueueFamily);
@@ -148,8 +148,6 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 		FrameContext.ImageIndex = -1;
 		FrameContext.FrameUBO.MVP = glm::mat4(1.0f);
 		LeVkUtils::CreateUniformBuffer(sizeof(LeVkFrameUniformData), &FrameContext.FrameUBOMemoryBuffer);
-		FrameContext.DescriptorSet.Init();
-		FrameContext.DescriptorSet.UpdateSet(&FrameContext.FrameUBOMemoryBuffer);
 	}
 	m_FrameIndex = 0;
 	m_DeletionQueue.AddFunction([this]()
@@ -246,6 +244,7 @@ LeBool LeVkRenderer::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFrameb
 
 	m_Queue.ResetFences(m_FrameIndex);
 
+	m_DescriptorManager.ResetDescriptors(m_FrameIndex);
 	m_ObjectCleaner.Flush(m_FrameIndex);
 
 	if (m_bRebuildViewportPending)
@@ -260,10 +259,10 @@ LeBool LeVkRenderer::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFrameb
 	else
 		pRenderFrame->FrameUBO.MVP = glm::mat4(1.0f);
 
-	LeVkUtils::UpdateBuffer(&m_FrameContexts[m_FrameIndex].FrameUBOMemoryBuffer,
-		&m_FrameContexts[m_FrameIndex].FrameUBO,
-		sizeof(m_FrameContexts[m_FrameIndex].FrameUBO));
+	LeVkUtils::UpdateBuffer(&pRenderFrame->FrameUBOMemoryBuffer, &pRenderFrame->FrameUBO, sizeof(pRenderFrame->FrameUBO));
 
+	LeVkDescriptor* pFrameDescriptor = m_DescriptorManager.GetDescriptor(LeVkDescriptorType::Frame);
+	VkDescriptorSet hFrameDescriptorSet = pFrameDescriptor->CreateDescriptorSet(m_FrameIndex, &pRenderFrame->FrameUBOMemoryBuffer);
 
 
 	VkCommandBuffer CommandBuffer = pRenderFrame->CommandBuffer;
@@ -374,9 +373,9 @@ LeBool LeVkRenderer::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFrameb
 
 			VkDescriptorSet DescriptorSets[] =
 			{
-				pRenderFrame->DescriptorSet.GetDescriptorSet(),			// First set - global data
-				pWorldMesh->GetLeDescriptor()->GetDescriptorSet(),			// Second set - matblock data
-				pMaterialVk->GetLeDescriptorSet()->GetDescriptorSet()	// Third set - material data
+				hFrameDescriptorSet,										// First set - global data
+				pWorldMesh->GetDescriptorSet(),								// Second set - matblock data
+				pMaterialVk->GetDescriptorSet()								// Third set - material data
 			};
 
 			uint32 NumDescriptorSets = ARRAY_SIZE(DescriptorSets);
@@ -470,23 +469,18 @@ LeBool LeVkRenderer::PreRender(VkCommandBuffer CommandBuffer, LeScene* pScene)
 		pTexDictionary->flags &= ~TEXTURE_DICTIONARY_TEXTURES_DIRTY;
 	}
 	
+	LeMaterialDictionary* pMatDictionary = pScene->GetMaterialDictionary();
+	LE_DEBUG_ASSERT(pMatDictionary);
+
+	{
+		UpdateMaterialDictionary(pMatDictionary);
+	}
+
 	LeVkMesh* pWorldMesh = static_cast<LeVkMesh*>(pScene->GetWorld()->GetMesh());
 	LE_DEBUG_ASSERT(pWorldMesh);
 
-	for (uint32 i = 0; i < pWorldMesh->GetNumMatblocks(); i++)
 	{
-		LeMatBlock* pMb = pWorldMesh->GetMatblock(i);
-		LE_DEBUG_ASSERT(pMb);
-
-		LeVkMatBlock* pMbVk = static_cast<LeVkMatBlock*>(pMb);
-		LE_DEBUG_ASSERT(pMbVk);
-
-		UpdateMatBlock(CommandBuffer, pMbVk);
-
-		LeVkMaterial* pMaterialVk = static_cast<LeVkMaterial*>(pMbVk->GetMaterial());
-		LE_DEBUG_ASSERT(pMaterialVk);
-
-		UpdateMaterial(pMaterialVk);
+		UpdateMesh(CommandBuffer, pWorldMesh);
 	}
 
 	return true;
@@ -529,7 +523,7 @@ const LeVkPhysicalDevice* LeVkRenderer::GetLePhysicalDevice(void)
 	return pPhysicalDevice;
 }
 
-LeSwapchain* LeVkRenderer::GetLeSwapchain(void)
+LeVkSwapchain* LeVkRenderer::GetLeSwapchain(void)
 {
 	return &m_Swapchain;
 }
@@ -537,6 +531,11 @@ LeSwapchain* LeVkRenderer::GetLeSwapchain(void)
 VmaAllocator LeVkRenderer::GetVmaAllocator(void)
 {
 	return m_hVmaAllocator;
+}
+
+LeVkDescriptorManager* LeVkRenderer::GetDescriptorManager(void)
+{
+	return &m_DescriptorManager;
 }
 
 void LeVkRenderer::CreateCommandBuffers(uint32 Count, VkCommandBuffer* CommandBuffers)
@@ -868,9 +867,6 @@ void LeVkRenderer::InitImGui(void)
 	LeBool bInstallGlfwCallbacks = true;
 	ImGui_ImplGlfw_InitForVulkan(m_pGltfWindow, bInstallGlfwCallbacks);
 
-	LeVkDescriptorPool* LeDescriptorPool = LeVkDescriptorPoolManager::Get().GetLeDescriptorPool(LeVkDescriptorPoolType::IMGUI);
-	LE_DEBUG_ASSERT(LeDescriptorPool);
-
 	VkFormat ColorAttachmentFormat = m_Swapchain.GetImageFormat();
 
 	ImGui_ImplVulkan_InitInfo init_info = {};
@@ -881,7 +877,7 @@ void LeVkRenderer::InitImGui(void)
 	init_info.QueueFamily = m_QueueFamily;
 	init_info.Queue = m_Queue.GetQueue();
 	init_info.PipelineCache = NULL;
-	init_info.DescriptorPool = LeDescriptorPool->GetDescriptorPool();
+	init_info.DescriptorPoolSize = 1000;
 	init_info.MinImageCount = m_Swapchain.GetMinNumImages();
 	init_info.ImageCount = m_Swapchain.GetNumImages();
 	init_info.Allocator = NULL;
@@ -1091,11 +1087,40 @@ void LeVkRenderer::UpdateMaterial(LeVkMaterial* pMaterial)
 		pMaterial->Flags &= ~MATERIAL_SHADER_DIRTY;
 	}
 
-	static LeBool deedIsDone = false;
-	// Run this every frame until I figure it out
-	if (!deedIsDone) pMaterial->UpdateDescriptorSet();
+	// Setup the descriptor
+	{
+		LeVkDescriptor* pDescriptor = m_DescriptorManager.GetDescriptor(LeVkDescriptorType::Material);
+		LE_DEBUG_ASSERT(pDescriptor);
 
-	deedIsDone = true;
+		LeVkTexture* pBaseTexture = static_cast<LeVkTexture*>(pMaterial->GetBaseTexture());
+		VkSampler hBaseTextureSampler = pBaseTexture ? pBaseTexture->sampler : VK_NULL_HANDLE;
+		VkImageView hBaseTextureImageView = pBaseTexture ? pBaseTexture->allocatedImage.imageView : VK_NULL_HANDLE;
+
+		MaterialDescriptorSetParams DescriptorSetParams =
+		{
+			.BaseTextureInfo =
+			{
+				.hSampler = hBaseTextureSampler,
+				.hImageView = hBaseTextureImageView
+			}
+		};
+
+		VkDescriptorSet hDescriptorSet = pDescriptor->CreateDescriptorSet(m_FrameIndex, &DescriptorSetParams);
+		pMaterial->SetDescriptorSet(hDescriptorSet);
+	}
+	
+
+}
+
+void LeVkRenderer::UpdateMaterialDictionary(LeMaterialDictionary* pMatDictionary)
+{
+	LE_DEBUG_ASSERT(pMatDictionary);
+
+	pMatDictionary->ForEachMaterial([this](LeMaterial* pMaterial)
+		{
+			LeVkMaterial* pVkMaterial = static_cast<LeVkMaterial*>(pMaterial);
+			UpdateMaterial(pVkMaterial);
+		});
 }
 
 void LeVkRenderer::UpdateMatBlock(VkCommandBuffer CommandBuffer, LeVkMatBlock* pMatblock)
@@ -1132,6 +1157,31 @@ void LeVkRenderer::UpdateMatBlock(VkCommandBuffer CommandBuffer, LeVkMatBlock* p
 		m_ObjectCleaner.PushBuffer(&StagingBuffer, m_FrameIndex);
 
 		pMatblock->Flags &= ~(MATBLOCK_FACES_DIRTY);
+	}
+}
+
+void LeVkRenderer::UpdateMesh(VkCommandBuffer CommandBuffer, LeVkMesh* pMesh)
+{
+	// Setup the descriptor
+	{
+		LeVkDescriptor* pDescriptor = m_DescriptorManager.GetDescriptor(LeVkDescriptorType::Mesh);
+		LE_DEBUG_ASSERT(pDescriptor);
+
+		VkDescriptorSet hDescriptorSet = pDescriptor->CreateDescriptorSet(m_FrameIndex, pMesh->GetModelMatrixUBO());
+		pMesh->SetDescriptorSet(hDescriptorSet);
+	}
+
+	// Update children matblocks
+
+	for (uint32 i = 0; i < pMesh->GetNumMatblocks(); i++)
+	{
+		LeMatBlock* pMb = pMesh->GetMatblock(i);
+		LE_DEBUG_ASSERT(pMb);
+
+		LeVkMatBlock* pMbVk = static_cast<LeVkMatBlock*>(pMb);
+		LE_DEBUG_ASSERT(pMbVk);
+
+		UpdateMatBlock(CommandBuffer, pMbVk);
 	}
 }
 

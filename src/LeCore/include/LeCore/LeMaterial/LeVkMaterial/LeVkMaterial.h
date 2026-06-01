@@ -4,7 +4,6 @@
 
 #include "LeCore/LeMaterial/LeMaterial.h"
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMaterial.h"
 
 
 class LeVkMaterial : public LeMaterial
@@ -17,12 +16,10 @@ public:
 	const LeVkGraphicsPipeline* GetGraphicsPipeline(void) { return m_pGraphicsPipeline; }
 	void SetGraphicsPipeline(LeVkGraphicsPipeline* pPipeline) { m_pGraphicsPipeline = pPipeline; }
 
-	LeVkDescriptorSetMaterial* GetLeDescriptorSet(void) { return &m_DescriptorSet; }
-
-	void UpdateDescriptorSet(void);
+	VkDescriptorSet GetDescriptorSet(void) { return m_hDescriptorSet; }
+	void SetDescriptorSet(VkDescriptorSet hDescriptorSet) { m_hDescriptorSet = hDescriptorSet; }
 
 private:
 	LeVkGraphicsPipeline* m_pGraphicsPipeline;
-
-	LeVkDescriptorSetMaterial m_DescriptorSet;
+	VkDescriptorSet m_hDescriptorSet;
 };

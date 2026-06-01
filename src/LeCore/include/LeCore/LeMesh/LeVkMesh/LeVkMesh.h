@@ -2,8 +2,6 @@
 #pragma once
 
 #include "LeCore/LeMesh/LeMesh.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
-#include "LeCore/LeRender/LeRenderVulkan/LeVkDescriptor/LeVkDescriptorSetMesh.h"
 
 class LeVkMatBlock : public LeMatBlock
 {
@@ -32,17 +30,17 @@ private:
 
 class LeVkMesh : public LeMesh
 {
-
 public:
 
-	LeVkMesh();
-	~LeVkMesh();
+	LeVkMesh(void);
+	~LeVkMesh(void);
 
-	LeVkDescriptorSetMesh* GetLeDescriptor(void) { return &m_DescriptorSet; }
+	LeVkAllocatedBuffer* GetModelMatrixUBO(void) { return &m_ModelMatrix; }
 
-protected:
+	VkDescriptorSet GetDescriptorSet(void) { return m_hDescriptorSet; }
+	void SetDescriptorSet(VkDescriptorSet hDescriptorSet) { m_hDescriptorSet = hDescriptorSet; }
 
+private:
 	LeVkAllocatedBuffer m_ModelMatrix;
-
-	LeVkDescriptorSetMesh m_DescriptorSet;
+	VkDescriptorSet m_hDescriptorSet;
 };

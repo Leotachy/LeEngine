@@ -49,7 +49,7 @@ static VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkS
 	return SurfaceFormats[0];
 }
 
-void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
+void LeVkSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 {
 	VkDevice Device = LeVkRenderer::Get()->GetDevice();
 	const LeVkPhysicalDevice* pPhysicalDevice = LeVkRenderer::Get()->GetLePhysicalDevice();
@@ -127,7 +127,7 @@ void LeSwapchain::Init(VkSurfaceKHR Surface, uint32 QueueFamily)
 	}
 }
 
-void LeSwapchain::DeInit()
+void LeVkSwapchain::DeInit()
 {
 	VkDevice Device = LeVkRenderer::Get()->GetDevice();
 

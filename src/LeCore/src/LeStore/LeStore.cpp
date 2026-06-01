@@ -24,6 +24,10 @@ LeBool LeStore::HasFileExtension(const LeChar* pFilename, const LeChar* pExtensi
 
 LeBool LeStore::GetFileExtension(LeChar* pBuf, const LeChar* pFilename)
 {
+
+	LE_DEBUG_ASSERT(pBuf);
+	LE_DEBUG_ASSERT(pFilename);
+
 	const LeChar* pExtensionChar = strrchr(pFilename, '.');
 	if (pExtensionChar)
 	{

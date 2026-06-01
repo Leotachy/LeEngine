@@ -8,7 +8,7 @@
 
 #include "LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 
-class LeSwapchain
+class LeVkSwapchain
 {
 public:
 	void Init(VkSurfaceKHR Surface, uint32 QueueFamily);
