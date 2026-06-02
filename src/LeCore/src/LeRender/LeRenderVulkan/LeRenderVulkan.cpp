@@ -374,19 +374,50 @@ LeBool LeVkRenderer::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFrameb
 			VkDescriptorSet DescriptorSets[] =
 			{
 				hFrameDescriptorSet,										// First set - global data
-				pWorldMesh->GetDescriptorSet(),								// Second set - matblock data
+				//pWorldMesh->GetDescriptorSet(),								// Second set - matblock data
 				pMaterialVk->GetDescriptorSet()								// Third set - material data
 			};
 
 			uint32 NumDescriptorSets = ARRAY_SIZE(DescriptorSets);
 
-			vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout(),
+			VkPipelineLayout hPipelineLayout = pMaterialVk->GetGraphicsPipeline()->GetPipelineLayout();
+
+			vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, hPipelineLayout,
 				0,						// firstSet
 				NumDescriptorSets,		// descriptorSetCount
 				DescriptorSets,			// descriptor sets
 				0,						// dynamicOffsetCount
 				NULL);					// pDynamicOffsets
 
+
+			// Push constants
+			{
+
+				glm::mat4 meshGlobalTM;
+				pWorldMesh->GetGlobalTM(&meshGlobalTM);
+
+				//LeRGBAReal MaterialColorReal = {1.0f, 0.0f, 0.0f, 1.0f};
+				LeRGBAReal MaterialColorReal = pMaterialVk->GetColor().ToRgbaReal();
+
+				LeVkPushConstants PushConstant =
+				{
+						.meshGlobalTM = meshGlobalTM,
+						.materialColor = {MaterialColorReal.r, MaterialColorReal.g, MaterialColorReal.b, MaterialColorReal.a}
+				};
+
+				VkPushConstantsInfo PushConstantsInfo =
+				{
+					.sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO,
+					.layout = hPipelineLayout,
+					.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+					.offset = 0,
+					.size = sizeof(LeVkPushConstants),
+					.pValues = &PushConstant
+				};
+				vkCmdPushConstants2(CommandBuffer, &PushConstantsInfo);
+
+			}
+			
 
 			vkCmdDrawIndexed(CommandBuffer, pMbVk->GetNumFaces() * 3, 1, 0, 0, 0);
 		}
@@ -1108,8 +1139,6 @@ void LeVkRenderer::UpdateMaterial(LeVkMaterial* pMaterial)
 		VkDescriptorSet hDescriptorSet = pDescriptor->CreateDescriptorSet(m_FrameIndex, &DescriptorSetParams);
 		pMaterial->SetDescriptorSet(hDescriptorSet);
 	}
-	
-
 }
 
 void LeVkRenderer::UpdateMaterialDictionary(LeMaterialDictionary* pMatDictionary)
@@ -1163,13 +1192,13 @@ void LeVkRenderer::UpdateMatBlock(VkCommandBuffer CommandBuffer, LeVkMatBlock* p
 void LeVkRenderer::UpdateMesh(VkCommandBuffer CommandBuffer, LeVkMesh* pMesh)
 {
 	// Setup the descriptor
-	{
-		LeVkDescriptor* pDescriptor = m_DescriptorManager.GetDescriptor(LeVkDescriptorType::Mesh);
-		LE_DEBUG_ASSERT(pDescriptor);
+	//{
+	//	LeVkDescriptor* pDescriptor = m_DescriptorManager.GetDescriptor(LeVkDescriptorType::Mesh);
+	//	LE_DEBUG_ASSERT(pDescriptor);
 
-		VkDescriptorSet hDescriptorSet = pDescriptor->CreateDescriptorSet(m_FrameIndex, pMesh->GetModelMatrixUBO());
-		pMesh->SetDescriptorSet(hDescriptorSet);
-	}
+	//	VkDescriptorSet hDescriptorSet = pDescriptor->CreateDescriptorSet(m_FrameIndex, pMesh->GetModelMatrixUBO());
+	//	pMesh->SetDescriptorSet(hDescriptorSet);
+	//}
 
 	// Update children matblocks
 

@@ -35,11 +35,11 @@ public:
 	VkDescriptorSet CreateDescriptorSet(uint32 FrameIndex, void* pData) override;
 };
 
-class LeVkMeshDescriptor : public LeVkDescriptor
-{
-public:
-	VkDescriptorSet CreateDescriptorSet(uint32 FrameIndex, void* pData) override;
-};
+//class LeVkMeshDescriptor : public LeVkDescriptor
+//{
+//public:
+//	VkDescriptorSet CreateDescriptorSet(uint32 FrameIndex, void* pData) override;
+//};
 
 struct MaterialDescriptorSetParams
 {
@@ -61,7 +61,7 @@ public:
 enum class LeVkDescriptorType
 {
 	Frame,
-	Mesh,
+	//Mesh,
 	Material,
 
 	NumDescriptorTypes
@@ -80,7 +80,7 @@ public:
 private:
 
 	LeVkFrameDescriptor m_FrameData;
-	LeVkMeshDescriptor m_MeshData;
+	//LeVkMeshDescriptor m_MeshData;
 	LeVkMaterialDescriptor m_MaterialData;
 
 };

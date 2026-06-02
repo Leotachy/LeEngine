@@ -163,37 +163,37 @@ VkDescriptorSet LeVkFrameDescriptor::CreateDescriptorSet(uint32 FrameIndex, void
 
 	return hDescriptorSet;
 }
-
-VkDescriptorSet LeVkMeshDescriptor::CreateDescriptorSet(uint32 FrameIndex, void* pData)
-{
-	VkDescriptorSet hDescriptorSet = LeVkDescriptor::CreateDescriptorSet(FrameIndex, pData);
-
-	LeVkAllocatedBuffer* pBuffer = (LeVkAllocatedBuffer*)pData;
-
-	VkDescriptorBufferInfo DescriptorBufferInfo =
-	{
-		.buffer = pBuffer->buffer,
-		.offset = 0,
-		.range = pBuffer->allocationInfo.size,
-	};
-
-	VkWriteDescriptorSet WriteDescriptorSet =
-	{
-		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-		.dstSet = hDescriptorSet,
-		.dstBinding = 0,
-		.dstArrayElement = 0,
-		.descriptorCount = 1,
-		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		.pBufferInfo = &DescriptorBufferInfo
-	};
-
-
-	VkDevice hDevice = LeVkRenderer::Get()->GetDevice();
-	vkUpdateDescriptorSets(hDevice, 1, &WriteDescriptorSet, 0, NULL);
-
-	return hDescriptorSet;
-}
+//
+//VkDescriptorSet LeVkMeshDescriptor::CreateDescriptorSet(uint32 FrameIndex, void* pData)
+//{
+//	VkDescriptorSet hDescriptorSet = LeVkDescriptor::CreateDescriptorSet(FrameIndex, pData);
+//
+//	LeVkAllocatedBuffer* pBuffer = (LeVkAllocatedBuffer*)pData;
+//
+//	VkDescriptorBufferInfo DescriptorBufferInfo =
+//	{
+//		.buffer = pBuffer->buffer,
+//		.offset = 0,
+//		.range = pBuffer->allocationInfo.size,
+//	};
+//
+//	VkWriteDescriptorSet WriteDescriptorSet =
+//	{
+//		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+//		.dstSet = hDescriptorSet,
+//		.dstBinding = 0,
+//		.dstArrayElement = 0,
+//		.descriptorCount = 1,
+//		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+//		.pBufferInfo = &DescriptorBufferInfo
+//	};
+//
+//
+//	VkDevice hDevice = LeVkRenderer::Get()->GetDevice();
+//	vkUpdateDescriptorSets(hDevice, 1, &WriteDescriptorSet, 0, NULL);
+//
+//	return hDescriptorSet;
+//}
 
 VkDescriptorSet LeVkMaterialDescriptor::CreateDescriptorSet(uint32 FrameIndex, void* pData)
 {
@@ -236,11 +236,11 @@ void LeVkDescriptorManager::Init(void)
 	m_FrameData.Init(FrameDataTypes, ARRAY_SIZE(FrameDataTypes), VK_SHADER_STAGE_VERTEX_BIT, 1);
 
 
-	VkDescriptorType MeshDataTypes[] =
+	/*VkDescriptorType MeshDataTypes[] =
 	{
 		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
 	};
-	m_MeshData.Init(MeshDataTypes, ARRAY_SIZE(MeshDataTypes), VK_SHADER_STAGE_VERTEX_BIT, 50000);
+	m_MeshData.Init(MeshDataTypes, ARRAY_SIZE(MeshDataTypes), VK_SHADER_STAGE_VERTEX_BIT, 50000);*/
 
 
 	VkDescriptorType MaterialDataTypes[] =
@@ -256,7 +256,7 @@ void LeVkDescriptorManager::DeInit(void)
 {
 
 	m_FrameData.DeInit();
-	m_MeshData.DeInit();
+	//m_MeshData.DeInit();
 	m_MaterialData.DeInit();
 
 }
@@ -264,7 +264,7 @@ void LeVkDescriptorManager::DeInit(void)
 void LeVkDescriptorManager::ResetDescriptors(uint32 FrameIndex)
 {
 	m_FrameData.Reset(FrameIndex);
-	m_MeshData.Reset(FrameIndex);
+	//m_MeshData.Reset(FrameIndex);
 	m_MaterialData.Reset(FrameIndex);
 }
 
@@ -274,8 +274,8 @@ LeVkDescriptor* LeVkDescriptorManager::GetDescriptor(LeVkDescriptorType type)
 	{
 	case LeVkDescriptorType::Frame:
 		return &m_FrameData;
-	case LeVkDescriptorType::Mesh:
-		return &m_MeshData;
+	//case LeVkDescriptorType::Mesh:
+	//	return &m_MeshData;
 	case LeVkDescriptorType::Material:
 		return &m_MaterialData;
 	}

@@ -85,16 +85,9 @@ uint32 LeVkMatBlock::LeVertexGetNumAttributeDescriptions()
 
 LeVkMesh::LeVkMesh()
 {
-	LeVkUtils::CreateUniformBuffer(sizeof(glm::mat4), &m_ModelMatrix);
-
-	glm::mat4 GlobalMatrix = glm::mat4(1.0f);
-	LeVkUtils::UpdateBuffer(&m_ModelMatrix, &GlobalMatrix, sizeof(GlobalMatrix));
-
-	m_hDescriptorSet = VK_NULL_HANDLE;
 }
 
 LeVkMesh::~LeVkMesh()
 {
-	LeVkUtils::DestroyBuffer(&m_ModelMatrix);
 }
 

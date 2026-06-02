@@ -199,13 +199,13 @@ int main(void)
 		processInput(pWindow, deltaTime);
 
 
-		LeRenderInterface::RenderScene(pScene, pCam, s_bFramebufferResized);
+		//LeRenderInterface::RenderScene(pScene, pCam, s_bFramebufferResized);
 
 		s_bFramebufferResized = false;
 	}
 
 	LeStreamFile StreamFile;
-	StreamFile.Open(LeStreamAccessType::WRITE, TESTAPP_SCENES_PATH "test_level.ble");
+	StreamFile.Open(LeStreamAccessType::WRITE, TESTAPP_SCENES_PATH "../../../SampleGame/res/scenes/test_level.ble");
 	pScene->SerializeBinaryChunk(&StreamFile, NULL);
 
 	LeEngineShutDown();

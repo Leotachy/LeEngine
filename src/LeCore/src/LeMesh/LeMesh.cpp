@@ -94,7 +94,7 @@ void LeMatBlock::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 
 LeMesh::LeMesh()
 {
-
+	m_GlobalTM = glm::mat4(1.0f);
 }
 
 LeMesh::~LeMesh()
@@ -144,6 +144,13 @@ void LeMesh::PurgeAllMatblocks(void)
 		delete pMb;
 
 	m_Matblocks.clear();
+}
+
+void LeMesh::GetGlobalTM(glm::mat4* pMat) const
+{
+	LE_DEBUG_ASSERT(pMat);
+
+	*pMat = m_GlobalTM;
 }
 
 void LeMesh::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)

@@ -85,6 +85,8 @@ public:
 		}
 	}
 
+	void GetGlobalTM(glm::mat4* pMat) const;
+
 	LeSerializableBinaryChunkType GetBinaryChunkType(void) { return LeSerializableBinaryChunkType::Mesh; }
 	void SerializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
 	void DeserializeBinaryChunkImpl(LeStreamFile* pFileStream) override;
@@ -93,5 +95,6 @@ protected:
 
 
 	std::vector<LeMatBlock*> m_Matblocks;
+	glm::mat4 m_GlobalTM;
 
 };

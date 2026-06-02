@@ -13,6 +13,7 @@ LeEngine_target_sources_grouped(
 	"include/LeCore/LeRender/LeRender.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeRenderVulkan.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkDescriptor.h"
+	"include/LeCore/LeRender/LeRenderVulkan/LeVkPushConstants.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkPhysicalDevice.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkSwapchain.h"
 	"include/LeCore/LeRender/LeRenderVulkan/LeVkQueue.h"

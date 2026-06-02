@@ -35,12 +35,5 @@ public:
 	LeVkMesh(void);
 	~LeVkMesh(void);
 
-	LeVkAllocatedBuffer* GetModelMatrixUBO(void) { return &m_ModelMatrix; }
-
-	VkDescriptorSet GetDescriptorSet(void) { return m_hDescriptorSet; }
-	void SetDescriptorSet(VkDescriptorSet hDescriptorSet) { m_hDescriptorSet = hDescriptorSet; }
-
 private:
-	LeVkAllocatedBuffer m_ModelMatrix;
-	VkDescriptorSet m_hDescriptorSet;
 };

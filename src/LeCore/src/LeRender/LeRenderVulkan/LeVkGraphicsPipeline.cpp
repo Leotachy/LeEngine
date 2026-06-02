@@ -128,11 +128,21 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pVertexShader
 		PipelineLayouts[i] = pDescriptor->GetDescriptorSetLayout();
 	}
 
+	VkPushConstantRange PushConstant =
+	{
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		.offset = 0,
+		.size = sizeof(LeVkPushConstants)
+	};
+	
+
 	VkPipelineLayoutCreateInfo LayoutInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 		.setLayoutCount = uint32(LeVkDescriptorType::NumDescriptorTypes),
-		.pSetLayouts = PipelineLayouts
+		.pSetLayouts = PipelineLayouts,
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = &PushConstant
 	};
 
 

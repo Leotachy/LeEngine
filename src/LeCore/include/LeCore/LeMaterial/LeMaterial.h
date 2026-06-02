@@ -7,16 +7,17 @@
 
 struct LeMaterialAttributes
 {
+	LeRGBA Color = {255, 255, 255, 255};
 	uint64 ShaderHash = 0;
-
 	uint64 BaseTextureHash = 0;
 };
 
-#define MATERIAL_ATTRIB_HASH_DIRTY (1<<0)
+#define MATERIAL_ATTRIB_HASH_DIRTY	(1<<0)
 #define MATERIAL_BASE_TEXTURE_DIRTY (1<<1)
-#define MATERIAL_SHADER_DIRTY (1<<2)
+#define MATERIAL_COLOR_DIRTY		(1<<2)
+#define MATERIAL_SHADER_DIRTY		(1<<3)
 
-#define MATERIAL_ALL_DIRTY_FLAGS (MATERIAL_ATTRIB_HASH_DIRTY|MATERIAL_BASE_TEXTURE_DIRTY|MATERIAL_SHADER_DIRTY)
+#define MATERIAL_ALL_DIRTY_FLAGS (MATERIAL_ATTRIB_HASH_DIRTY|MATERIAL_BASE_TEXTURE_DIRTY|MATERIAL_COLOR_DIRTY|MATERIAL_SHADER_DIRTY)
 
 #define LE_MATERIAL_MAX_NAME 128
 
@@ -33,8 +34,11 @@ public:
 	void SetName(const LeChar* pName);
 	const LeChar* GetName(void) { return m_Name; }
 
+	void SetColor(const LeRGBA color);
+	LeRGBA GetColor(void) { return m_Color; }
+
 	void SetShader(LeShader* pShader);
-	LeShader* GetShader(void) const { return m_pShader; }
+	LeShader* GetShader(void) { return m_pShader; }
 
 	void SetBaseTexture(LeTexture* pTexture);
 	LeTexture* GetBaseTexture(void) { return m_pBaseTexture; }
@@ -51,6 +55,7 @@ private:
 
 	LeChar m_Name[LE_MATERIAL_MAX_NAME];
 
+	LeRGBA m_Color;
 	LeShader* m_pShader;
 	LeTexture* m_pBaseTexture;
 

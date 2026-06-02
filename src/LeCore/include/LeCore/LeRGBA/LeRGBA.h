@@ -4,7 +4,10 @@
 
 struct LeRGBAReal
 {
-    float32 red, green, blue, alpha;
+    float32 r, g, b, a;
+
+    LeRGBAReal();
+    LeRGBAReal(float32 r, float32 g, float32 b, float32 a);
 
     LeRGBAReal& operator += (const LeRGBAReal& v);
     LeRGBAReal& operator -= (const LeRGBAReal& v);
@@ -33,6 +36,11 @@ struct LeRGBA
         uint32 rgba;
     };
 
+    LeRGBA();
+    LeRGBA(const uint8 r, const uint8 g, const uint8 b, const uint8 a);
+    LeRGBA(const uint32 rgba);
+
+    LeRGBAReal ToRgbaReal(void) const;
 
     bool operator == (const LeRGBA& v) const;
     bool operator != (const LeRGBA& v) const;
