@@ -131,7 +131,7 @@ private:
 	void UpdateTexture(VkCommandBuffer CommandBuffer, LeVkTexture* pTex);
 	void UpdateTextureDictionary(VkCommandBuffer CommandBuffer, LeTextureDictionary* pTexDictionary);
 
-	LeBool UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial);
+	void UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial);
 	void UpdateMaterial(LeVkMaterial* pMaterial);
 	void UpdateMaterialDictionary(LeMaterialDictionary* pMatDictionary);
 
@@ -181,11 +181,14 @@ private:
 
 	int32 m_FrameIndex;
 
+
 	LeVkSamplerDictionary m_SamplerDictionary;
+	LeVkGraphicsPipelineDictionary m_GraphicsPipelineDictionary;
 	LeShaderDictionary m_ShaderDictionary;
+	LeVkObjectCleaner m_ObjectCleaner;
+
 
 
 	LeDeletionQueue m_DeletionQueue;
-	LeVkObjectCleaner m_ObjectCleaner;
 };
 

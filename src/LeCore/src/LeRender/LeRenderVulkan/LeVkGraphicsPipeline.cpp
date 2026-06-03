@@ -4,26 +4,24 @@
 #include "LeCore/LeRender/LeRenderVulkan/LeVkGraphicsPipeline.h"
 #include "LeCore/LeMesh/LeVkMesh/LeVkMesh.h"
 
-LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pVertexShader, LeVkShader* pFragmentShader)
+LeVkGraphicsPipeline::LeVkGraphicsPipeline(const LeVkGraphicsPipelineParams* pParams)
 {
-	LE_DEBUG_ASSERT(key);
-	LE_DEBUG_ASSERT(pVertexShader);
-	LE_DEBUG_ASSERT(pFragmentShader);
-
-	m_Key = key;
+	LE_DEBUG_ASSERT(pParams);
+	LE_DEBUG_ASSERT(pParams->pVertexShader);
+	LE_DEBUG_ASSERT(pParams->pFragmentShader);
 
 	const VkPipelineShaderStageCreateInfo ShaderStageInfo[] =
 	{
 		{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 			.stage = VK_SHADER_STAGE_VERTEX_BIT,
-			.module = pVertexShader->GetShaderModule(),
+			.module = pParams->pVertexShader->GetShaderModule(),
 			.pName = "main"
 		},
 		{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 			.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-			.module = pFragmentShader->GetShaderModule(),
+			.module = pParams->pFragmentShader->GetShaderModule(),
 			.pName = "main"
 		}
 	};
@@ -78,11 +76,11 @@ LeVkGraphicsPipeline::LeVkGraphicsPipeline(uint64 key, LeVkShader* pVertexShader
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.polygonMode = VK_POLYGON_MODE_FILL,
-		.cullMode = VK_CULL_MODE_NONE,
+		.cullMode = VkCullModeFlags(pParams->bDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT),
 		.frontFace = VK_FRONT_FACE_CLOCKWISE,
 		.lineWidth = 1.0f
 	};
-
+	
 	VkPipelineMultisampleStateCreateInfo MultisampleStateInfo =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
@@ -200,28 +198,31 @@ LeVkGraphicsPipeline::~LeVkGraphicsPipeline()
 
 
 
-LeVkGraphicsPipelineDictionary* LeVkGraphicsPipelineDictionary::Get(void)
+void LeVkGraphicsPipelineDictionary::Init()
 {
-	static LeVkGraphicsPipelineDictionary instance;
-	return &instance;
+
 }
 
-void LeVkGraphicsPipelineDictionary::Add(LeVkGraphicsPipeline* pPipeline)
+void LeVkGraphicsPipelineDictionary::DeInit()
 {
-	uint64 key = pPipeline->GetKey();
-
-	if (m_GraphicsPipelines[key])
-		LE_WARN("Pipeline already exists with key %lld", key);
-
-	m_GraphicsPipelines[key] = pPipeline;
+	PurgeAllGraphicsPipelines();
 }
 
-LeVkGraphicsPipeline* LeVkGraphicsPipelineDictionary::Find(int64 key)
+const LeVkGraphicsPipeline* LeVkGraphicsPipelineDictionary::GetOrCreateGraphicsPipeline(const LeVkGraphicsPipelineParams* pParams)
 {
-	return m_GraphicsPipelines[key];
+	uint64 hash = LeHash::hash64_bin(pParams, sizeof(*pParams));
+
+	auto Result = m_GraphicsPipelines.find(hash);
+	if (Result != m_GraphicsPipelines.end())
+		return (*Result).second;
+
+	const LeVkGraphicsPipeline* pGraphicsPipeline = new LeVkGraphicsPipeline(pParams);
+	m_GraphicsPipelines[hash] = pGraphicsPipeline;
+
+	return pGraphicsPipeline;
 }
 
-void LeVkGraphicsPipelineDictionary::Purge(void)
+void LeVkGraphicsPipelineDictionary::PurgeAllGraphicsPipelines(void)
 {
 	for (auto pipeline : m_GraphicsPipelines)
 		delete pipeline.second;

@@ -13,11 +13,8 @@ struct LeMaterialAttributes
 };
 
 #define MATERIAL_ATTRIB_HASH_DIRTY	(1<<0)
-#define MATERIAL_BASE_TEXTURE_DIRTY (1<<1)
-#define MATERIAL_COLOR_DIRTY		(1<<2)
-#define MATERIAL_SHADER_DIRTY		(1<<3)
 
-#define MATERIAL_ALL_DIRTY_FLAGS (MATERIAL_ATTRIB_HASH_DIRTY|MATERIAL_BASE_TEXTURE_DIRTY|MATERIAL_COLOR_DIRTY|MATERIAL_SHADER_DIRTY)
+#define MATERIAL_ALL_DIRTY_FLAGS (MATERIAL_ATTRIB_HASH_DIRTY)
 
 #define LE_MATERIAL_MAX_NAME 128
 
@@ -32,10 +29,14 @@ public:
 	uint64 GetAttributeHash(void);
 
 	void SetName(const LeChar* pName);
-	const LeChar* GetName(void) { return m_Name; }
+	const LeChar* GetName(void) const { return m_Name; }
 
 	void SetColor(const LeRGBA color);
-	LeRGBA GetColor(void) { return m_Color; }
+	LeRGBA GetColor(void) const { return m_Color; }
+
+	void SetDoubleSided(const LeBool b);
+	LeBool IsDoubleSided(void) const { return m_bDoubleSided; }
+	virtual void OnDoubleSidedChanged(void) {}
 
 	void SetShader(LeShader* pShader);
 	LeShader* GetShader(void) { return m_pShader; }
@@ -56,6 +57,7 @@ private:
 	LeChar m_Name[LE_MATERIAL_MAX_NAME];
 
 	LeRGBA m_Color;
+	LeBool m_bDoubleSided;
 	LeShader* m_pShader;
 	LeTexture* m_pBaseTexture;
 

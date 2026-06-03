@@ -166,6 +166,18 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 			m_Queue.DeInit();
 		});
 
+	m_SamplerDictionary.Init();
+	m_DeletionQueue.AddFunction([this]()
+		{
+			m_SamplerDictionary.DeInit();
+		});
+
+	m_GraphicsPipelineDictionary.Init();
+	m_DeletionQueue.AddFunction([this]()
+		{
+			m_GraphicsPipelineDictionary.DeInit();
+		});
+
 	m_ShaderDictionary.LoadAllShaders(pPathParams->pShaderBinaryPath);
 	m_DeletionQueue.AddFunction([this]()
 		{
@@ -186,12 +198,6 @@ void LeVkRenderer::Init(WindowParams* pWindowParams, ViewportParams* pViewportPa
 	m_DeletionQueue.AddFunction([this]()
 		{
 			m_Viewport.DeInit();
-		});
-
-	m_SamplerDictionary.Init();
-	m_DeletionQueue.AddFunction([this]()
-		{
-			m_SamplerDictionary.DeInit();
 		});
 
 	m_ObjectCleaner.Init();
@@ -218,9 +224,6 @@ void LeVkRenderer::DeInit(void)
 {
 
 	LE_DEBUG_MESSAGE("Deinitializing LeVkRenderer..");
-
-	// DeInit graphics pipelines
-	LeVkGraphicsPipelineDictionary::Get()->Purge();
 
 	m_DeletionQueue.Flush();
 
@@ -1058,14 +1061,9 @@ void LeVkRenderer::UpdateTextureDictionary(VkCommandBuffer CommandBuffer, LeText
 }
 
 
-LeBool LeVkRenderer::UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
+void LeVkRenderer::UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 {
-
 	LE_DEBUG_ASSERT(pMaterial);
-
-	// Test if graphics pipeline needs a refresh
-
-	const LeVkGraphicsPipeline* pGraphicsPipeline = pMaterial->GetGraphicsPipeline();
 
 	//LeShader* pShader = pMaterial->GetShader();
 	//LE_DEBUG_ASSERT(pShader && "Material is missing a shader!");
@@ -1073,49 +1071,28 @@ LeBool LeVkRenderer::UpdateGraphicsPipelineForMaterial(LeVkMaterial* pMaterial)
 	LeVkShader* pFragShader = static_cast<LeVkShader*>(m_ShaderDictionary.FindShader(LeHash::hash64("basic"), LeShaderType::Fragment));
 
 	// Test if pipeline is still valid
-	LeGraphicsPipelineVkKey PipelineKey =
+	LeVkGraphicsPipelineParams PipelineKey =
 	{
-		.VertexShaderHash = pVertexShader->GetNameHash(),
-		.FragmentShaderHash = pFragShader->GetNameHash(),
+		.pVertexShader = pVertexShader,
+		.pFragmentShader = pFragShader,
+		.bDoubleSided = pMaterial->IsDoubleSided()
 	};
 
-	int64 PipelineKeyHash = LeHash::hash64_bin(&PipelineKey, sizeof(PipelineKey));
+	const LeVkGraphicsPipeline* pGraphicsPipeline = m_GraphicsPipelineDictionary.GetOrCreateGraphicsPipeline(&PipelineKey);
+	LE_DEBUG_ASSERT(pGraphicsPipeline);
 
-	if (!pGraphicsPipeline || pGraphicsPipeline->GetKey() != PipelineKeyHash)
-	{
-
-		LeVkGraphicsPipeline* FoundGraphicsPipeline =
-			LeVkGraphicsPipelineDictionary::Get()->Find(PipelineKeyHash);
-
-		if (FoundGraphicsPipeline)
-		{
-			pMaterial->SetGraphicsPipeline(FoundGraphicsPipeline);
-
-		}
-		else
-		{
-			LeVkGraphicsPipeline* NewGraphicsPipeline = new LeVkGraphicsPipeline(PipelineKeyHash, pVertexShader, pFragShader);
-			LeVkGraphicsPipelineDictionary::Get()->Add(NewGraphicsPipeline);
-
-			pMaterial->SetGraphicsPipeline(NewGraphicsPipeline);
-		}
-
-
-		return true;
-	}
-
-
-	return false;
+	pMaterial->SetGraphicsPipeline(pGraphicsPipeline);
 }
 
 void LeVkRenderer::UpdateMaterial(LeVkMaterial* pMaterial)
 {
 	LE_DEBUG_ASSERT(pMaterial);
 
-	if (pMaterial->Flags & MATERIAL_SHADER_DIRTY)
+	if (pMaterial->IsGraphicsPipelineRefreshPending())
 	{
 		UpdateGraphicsPipelineForMaterial(pMaterial);
-		pMaterial->Flags &= ~MATERIAL_SHADER_DIRTY;
+		
+		pMaterial->UnsetRefreshGraphicsPipeline();
 	}
 
 	// Setup the descriptor

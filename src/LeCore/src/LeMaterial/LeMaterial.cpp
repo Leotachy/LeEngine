@@ -12,6 +12,7 @@ LeMaterial::LeMaterial()
 	m_Name[0] = 0;
 
 	m_Color = { 255, 255, 255, 255 };
+	m_bDoubleSided = true;
 	m_pShader = NULL;
 	m_pBaseTexture = NULL;
 
@@ -60,19 +61,25 @@ void LeMaterial::SetName(const LeChar* pName)
 void LeMaterial::SetColor(const LeRGBA color)
 {
 	m_Color = color;
-	Flags |= MATERIAL_COLOR_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
+	Flags |= MATERIAL_ATTRIB_HASH_DIRTY;
+}
+
+void LeMaterial::SetDoubleSided(const LeBool b)
+{
+	m_bDoubleSided = b;
+	Flags |= MATERIAL_ATTRIB_HASH_DIRTY;
 }
 
 void LeMaterial::SetShader(LeShader* pShader)
 { 
 	m_pShader = pShader;
-	Flags |= MATERIAL_SHADER_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
+	Flags |= MATERIAL_ATTRIB_HASH_DIRTY;
 }
 
 void LeMaterial::SetBaseTexture(LeTexture* pTexture)
 {
 	m_pBaseTexture = pTexture;
-	Flags |= MATERIAL_BASE_TEXTURE_DIRTY | MATERIAL_ATTRIB_HASH_DIRTY;
+	Flags |= MATERIAL_ATTRIB_HASH_DIRTY;
 }
 
 void LeMaterial::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
@@ -80,6 +87,7 @@ void LeMaterial::SerializeBinaryChunkImpl(LeStreamFile* pFileStream)
 	pFileStream->WriteString(m_Name);
 	
 	pFileStream->Write(&m_Color, sizeof(m_Color));
+	pFileStream->WriteNumber(&m_bDoubleSided);
 	uint64 ShaderHash = GetShader() ? GetShader()->GetNameHash() : 0;
 	pFileStream->WriteNumber(&ShaderHash);
 	uint64 BaseTextureHash = GetBaseTexture() ? GetBaseTexture()->GetNameHash() : 0;
@@ -94,6 +102,7 @@ void LeMaterial::DeserializeBinaryChunkImpl(LeStreamFile* pFileStream)
 	LE_DEBUG_ASSERT(pScene);
 
 	pFileStream->Read(&m_Color, sizeof(m_Color));
+	pFileStream->ReadNumber(&m_bDoubleSided);
 	uint64 ShaderHash;
 	pFileStream->ReadNumber(&ShaderHash);
 
