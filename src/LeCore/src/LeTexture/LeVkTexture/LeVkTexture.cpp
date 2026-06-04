@@ -38,7 +38,6 @@ LeVkTexture::~LeVkTexture()
 
 void LeVkTexture::OnPixelsAllocated(void)
 {
-    VkDeviceSize imageSize = m_Width * m_Height * LeVkUtils::GetVkBytesPerTexFormat(m_format);
 
     VkExtent3D extent = VkExtent3D(m_Width, m_Height, 1);
 

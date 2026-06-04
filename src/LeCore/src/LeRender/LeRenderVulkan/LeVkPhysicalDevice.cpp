@@ -200,7 +200,7 @@ uint32 LeVkPhysicalDevices::SelectDevice(VkQueueFlags RequiredQueueType, LeBool 
     
     LE_ERROR("Required queue Type %x and supports present %d not found", RequiredQueueType, SupportsPresent);
     
-    return -1;
+    return uint32(-1);
 }
 
 

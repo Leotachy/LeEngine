@@ -272,7 +272,7 @@ VkSampler LeVkUtils::CreateSampler(const LeVkTextureAttributes* Attribs, LeBool 
 		.addressModeU = Attribs->AddressModeU,
 		.addressModeV = Attribs->AddressModeV,
 		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.anisotropyEnable = VK_TRUE,
+		.anisotropyEnable = bEnableAnisotropy,
 		.maxAnisotropy = fMaxAnisotropy,
 		.compareEnable = VK_FALSE,
 		.compareOp = VK_COMPARE_OP_ALWAYS,
@@ -410,7 +410,7 @@ uint32 LeVkUtils::GetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties* pMe
 	}
 
 	LE_DEBUG_ERROR("Cannot find memory Type for Type %x requested mem props %x", MemTypeBitsMask, ReqMemPropFlags);
-	return -1;
+	return uint32(-1);
 }
 
 const LeChar* LeVkUtils::GetVkDebugUtilsMessageSeverityStr(VkDebugUtilsMessageSeverityFlagBitsEXT Severity)

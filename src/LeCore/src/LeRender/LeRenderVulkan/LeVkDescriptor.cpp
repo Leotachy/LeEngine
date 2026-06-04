@@ -47,7 +47,7 @@ void LeVkDescriptor::Init(const VkDescriptorType* pDescriptorTypes, uint32 NumTy
 	const uint32 POOL_SIZES_BUFFER_SIZE = SET_LAYOUT_BINDINGS_BUFFER_SIZE;
 	LE_DEBUG_ASSERT(NumTypes < POOL_SIZES_BUFFER_SIZE);
 
-	for (uint32 i = 0; i < LE_MAX_FRAMES_IN_FLIGHT; i++)
+	for (uint32 fif = 0; fif < LE_MAX_FRAMES_IN_FLIGHT; fif++)
 	{
 		VkDescriptorPoolSize PoolSizes[POOL_SIZES_BUFFER_SIZE];
 
@@ -68,10 +68,10 @@ void LeVkDescriptor::Init(const VkDescriptorType* pDescriptorTypes, uint32 NumTy
 			.pPoolSizes = PoolSizes
 		};
 
-		VkResult res = vkCreateDescriptorPool(device, &PoolCreateInfo, NULL, &m_Pools[i].hPool);
+		res = vkCreateDescriptorPool(device, &PoolCreateInfo, NULL, &m_Pools[fif].hPool);
 		LE_CHECK_VK_RESULT(res);
 
-		m_Pools[i].NumSetsActive = 0;
+		m_Pools[fif].NumSetsActive = 0;
 	}
 
 	m_MaxSetsPerPool = MaxSets;

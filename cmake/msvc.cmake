@@ -8,8 +8,11 @@ function (LeEngine_target_settings_toolchain target)
     target_compile_definitions(${target} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:_CRT_SECURE_NO_WARNINGS>)
 
     # Set warning level 3 and enable warnings as errors
-    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/W3>)
-    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/WX>)
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/W4>)
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/w14640>)
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/wd4201>) # nameless structs
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/wd4100>) # unreferenced function parameters (who cares)
+
 
     # Disable unreachable warning (libfmt)
     target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/wd4702>) # unreachable

@@ -79,7 +79,7 @@ uint32 LeVkQueue::AcquireNextImage(int32 frameIndex)
 		m_hSwapchain->GetSwapchain(), UINT64_MAX, m_phPresentCompleteSems[frameIndex], NULL, &ImageIndex);
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
-		return -1; //TODO fix this
+		return (uint32)(-1); //TODO fix this
 
 
 	LE_CHECK_VK_RESULT(res);
@@ -127,7 +127,7 @@ void LeVkQueue::SubmitAsync(VkCommandBuffer CmbBuf, uint32 imageIndex, int32 fra
 }
 
 
-bool LeVkQueue::Present(uint32 imageIndex, int32 frameIndex)
+bool LeVkQueue::Present(uint32 imageIndex)
 {
 
 	VkSwapchainKHR Swapchain = m_hSwapchain->GetSwapchain();

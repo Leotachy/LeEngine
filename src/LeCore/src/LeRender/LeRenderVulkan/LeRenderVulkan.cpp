@@ -472,7 +472,7 @@ LeBool LeVkRenderer::RenderScene(LeScene* pScene, LeCamera* pCam, LeBool bFrameb
 	m_Queue.SubmitAsync(CommandBuffer, pRenderFrame->ImageIndex, m_FrameIndex);
 
 
-	if (!m_Queue.Present(pRenderFrame->ImageIndex, m_FrameIndex) || bFramebufferResized)
+	if (!m_Queue.Present(pRenderFrame->ImageIndex) || bFramebufferResized)
 		OnSurfaceSizeChanged();
 
 	m_FrameIndex++;
