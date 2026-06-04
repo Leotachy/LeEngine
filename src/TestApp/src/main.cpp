@@ -10,6 +10,8 @@
 #include "LeCore/LeTexture/LeTextureDictionary.h"
 #include "LeCore/LeScene/LeScene.h"
 
+#include "LebImporter/LebImporter.h"
+
 #define DEFAULT_SCREEN_WIDTH 800
 #define DEFAULT_SCREEN_HEIGHT 600
 
@@ -175,6 +177,7 @@ int main(void)
 
 	// The triangle is constructed!
 
+	LebImporter::ImportGltfToScene("yo", NULL);
 
 	double deltaTime = 0.0;	// Time between current frame and last frame
 	double lastFrame = 0.0; // Time of last frame
@@ -187,11 +190,11 @@ int main(void)
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		if (deltaTime > 0.0)
+		/*if (deltaTime > 0.0)
 		{
 			int32 FPS = int32(1.0 / deltaTime);
 			LE_DEBUG_MESSAGE("FPS: %d", FPS);
-		}
+		}*/
 
 
 		manipulateMatblockVertex(Mb, deltaTime);

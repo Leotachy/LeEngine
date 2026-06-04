@@ -10,6 +10,8 @@
 #include "LeCore/LeTexture/LeTextureDictionary.h"
 #include "LeCore/LeScene/LeScene.h"
 
+
+
 #define DEFAULT_SCREEN_WIDTH 800
 #define DEFAULT_SCREEN_HEIGHT 600
 #define SAMPLEGAME_NAME "SampleGame"

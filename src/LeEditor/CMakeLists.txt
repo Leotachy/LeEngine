@@ -27,4 +27,4 @@ target_link_libraries(${_target} imgui-docking)
 find_package(Vulkan REQUIRED)
 target_link_libraries(${_target} Vulkan::Vulkan)
 
-LeEngine_target_settings(${_target} "LeEditor")
+LeEngine_target_settings(${_target} "LeEngine")
