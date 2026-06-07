@@ -19,7 +19,6 @@ target_include_directories(${_target} PUBLIC "include/" PRIVATE "src/")
 
 target_link_libraries(${_target} LeCore)
 target_link_libraries(${_target} glfw)
-target_link_libraries(${_target} glm)
 target_link_libraries(${_target} imgui-docking)
 
 

@@ -106,7 +106,10 @@ target_link_libraries(${_target} PUBLIC libjpeg-turbo::libjpeg-turbo)
 
 
 target_link_libraries(${_target} PUBLIC glfw)
-target_link_libraries(${_target} PUBLIC glm)
+
+find_package(glm REQUIRED)
+target_link_libraries(${_target} PUBLIC glm::glm)
+
 target_link_libraries(${_target} PUBLIC imgui-docking)
 target_link_libraries(${_target} PRIVATE VulkanMemoryAllocator)
 
