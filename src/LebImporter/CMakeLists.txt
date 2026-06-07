@@ -8,14 +8,15 @@ LeEngine_target_sources_grouped(
 
 	"include/LebImporter/LebImporter.h"
 
-	"src/main.cpp"
+	"src/LebImporter.cpp"
 )
 
 target_include_directories(${_target} PUBLIC "include/" PRIVATE "src/")
 
 add_subdirectory(thirdparty)
 
-target_link_libraries(${_target} PRIVATE LeCore)
+target_link_libraries(${_target} PUBLIC LeCore)
 target_link_libraries(${_target} PUBLIC cgltf)
+target_link_libraries(${_target} PUBLIC turbojpeg-static)
 
 LeEngine_target_settings(${_target} "LeEngine")

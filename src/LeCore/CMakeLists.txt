@@ -100,15 +100,20 @@ target_compile_definitions(${_target}
 )
 
 
-target_link_libraries(${_target} glfw)
-target_link_libraries(${_target} glm)
-target_link_libraries(${_target} imgui-docking)
-target_link_libraries(${_target} VulkanMemoryAllocator)
+find_package(libjpeg-turbo REQUIRED)
+target_link_libraries(${_target} PUBLIC libjpeg-turbo::libjpeg-turbo)
+
+
+
+target_link_libraries(${_target} PUBLIC glfw)
+target_link_libraries(${_target} PUBLIC glm)
+target_link_libraries(${_target} PUBLIC imgui-docking)
+target_link_libraries(${_target} PRIVATE VulkanMemoryAllocator)
 
 # Vulkan SDK needs to be installed on the local machine
 find_package(Vulkan REQUIRED)
 
-target_link_libraries(${_target} Vulkan::Vulkan)
+target_link_libraries(${_target} PRIVATE Vulkan::Vulkan)
 
 
 LeEngine_target_settings(${_target} "LeEngine")

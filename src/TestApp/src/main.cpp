@@ -177,7 +177,7 @@ int main(void)
 
 	// The triangle is constructed!
 
-	LebImporter::ImportGltfToScene("yo", NULL);
+	LebImporter::ImportGltf("D:/source/LeEngine/git_ignored/sorority_gltf/sorority.gltf");
 
 	double deltaTime = 0.0;	// Time between current frame and last frame
 	double lastFrame = 0.0; // Time of last frame

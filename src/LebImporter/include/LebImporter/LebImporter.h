@@ -7,5 +7,5 @@
 class LebImporter
 {
 public:
-	static LeBool ImportGltfToScene(const LeChar* pFilename, LeScene* pScene);
+	static LeScene* ImportGltf(const LeChar* pFilename);
 };

@@ -56,7 +56,6 @@ public:
 	static void DeInitRenderer(void);
 
 	static void SetViewportDimensions(uint32 width, uint32 height);
-
 #ifdef SUPPORT_IMGUI
 	static ImTextureID GetViewportImGuiTexture(void);
 #endif
