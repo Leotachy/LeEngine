@@ -100,10 +100,6 @@ target_compile_definitions(${_target}
 )
 
 
-find_package(libjpeg-turbo REQUIRED)
-target_link_libraries(${_target} PUBLIC libjpeg-turbo::libjpeg-turbo)
-
-
 
 target_link_libraries(${_target} PUBLIC glfw)
 
@@ -111,11 +107,17 @@ find_package(glm REQUIRED)
 target_link_libraries(${_target} PUBLIC glm::glm)
 
 target_link_libraries(${_target} PUBLIC imgui-docking)
-target_link_libraries(${_target} PRIVATE VulkanMemoryAllocator)
 
+find_package(libjpeg-turbo REQUIRED)
+target_link_libraries(${_target} PUBLIC libjpeg-turbo::libjpeg-turbo)
+
+
+# Private libs
+
+find_package(VulkanMemoryAllocator REQUIRED)
+target_link_libraries(${_target} PRIVATE GPUOpen::VulkanMemoryAllocator)
 # Vulkan SDK needs to be installed on the local machine
 find_package(Vulkan REQUIRED)
-
 target_link_libraries(${_target} PRIVATE Vulkan::Vulkan)
 
 

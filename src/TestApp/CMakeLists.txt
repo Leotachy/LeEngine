@@ -24,8 +24,7 @@ target_compile_definitions(${_target}
 
 		
 
-target_link_libraries(${_target} glfw)
-target_link_libraries(${_target} LeCore)
-target_link_libraries(${_target} LebImporter)
+target_link_libraries(${_target} PRIVATE LeCore)
+target_link_libraries(${_target} PRIVATE LebImporter)
 
 LeEngine_target_settings(${_target} "LeEngine")

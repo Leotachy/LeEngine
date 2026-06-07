@@ -4,6 +4,6 @@ build/
 .vs/
 .idea/
 CMakeSettings.json
-conan/
+CMakeUserPresets.json
 
-git_ignored/
+conan/

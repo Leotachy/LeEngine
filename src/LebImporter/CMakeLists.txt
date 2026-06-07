@@ -16,7 +16,6 @@ target_include_directories(${_target} PUBLIC "include/" PRIVATE "src/")
 add_subdirectory(thirdparty)
 
 target_link_libraries(${_target} PUBLIC LeCore)
-target_link_libraries(${_target} PUBLIC cgltf)
-target_link_libraries(${_target} PUBLIC turbojpeg-static)
+target_link_libraries(${_target} PRIVATE cgltf)
 
 LeEngine_target_settings(${_target} "LeEngine")

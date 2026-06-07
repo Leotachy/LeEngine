@@ -17,13 +17,7 @@ LeEngine_target_sources_grouped(
 
 target_include_directories(${_target} PUBLIC "include/" PRIVATE "src/")
 
-target_link_libraries(${_target} LeCore)
-target_link_libraries(${_target} glfw)
-target_link_libraries(${_target} imgui-docking)
-
-
-# Vulkan SDK needs to be installed on the local machine
-find_package(Vulkan REQUIRED)
-target_link_libraries(${_target} Vulkan::Vulkan)
+target_link_libraries(${_target} PRIVATE LeCore)
+target_link_libraries(${_target} PRIVATE imgui-docking)
 
 LeEngine_target_settings(${_target} "LeEngine")

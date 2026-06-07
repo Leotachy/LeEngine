@@ -9,6 +9,7 @@ class LeEngine(ConanFile):
     def requirements(self):
         self.requires("libjpeg-turbo/3.1.4.1")
         self.requires("glm/1.0.1")
+        self.requires("vulkan-memory-allocator/3.3.0")
      
     def build_requirements(self):
         self.tool_requires("cmake/[>=3.19.2]")
