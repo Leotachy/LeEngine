@@ -3,7 +3,8 @@
 #include "LeCore/LeCore.h"
 
 #define CGLTF_IMPLEMENTATION
-#include "cgltf/cgltf.h"
+#include <cgltf.h>
+
 
 #include "LebImporter/LebImporter.h"
 

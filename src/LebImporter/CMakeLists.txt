@@ -13,9 +13,9 @@ LeEngine_target_sources_grouped(
 
 target_include_directories(${_target} PUBLIC "include/" PRIVATE "src/")
 
-add_subdirectory(thirdparty)
-
 target_link_libraries(${_target} PUBLIC LeCore)
-target_link_libraries(${_target} PRIVATE cgltf)
+
+find_package(cgltf REQUIRED CONFIG)
+target_link_libraries(${_target} PRIVATE cgltf::cgltf)
 
 LeEngine_target_settings(${_target} "LeEngine")
