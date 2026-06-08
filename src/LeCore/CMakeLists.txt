@@ -101,14 +101,16 @@ target_compile_definitions(${_target}
 
 
 
+find_package(glfw3 REQUIRED CONFIG)
 target_link_libraries(${_target} PUBLIC glfw)
 
-find_package(glm REQUIRED)
+find_package(glm REQUIRED CONFIG)
 target_link_libraries(${_target} PUBLIC glm::glm)
 
-target_link_libraries(${_target} PUBLIC imgui-docking)
+#find_package(imgui REQUIRED CONFIG)
+#target_link_libraries(${_target} PUBLIC imgui::imgui)
 
-find_package(libjpeg-turbo REQUIRED)
+find_package(libjpeg-turbo REQUIRED CONFIG)
 target_link_libraries(${_target} PUBLIC libjpeg-turbo::libjpeg-turbo)
 
 

@@ -18,6 +18,5 @@ LeEngine_target_sources_grouped(
 target_include_directories(${_target} PUBLIC "include/" PRIVATE "src/")
 
 target_link_libraries(${_target} PRIVATE LeCore)
-target_link_libraries(${_target} PRIVATE imgui-docking)
 
 LeEngine_target_settings(${_target} "LeEngine")

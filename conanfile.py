@@ -11,6 +11,9 @@ class LeEngine(ConanFile):
         self.requires("glm/1.0.1")
         self.requires("vulkan-memory-allocator/3.3.0")
         self.requires("cgltf/1.15")
+        self.requires("glfw/3.4")
+        #self.requires("imgui/1.92.8")
+    
      
     def build_requirements(self):
         self.tool_requires("cmake/[>=3.19.2]")

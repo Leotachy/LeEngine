@@ -43,4 +43,3 @@ include(cmake/functions.cmake)
 
 
 add_subdirectory(src)
-add_subdirectory(thirdparty)
